@@ -1,0 +1,35 @@
+﻿index,table ,filter,result_col,result_value,description
+1,person,person['employment'] == "Employed full time (35+ hours/week, paid)",pptyp,1,full-time worker
+2,person,(person['employment'] == 'Self-employed') & (person['hours_work'].isin(['31-40 hours','41–50 hours','More than 50 hours','More than 50 hours','31-34 hours'])),pptyp,1,self-employed with minimum work hours classified full-time worker
+3,person,person['employment'] == "Employed part time (fewer than 35 hours/week, paid)",pptyp,2,part-time worker
+4,person,(person['employment'] == 'Self-employed') & (~person['hours_work'].isin(['31-40 hours','41–50 hours','More than 50 hours','More than 50 hours','31-34 hours'])),pptyp,2,self-employed with less than minimum work hours classified part-time worker
+5,person,(person['worker'] != "1+ job(s) (including part-time)") & (person['age'].isin(['65-74 years','75-84 years','85 or years older'])),pptyp,3,Non-working adult age over 65
+6,person,(person['worker'] != "1+ job(s) (including part-time)") & (person['age'].isin(['18-24 years','25-34 years','35-44 years','45-54 years','55-64 years'])),pptyp,4,Non working adult age <65
+7,person,(person['schooltype'].isin(['College, graduate, or professional school','Vocational/technical school'])) & (person['student'] == 'Full-time student'),pptyp,5,University student (full-time)
+8,person,(~person['age'].isin(['Under 5 years old','5-11 years','12-15 years'])) & (person['schooltype'].isin(['K-12 home school (full-time or part-time)','K-12 public school','K-12 private school'])),pptyp,6,High school student age 16+
+9,person,person['age'].isin(['5-11 years','12-15 years']),pptyp,7,Child age 5-15
+10,person,person['age']=='Under 5 years old',pptyp,8,Child Under 5
+11,person,person['pptyp'].isnull(),pptyp,-1,Assign any missing person -1 value as missing logic flag
+12,person,(person['age'].isin(['16-17 years'])) & (person['pptyp'] == -1),pptyp,6,Assume anyone 16-17 is a student if they have missing school data
+13,person,person['employment'].isin(["Employed full time (35+ hours/week, paid)"]),pwtyp,1,Full time worker
+14,person,person['employment'].isin(["Employed part time (fewer than 35 hours/week, paid)"]),pwtyp,2,Part time worker
+15,person,~person['pwtyp'].isin([1,2]),pwtyp,0,Non-worker
+16,person,:,ptpass,0,Default of no transit pass availability
+17,person,(person['tran_pass_12'].isin(['Yes, school pays all of value','Yes, school pays part of value'])) | (person['benefits_3'].isin(['Offered, and I use'])),ptpass,1,
+18,person,:,ppaidprk,0,Default of assuming no parking cost unless otherwise specified
+20,person,person['workpass'].isin(['Yes, employer pays/reimburses for all or part of parking pass','Yes, personally pay daily with cash/tickets','Yes, personally pay for parking pass at work']),ppaidprk,1,
+21,person,:,puwmode,person['commute_mode'].map(config['commute_mode_dict']),
+22,person,person['puwmode'].isnull(),puwmode,config['commute_mode_dict']['null'],
+23,person,:,pagey,person['age'].map(config['age_map']),
+24,person,:,pgend,person['gender'].map(config['gender_map']),
+25,person,:,pstyp,person['student'].map(config['pstyp_map']),
+26,person,:,pstyp,person['pstyp'].fillna(0),
+27,person,:,hhno,person['household_id'],
+28,person,:,pno,person['person_id'].astype('str').apply(lambda x: x[-2:]).astype('int'),"Extract from person ID field which appends the person number to the household on the last 2 columns"
+29,person,:,psexpfac,person['hh_weight_2017_2019'],
+30,person,:,pwtaz,person['work_taz'],
+34,person,:,pstaz,person['school_loc_taz'],
+35,person,:,pwpcl,person['work_parcel'],
+36,person,:,pspcl,person['school_loc_parcel'],
+37,person,:,pdiary,0,
+38,person,:,pproxy,0,

@@ -1,0 +1,32 @@
+﻿index,table,filter,result_col,result_value,description
+1,trip,:,hhno,trip['household_id'],
+2,trip,:,trexpfac,trip['trip_weight_2017_2019'],
+3,trip,:,tsvid,range(len(trip)),original trip_id is too long for daysim so reset values; We can export the mapping between tsvid and trip_id in the script
+4,trip,:,opurp,trip['origin_purpose'].map(config['purpose_map']).fillna(-1).astype('int'),
+5,trip,:,dpurp,trip['dest_purpose'].map(config['purpose_map']).fillna(-1).astype('int'),
+6,trip,:,dorp,trip['driver'].map(config['dorp_map']),
+7,trip,:,dorp,trip['dorp'].fillna(3),
+8,trip,:,mode,'Other',
+9,trip,(trip['travelers_total'] == 1) & (trip['mode_simple'] == 'Drive'),mode,'SOV',
+10,trip,(trip['travelers_total'] == 2) & (trip['mode_simple'] == 'Drive'),mode,'HOV2',
+11,trip,(trip['travelers_total'] > 2) & (trip['mode_simple'] == 'Drive'),mode,'HOV3+',
+12,trip,trip['mode_simple'] == 'Transit',mode,'Transit',
+13,trip,trip['mode_simple'] == 'Walk',mode,'Walk',
+14,trip,trip['mode_simple'] == 'Bike',mode,'Bike',
+15,trip,trip['mode_1'].isin(['School bus']),mode,'School_Bus',
+16,trip,"trip['mode_1'].isin(['Other hired service (Uber, Lyft, or other smartphone-app car service)','Taxi (e.g., Yellow Cab)'])",mode,'TNC',
+17,trip,:,mode,trip['mode'].map(config['mode_dict']),
+18,trip,:,oadtyp,4,origin type: assume other by default
+19,trip,:,dadtyp,4,destination type: assume other by default
+20,trip,trip['opurp'] == 0,oadtyp,1,"Trips with origin/destination purpose of ""Home"" (0) have a origin/destination address type of ""Home"" (1)"
+21,trip,trip['dpurp'] == 0,dadtyp,1,"Trips with origin/destination purpose of ""Home"" (0) have a origin/destination address type of ""Home"" (1)"
+22,trip,(trip['opurp'] == 2) & (trip['opcl'] == trip['pspcl']),oadtyp,3,usual school
+23,trip,(trip['dpurp'] == 2) & (trip['dpcl'] == trip['pspcl']),dadtyp,3,usual school
+24,trip,(trip['opurp'] == 1) & (trip['otaz'] == trip['pwtaz']),oadtyp,2,If trip is to/from TAZ of usual workplace and trip purpose is work
+25,trip,(trip['dpurp'] == 1) & (trip['dtaz'] == trip['pwtaz']),dadtyp,2,If trip is to/from TAZ of usual workplace and trip purpose is work
+26,trip,trip['opurp'] == 10,oadtyp,6,'Change mode'
+27,trip,trip['dpurp'] == 10,dadtyp,6,'Change mode'
+28,trip,:,travcost,-1,Set skim values to -1 until they're updated in the next script
+29,trip,:,travtime,-1,Set skim values to -1 until they're updated in the next script
+30,trip,:,travdist,-1,Set skim values to -1 until they're updated in the next script
+31,trip,:,day,trip['dayofweek'].map(config['day_map']),

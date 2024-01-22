@@ -1,0 +1,58 @@
+[
+  {
+    "objectID": "index.html#install-quarto",
+    "href": "index.html#install-quarto",
+    "title": "Daysim Conversion Summary",
+    "section": "0.1 Install Quarto",
+    "text": "0.1 Install Quarto\nhttps://quarto.org/docs/get-started/"
+  },
+  {
+    "objectID": "index.html#render-full-quarto-book",
+    "href": "index.html#render-full-quarto-book",
+    "title": "Daysim Conversion Summary",
+    "section": "0.2 Render full Quarto book",
+    "text": "0.2 Render full Quarto book\nuse the render command at the project location to render all files\n\n\nTerminal\n\nquarto render"
+  },
+  {
+    "objectID": "index.html#to-render-individual-jupyter-notebooks",
+    "href": "index.html#to-render-individual-jupyter-notebooks",
+    "title": "Daysim Conversion Summary",
+    "section": "0.3 To render individual Jupyter Notebooks",
+    "text": "0.3 To render individual Jupyter Notebooks\n\n\nTerminal\n\nquarto render notebook.ipynb\n\nEven though you are rendering only one script in the project, the entire book is still produced using previously rendered versions of the other chapters.\n\nNote that when rendering an .ipynb Quarto will not execute the cells within the notebook by default:\n\neither you already executed them while editing the notebook\nor you can execute the cells by passing the --execute flag to render:\n\n\n\n\nTerminal\n\nquarto render notebook.ipynb --execute"
+  },
+  {
+    "objectID": "hh_comparison.html",
+    "href": "hh_comparison.html",
+    "title": "2  Household Comparison",
+    "section": "",
+    "text": "source\nNEW\nRSG\n\n\nhhcu5\n\n\n\n\n\n\n0\n0.845578\n0.885304\n\n\n1\n0.101040\n0.076308\n\n\n2\n0.048877\n0.032379\n\n\n3\n0.004505\n0.006010\n\n\n\n\n\n\n\n\n\n\n\n3 Children 5-15\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\nhh515\n\n\n\n\n\n\n0\n0.755695\n0.783833\n\n\n1\n0.113306\n0.110474\n\n\n2\n0.109644\n0.087422\n\n\n3\n0.014751\n0.013373\n\n\n4\n0.003239\n0.002826\n\n\n5\n0.003365\n0.002073\n\n\n\n\n\n\n\n\n\n\n\n\n4 High School Age Students\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\nhhhsc\n\n\n\n\n\n\n0\n0.928775\n0.921947\n\n\n1\n0.056877\n0.064120\n\n\n2\n0.014348\n0.012828\n\n\n3\nNaN\n0.001105\n\n\n\n\n\n\n\n\n\n\n\n\n5 Total Children\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\nchildren\n\n\n\n\n\n\n0\n0.643928\n0.693130\n\n\n1\n0.121925\n0.114471\n\n\n2\n0.152120\n0.123459\n\n\n3\n0.060950\n0.047172\n\n\n4\n0.013254\n0.014533\n\n\n5\n0.004457\n0.005163\n\n\n6\n0.003365\n0.002073\n\n\n\n\n\n\n\n\n\n\n\n\n6 University Students\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\nhhuni\n\n\n\n\n\n\n0\n0.920666\n0.923373\n\n\n1\n0.076744\n0.074222\n\n\n2\n0.002454\n0.002206\n\n\n3\n0.000073\n0.000066\n\n\n4\n0.000063\n0.000134\n\n\n\n\n\n\n\n\n\n\n\n\n7 Full-time Workers\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\nhhftw\n\n\n\n\n\n\n0\n0.247113\n0.305443\n\n\n1\n0.499056\n0.435262\n\n\n2\n0.229715\n0.232174\n\n\n3\n0.022793\n0.025297\n\n\n4\n0.001218\n0.001681\n\n\n5\n0.000105\n0.000145\n\n\n\n\n\n\n\n\n\n\n\n\n8 Part-Time Workers\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\nhhptw\n\n\n\n\n\n\n0\n0.816441\n0.815252\n\n\n1\n0.171326\n0.170840\n\n\n2\n0.008312\n0.011190\n\n\n3\n0.003920\n0.002717\n\n\n\n\n\n\n\n\n\n\n\n\n9 Retired\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\nhhret\n\n\n\n\n\n\n0\n0.862868\n0.726149\n\n\n1\n0.088172\n0.237786\n\n\n2\n0.048929\n0.031374\n\n\n3\n0.000032\n0.004691\n\n\n\n\n\n\n\n\n\n\n\n\n10 Other\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\nhhoad\n\n\n\n\n\n\n0\n0.719628\n0.807543\n\n\n1\n0.249216\n0.122210\n\n\n2\n0.027899\n0.070202\n\n\n3\n0.003257\n0.000044\n\n\n\n\n\n\n\n\n\n\n\n\n11 Income\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\nhhincome\n\n\n\n\n\n\n-1\n0.068898\n0.077258\n\n\n5000\n0.029689\n0.036964\n\n\n17500\n0.088689\n0.087029\n\n\n30000\n0.064390\n0.064156\n\n\n42500\n0.088906\n0.093044\n\n\n62500\n0.152900\n0.153044\n\n\n87500\n0.138368\n0.130350\n\n\n125000\n0.173751\n0.172965\n\n\n175000\n0.103010\n0.090258\n\n\n225000\n0.052259\n0.051839\n\n\n250000\n0.039140\n0.043092\n\n\n\n\n\n\n\n\n\n\n\n\n12 Ownership Status\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\nhownrent\n\n\n\n\n\n\n1\n0.619832\n0.632663\n\n\n2\n0.350997\n0.330336\n\n\n3\n0.029172\n0.037001\n\n\n\n\n\n\n\n\n\n\n\n\n13 Housing Type\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\nhrestype\n\n\n\n\n\n\n1\n0.592578\n0.607097\n\n\n2\n0.092518\n0.089830\n\n\n3\n0.284883\n0.276165\n\n\n4\n0.028782\n0.024950\n\n\n5\n0.000561\n0.000905\n\n\n6\n0.000677\n0.001052"
+  },
+  {
+    "objectID": "person_comparison.html#tour-characteristics",
+    "href": "person_comparison.html#tour-characteristics",
+    "title": "3  Person Comparison",
+    "section": "3.1 Tour Characteristics",
+    "text": "3.1 Tour Characteristics\n::: {.panel-tabset}\n\n3.1.1 Persons (Weighted)"
+  },
+  {
+    "objectID": "person_day_comparison.html#total-tours",
+    "href": "person_day_comparison.html#total-tours",
+    "title": "4  Person Day Comparison",
+    "section": "4.1 Total Tours",
+    "text": "4.1 Total Tours\n\nTotal Tours (Weighted)Total Tours (Unweighted)\n\n\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\ntotal_tours\n\n\n\n\n\n\n0\nNaN\n2.359553e-01\n\n\n1\n4.581810e-01\n3.412250e-01\n\n\n2\n3.553205e-01\n2.733065e-01\n\n\n3\n1.067919e-01\n7.914763e-02\n\n\n4\n5.567543e-02\n4.908521e-02\n\n\n5\n1.478707e-02\n1.331562e-02\n\n\n6\n6.097484e-03\n5.049343e-03\n\n\n7\n2.464149e-03\n2.073235e-03\n\n\n8\n6.803898e-04\n7.679181e-04\n\n\n9\n9.683373e-07\n1.399206e-06\n\n\n10\n5.571195e-07\n7.249381e-05\n\n\n12\n5.571195e-07\n2.760666e-07\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nsource\nNEW\nRSG\n\n\ntotal_tours\n\n\n\n\n\n\n0\nNaN\n0.176627\n\n\n1\n0.400853\n0.326819\n\n\n2\n0.374320\n0.306033\n\n\n3\n0.123989\n0.105005\n\n\n4\n0.065559\n0.054564\n\n\n5\n0.024401\n0.020956\n\n\n6\n0.007864\n0.006665\n\n\n7\n0.001837\n0.002033\n\n\n8\n0.000955\n0.001017\n\n\n9\n0.000073\n0.000113\n\n\n10\n0.000073\n0.000113\n\n\n12\n0.000073\n0.000056\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nTours by Purpose (Weighted)Tours by Purpose (Unweighted)Stops by Purpose (Weighted)Stops by Purpose (Unweighted)"
+  },
+  {
+    "objectID": "tour_comparison.html#tour-characteristics",
+    "href": "tour_comparison.html#tour-characteristics",
+    "title": "5  Tour Comparison",
+    "section": "5.1 Tour Characteristics",
+    "text": "5.1 Tour Characteristics\n\nAll Tours (Weighted)All Tours (Unweighted)Subtours (Weighted)Subtours (unweighted)"
+  },
+  {
+    "objectID": "trip_comparison.html",
+    "href": "trip_comparison.html",
+    "title": "6  Trip Characteristics",
+    "section": "",
+    "text": "NEW: R:/e2projects_two/2018_base_year/survey/daysim_format/revised/skims_attached\nRSG: R:/e2projects_two/SoundCast/Inputs/dev/base_year/2018/survey\\RSG_version\n\n\n\nTrips (Weighted)Trips (Unweighted)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nTrip Mode and Purpose (Weighted)Trip Mode and Purpose (Unweighted)"
+  }
+]

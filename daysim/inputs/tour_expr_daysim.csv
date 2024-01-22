@@ -1,0 +1,10 @@
+﻿index,table ,filter,result_col,result_value,description
+1,tour,:,jtindex,0,
+2,tour,:,phtindx1,0,
+3,tour,:,phtindx2,0,
+4,tour,:,fhtindx1,0,
+5,tour,:,fhtindx2,0,
+6,tour,:,tautotime,-1,
+7,tour,:,tautocost,-1,
+8,tour,:,tautodist,-1,
+

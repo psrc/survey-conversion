@@ -1,0 +1,31 @@
+project:
+  type: book
+  output-dir: "validation-notebook"
+  
+book:
+  title: "Daysim Conversion Summary"
+  sidebar:
+    logo: PSRClogo2016path.png
+
+  chapters:
+    - index.qmd
+    - hh_comparison.ipynb
+    - person_comparison.ipynb
+    - person_day_comparison.ipynb
+    - tour_comparison.ipynb
+    - trip_comparison.ipynb
+
+format:
+  html:
+    mainfont: Poppins
+    theme: 
+      light: [cosmo, custom.scss]
+      dark: [darkly, custom.scss]
+    echo: false
+    code-tools: true
+
+toc: true
+
+
+
+

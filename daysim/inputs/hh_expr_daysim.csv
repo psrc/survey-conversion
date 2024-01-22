@@ -1,0 +1,11 @@
+﻿index,table ,filter,result_col,result_value,description
+1,hh,:,hhexpfac,hh['hh_weight_2017_2019'],
+2,hh,:,hhno,hh['household_id'],
+3,hh,:,hownrent,hh['rent_own'].map(config['hownrent_map']) ,
+4,hh,:,hrestype,hh['res_type'].map(config['hhrestype_map']) ,
+5,hh,:,hhincome,hh['hhincome_detailed'].map(config['income_map']),
+6,hh,:,hhsize,hh['hhsize'].map(config['hhsize_map']),
+7,hh,:,hhvehs,hh['vehicle_count'].map(config['hhvehs_map']),
+8,hh,:,hhtaz,hh['final_home_taz'],
+9,hh,:,hhparcel,hh['final_home_parcel'],
+10,hh,:,samptype,1,
