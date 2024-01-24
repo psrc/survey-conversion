@@ -22,55 +22,23 @@ import pandas as pd
 import sqlalchemy
 from sqlalchemy.engine import URL
 import logging
-import logcontroller
+from daysim import logcontroller
+from modules import util, convert
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
-config = toml.load("configuration.toml")
+config = toml.load("daysim_configuration.toml")
 
 # Start log file
 logger = logcontroller.setup_custom_logger("convert_format_logger.txt")
 logger.info("--------------------convert_format.py STARTING--------------------")
 start_time = datetime.datetime.now()
 
-
-def apply_filter(df, df_name, filter, msg):
-    """Apply a filter to trim df, record changes in log file."""
-
-    logger.info(f"Dropped {len(df[~filter])} " + df_name + ": " + msg)
-
-    return df[filter]
-
-
-def assign_tour_mode(_df, tour_dict, tour_id, mode_heirarchy=config["mode_heirarchy"]):
-    """Get a list of transit modes and identify primary mode
-    Primary mode is the first one from a heirarchy list found in the tour."""
-    mode_list = _df["mode"].value_counts().index.astype("int").values
-
-    for mode in mode_heirarchy:
-        if mode in mode_list:
-            # If transit, check whether access mode is walk to transit or drive to transit
-            if mode == 6:
-                # Try to use the access mode field values to get access mode
-                try:
-                    if len([i for i in _df["mode_acc"].values if i in [3, 4, 5, 6, 7]]):
-                        tour_mode = 7  # park and ride
-                    else:
-                        tour_mode = 6
-                    return tour_mode
-                except:
-                    # otherwise, assume walk to transit
-                    tour_mode = 6  # walk
-                    return tour_mode
-
-            return mode
-
-
 def process_person_file(person):
     """Create Daysim-formatted person file."""
 
     # Calculate fields using an expression file; delimiter only includes commas outside of parentheses
-    expr_df = pd.read_csv(r"inputs\person_expr_daysim.csv", delimiter=",(?![^\(]*[\)])")
+    expr_df = pd.read_csv(r"daysim\inputs\person_expr_daysim.csv", delimiter=",(?![^\(]*[\)])")
 
     for index, row in expr_df.iterrows():
         expr = (
@@ -84,41 +52,14 @@ def process_person_file(person):
         print(row["index"])
         exec(expr)
 
-    daysim_cols = [
-        "hhno",
-        "pno",
-        "pptyp",
-        "pagey",
-        "pgend",
-        "pwtyp",
-        "pwpcl",
-        "pwtaz",
-        "pwautime",
-        "pwaudist",
-        "pstyp",
-        "pspcl",
-        "pstaz",
-        "psautime",
-        "psaudist",
-        "puwmode",
-        "puwarrp",
-        "puwdepp",
-        "ptpass",
-        "ppaidprk",
-        "pdiary",
-        "pproxy",
-        "psexpfac",
-        "person_id",
-    ]
-
     # Add empty columns to fill in later with skims
-    for col in daysim_cols:
+    for col in config['person_columns']:
         if col not in person.columns:
             person[col] = -1
         else:
             person[col] = person[col].fillna(-1)
 
-    person = person[daysim_cols]
+    person = person[config['person_columns']]
 
     return person
 
@@ -148,7 +89,7 @@ def total_persons_to_hh(
 
 def process_household_file(hh, person):
     # Calculate fields using an expression file
-    expr_df = pd.read_csv(r"inputs\hh_expr_daysim.csv")
+    expr_df = pd.read_csv(r"daysim\inputs\hh_expr_daysim.csv")
 
     for index, row in expr_df.iterrows():
         expr = (
@@ -202,29 +143,7 @@ def process_household_file(hh, person):
     logger.info(f"Dropped {len(hh[~_filter])} households: missing parcels")
     hh = hh[_filter]
 
-    daysim_fields = [
-        "hhno",
-        "hhsize",
-        "hhvehs",
-        "hhwkrs",
-        "hhftw",
-        "hhptw",
-        "hhret",
-        "hhoad",
-        "hhuni",
-        "hhhsc",
-        "hh515",
-        "hhcu5",
-        "hhincome",
-        "hownrent",
-        "hrestype",
-        "hhtaz",
-        "hhparcel",
-        "hhexpfac",
-        "samptype",
-    ]
-
-    hh = hh[daysim_fields]
+    hh = hh[config['hh_columns']]
 
     return hh
 
@@ -241,7 +160,7 @@ def process_trip_file(trip, person):
     )
 
     # Calculate fields using an expression file
-    expr_df = pd.read_csv(r"inputs\trip_expr_daysim.csv")
+    expr_df = pd.read_csv(r"daysim\inputs\trip_expr_daysim.csv")
 
     for index, row in expr_df.iterrows():
         expr = (
@@ -256,31 +175,34 @@ def process_trip_file(trip, person):
         exec(expr)
 
     # Select only weekday trips (M-Th)
-    trip = apply_filter(
+    trip = convert.apply_filter(
         trip,
         "trips",
         trip["dayofweek"].isin(["Monday", "Tuesday", "Wednesday", "Thursday"]),
+        logger,
         "trip taken on Friday, Saturday, or Sunday",
     )
 
-    trip = apply_filter(
+    trip = convert.apply_filter(
         trip,
         "trips",
         (-trip["trexpfac"].isnull()) & (trip["trexpfac"] > 0),
+        logger,
         "no or null weight",
     )
 
-    trip = apply_filter(
+    trip = convert.apply_filter(
         trip,
         "trips",
         (-trip["arrival_time_timestamp"].isnull())
         & (-trip["depart_time_timestamp"].isnull()),
+        logger,
         "missing departure/arrival time",
     )
 
     for col in ["opurp", "dpurp"]:
-        trip = apply_filter(
-            trip, "trips", (trip[col] >= 0), "missing or unusable " + col
+        trip = convert.apply_filter(
+            trip, "trips", (trip[col] >= 0), logger, "missing or unusable " + col
         )
 
     # The time_mam (minutes after midnight) data seems to be corrupted; recalculate from the timestamp
@@ -309,10 +231,11 @@ def process_trip_file(trip, person):
     trip["deptm"] = trip["depart_hour"] * 60 + trip["depart_min"]
 
     # Filter out trips that started before 0 minutes after midnight
-    trip = apply_filter(
+    trip = convert.apply_filter(
         trip,
         "trips",
         trip["deptm"] >= 0,
+        logger,
         "trips started before 0 minutes after midnight",
     )
 
@@ -332,7 +255,7 @@ def process_trip_file(trip, person):
     # and not calculated for 2019.
     trip["endacttm"] = trip["activity_duration"].abs() + trip["arrtm"]
 
-    trip = apply_filter(
+    trip = convert.apply_filter(
         trip,
         "trips",
         ~(
@@ -340,6 +263,7 @@ def process_trip_file(trip, person):
             & (trip["opurp"] == trip["dpurp"])
             & (trip["opurp"] == 1)
         ),
+        logger,
         "intrazonal work-related trips",
     )
 
@@ -380,37 +304,10 @@ def process_trip_file(trip, person):
 
     # Filter null trips
     for col in ["mode", "opurp", "dpurp", "otaz", "dtaz"]:
-        trip = apply_filter(trip, "trips", -trip[col].isnull(), col + " is null")
+        trip = convert.apply_filter(trip, "trips", -trip[col].isnull(), logger, col + " is null")
 
     # Write to file
-    trip_cols = [
-        "hhno",
-        "pno",
-        "tsvid",
-        "day",
-        "mode",
-        "opurp",
-        "dpurp",
-        "deptm",
-        "otaz",
-        "opcl",
-        "dtaz",
-        "dpcl",
-        "oadtyp",
-        "dadtyp",
-        "arrtm",
-        "trexpfac",
-        "travcost",
-        "travtime",
-        "travdist",
-        "pathtype",
-        "mode_acc",
-        "dorp",
-        "endacttm",
-        "trip_id",
-        "person_id",
-    ]
-    trip = trip[trip_cols]
+    trip = trip[config['trip_columns']]
 
     return trip
 
@@ -428,17 +325,19 @@ def build_tour_file(trip, person):
         "no trips in set": 0,
     }
 
-    trip = apply_filter(
+    trip = convert.apply_filter(
         trip,
         "trips",
         -((trip["opurp"] == trip["dpurp"]) & (trip["opurp"] == 0)),
+        logger,
         "trips have same origin/destination of home",
     )
 
-    trip = apply_filter(
+    trip = convert.apply_filter(
         trip,
         "trips",
         (((trip["dpurp"] >= 0)) | (trip["opurp"] >= 0)),
+        logger,
         "trips missing purpose",
     )
 
@@ -577,7 +476,7 @@ def build_tour_file(trip, person):
                     trip.loc[trip["trip_id"] == _df.iloc[-1]["trip_id"], "half"] = 2
                     trip.loc[trip["trip_id"].isin(_df["trip_id"]), "tseg"] = 1
 
-                    tour_dict[tour_id]["tmodetp"] = assign_tour_mode(
+                    tour_dict[tour_id]["tmodetp"] = convert.assign_tour_mode(
                         _df, tour_dict, tour_id
                     )
 
@@ -705,7 +604,7 @@ def build_tour_file(trip, person):
 
                                         tour_dict[subtour_id][
                                             "tmodetp"
-                                        ] = assign_tour_mode(
+                                        ] = convert.assign_tour_mode(
                                             subtour_df, tour_dict, subtour_id
                                         )
 
@@ -843,7 +742,7 @@ def build_tour_file(trip, person):
                                         ]
                                         tour_dict[subtour_id][
                                             "tmodetp"
-                                        ] = assign_tour_mode(
+                                        ] = convert.assign_tour_mode(
                                             subtour_df, tour_dict, subtour_id
                                         )
 
@@ -931,7 +830,7 @@ def build_tour_file(trip, person):
                             ] = local_tour_id
 
                             # Extract main mode
-                            tour_dict[tour_id]["tmodetp"] = assign_tour_mode(
+                            tour_dict[tour_id]["tmodetp"] = convert.assign_tour_mode(
                                 _df, tour_dict, tour_id
                             )
 
@@ -1024,7 +923,7 @@ def build_tour_file(trip, person):
                             tour_dict[tour_id]["parent"] = 0
 
                             # Mode
-                            tour_dict[tour_id]["tmodetp"] = assign_tour_mode(
+                            tour_dict[tour_id]["tmodetp"] = convert.assign_tour_mode(
                                 _df, tour_dict, tour_id
                             )
 
@@ -1116,7 +1015,7 @@ def build_tour_file(trip, person):
                         ] = local_tour_id
 
                         # Extract main mode
-                        tour_dict[tour_id]["tmodetp"] = assign_tour_mode(
+                        tour_dict[tour_id]["tmodetp"] = convert.assign_tour_mode(
                             _df, tour_dict, tour_id
                         )
 
@@ -1137,7 +1036,7 @@ def build_tour_file(trip, person):
     tour = pd.DataFrame.from_dict(tour_dict, orient="index")
 
     # After tour file is created, apply expression files
-    expr_df = pd.read_csv(r"inputs\tour_expr_daysim.csv")
+    expr_df = pd.read_csv(r"daysim\inputs\tour_expr_daysim.csv")
 
     for index, row in expr_df.iterrows():
         expr = (
@@ -1166,74 +1065,9 @@ def build_tour_file(trip, person):
     )
 
     # Export columns in proper order
-    tour_cols = [
-        "hhno",
-        "pno",
-        "day",
-        "tour",
-        "jtindex",
-        "parent",
-        "subtrs",
-        "pdpurp",
-        "tlvorig",
-        "tardest",
-        "tlvdest",
-        "tarorig",
-        "toadtyp",
-        "tdadtyp",
-        "topcl",
-        "totaz",
-        "tdpcl",
-        "tdtaz",
-        "tmodetp",
-        "tpathtp",
-        "tautotime",
-        "tautocost",
-        "tautodist",
-        "tripsh1",
-        "tripsh2",
-        "phtindx1",
-        "phtindx2",
-        "fhtindx1",
-        "fhtindx2",
-        "toexpfac",
-        "person_id",
-        "unique_person_id",
-        "household_id_elmer",
-    ]
-    tour = tour[tour_cols]
+    tour = tour[config["tour_columns"]]
 
-    trip_cols = [
-        "hhno",
-        "pno",
-        "day",
-        "tour",
-        "half",
-        "tseg",
-        "tsvid",
-        "opurp",
-        "dpurp",
-        "oadtyp",
-        "dadtyp",
-        "opcl",
-        "dpcl",
-        "otaz",
-        "dtaz",
-        "mode",
-        "pathtype",
-        "dorp",
-        "deptm",
-        "arrtm",
-        "endacttm",
-        "travtime",
-        "travcost",
-        "travdist",
-        "trexpfac",
-        "person_id",
-        "unique_person_id",
-        "household_id_elmer",
-    ]
-    trip = trip[trip_cols]
+    trip = trip[config['trip_columns'] + ["unique_person_id","household_id_elmer"]]
 
     return tour, trip, error_dict
 
@@ -1421,17 +1255,9 @@ def process_person_day(tour, person, trip, hh, person_day_original_df):
 
 
 def convert_format():
-    # Load Person Day data from Elmer
-    conn_string = "DRIVER={ODBC Driver 17 for SQL Server}; SERVER=AWS-PROD-SQL\Sockeye; DATABASE=Elmer; trusted_connection=yes"
-    sql_conn = pyodbc.connect(conn_string)
-    params = urllib.parse.quote_plus(conn_string)
-    engine = sqlalchemy.create_engine("mssql+pyodbc:///?odbc_connect=%s" % params)
 
-    person_day_original_df = pd.read_sql(
-        sql="SELECT household_id, person_id, pernum, dayofweek, numtrips, svy_complete, telework_time FROM HHSurvey.v_days WHERE survey_year IN "
-        + config["survey_year"],
-        con=engine,
-    )
+    # Load Person Day data from Elmer
+    person_day_original_df = util.load_elmer_table("HHSurvey.v_days", config["survey_year"])
     person_day_original_df["day"] = person_day_original_df["dayofweek"].map(
         config["day_map"]
     )
@@ -1448,19 +1274,27 @@ def convert_format():
             os.path.join(config["input_dir"], "geolocated_person.csv")
         )
 
+        # Load expression files
+        person_expr_df = pd.read_csv(r"daysim/inputs/person_expr_daysim.csv", delimiter=",(?![^\(]*[\)])")   # Exclude quotes within data
+        hh_expr_df = pd.read_csv(r"daysim/inputs/hh_expr_daysim.csv")
+        trip_expr_df = pd.read_csv(r"daysim/inputs/trip_expr_daysim.csv")
+
         # Recode person, household, and trip data
-        person = process_person_file(person_original_df)
-        hh = process_household_file(hh_original_df, person)
-        trip = process_trip_file(trip_original_df, person)
+        # person = process_person_file(person_original_df)
+        person = convert.process_expression_file(person_original_df, person_expr_df, config['person_columns'])
+        hh = convert.process_expression_file(hh_original_df, hh_expr_df, config['hh_columns'])
+        trip = convert.process_expression_file(trip_original_df, trip_expr_df, config['trip_columns'])
 
         # Write mapping between original trip_id and tsvid used on they survey
         trip[["trip_id", "tsvid"]].to_csv(
             os.path.join(config["output_dir"], "trip_id_tsvid_mapping.csv")
         )
 
-        # TEMPORARY FOR DEBUGGING
-        # trip = trip.iloc[1:1000]
+        # Use smaller sample if debugging
+        if config['debug']:
+            trip = trip.iloc[1:1000]
 
+        
         # Create new Household and Person records for each travel day.
         # For trip/tour models we use this data as if each person-day were independent for multiple-day diaries
         hh["household_id_elmer"] = hh["hhno"].copy()

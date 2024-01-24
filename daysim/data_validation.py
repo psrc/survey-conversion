@@ -19,7 +19,7 @@ import toml
 import pandera as pa
 from pandera import Column, Check
 
-config = toml.load("configuration.toml")
+config = toml.load("daysim_configuration.toml")
 
 tours_schema = pa.DataFrameSchema(
     {

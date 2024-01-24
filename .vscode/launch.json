@@ -8,11 +8,9 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            // "program": "attach_skims.py",
-            // "program": "convert_format.py",
-            // "program": "data_validation.py",
-            // "program": "locate_parcels.py",
-            "program": "process_survey.py",
+            // "cwd": "${fileDirname}/daysim",
+            // "purpose": ["debug-in-terminal"],
+            "program": "process_daysim.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }

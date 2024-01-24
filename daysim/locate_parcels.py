@@ -36,68 +36,86 @@ from sqlalchemy.engine import URL
 from pymssql import connect
 from shapely import wkt
 import logging
-import logcontroller
+from daysim import logcontroller
 import datetime
 import toml
 import configuration
+from modules import geolocate, util
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
-config = toml.load("configuration.toml")
+config = toml.load("daysim_configuration.toml")
 
 logger = logcontroller.setup_custom_logger("locate_parcels_logger.txt")
 logger.info("--------------------locate_parcels.py STARTING--------------------")
 start_time = datetime.datetime.now()
 
+def locate_parcels():
+    if config["use_elmer"]:
+        trip_original = util.load_elmer_table("HHSurvey.v_trips", config["survey_year"])
+        person_original = util.load_elmer_table("HHSurvey.v_persons", config["survey_year"])
+        hh_original = util.load_elmer_table("HHSurvey.v_households", config["survey_year"])
+    else:
+        trip_original = pd.read_csv(
+            os.path.join(config["survey_input_dir"], "trip.csv")
+        )
+        person_original = pd.read_csv(
+            os.path.join(config["survey_input_dir"], "person.csv")
+        )
+        hh_original = pd.read_csv(os.path.join(config["survey_input_dir"], "hh.csv"))
 
-def nearest_neighbor(df_parcel_coord, df_trip_coord):
-    """Find 1st nearest parcel location for trip location
-    df_parcel: x and y columns of parcels
-    df_trip: x and y columns of trip records
+    # Load parcel data
+    parcel_df = pd.read_csv(config["parcel_file_dir"], delim_whitespace=True)
+    parcel_maz_df = pd.read_csv(config["parcel_maz_file_dir"])
 
-    Returns: tuple of distance between nearest points and index of df_parcel for nearest parcel
+    # Join MAZ data to parcel records
+    parcel_df = parcel_df.merge(parcel_maz_df, left_on='parcelid', right_on='parcel_id')
 
-    """
+    ##################################################
+    # Process Household Records
+    ##################################################
 
-    kdt_parcels = cKDTree(df_parcel_coord)
-    return kdt_parcels.query(df_trip_coord, k=1)
+    hh_filter_dict_list = [
+        {
+            # Current Home Location
+            "var_name": "final_home",
+            "parcel_filter": (parcel_df["hh_p"] > 0),
+            "hh_filter": (-hh_original["final_home_lat"].isnull()),
+        },
+        {
+            # Previous Home Location
+            "var_name": "prev_home",
+            "parcel_filter": (parcel_df["hh_p"] > 0),
+            "hh_filter": (-hh_original["prev_home_lat"].isnull()),
+        },
+    ]
 
+    hh_new = geolocate.locate_hh_parcels(hh_original.copy(), parcel_df, hh_filter_dict_list)
 
-def locate_parcel(
-    _parcel_df, df, xcoord_col, ycoord_col, parcel_filter=None, df_filter=None
-):
-    """Find nearest parcel to XY coordinate. Returns distance between parcel node and points, and selected parcel ID
+    # Write to file
+    hh_new.to_csv(os.path.join(config["output_dir"], "geolocated_hh.csv"), index=False)
 
-    Inputs:
-    - _parcel_df: full parcels dataset
-    - df: records to be located
-    - xcoord_col and ycood_col: column names of x and y coordinates
-    - parcel_filter: filter to be applied to _parcels_df to generate candidate parcels
-    - df_filter: filter on point-level data
+    ###################################################
+    # Process Person Records
+    ###################################################
 
-    Returns: 2 lists: (1) distance between nearest parcel [_dist] and (2) index of nearest parcel [_ix]
-    """
-
-    if parcel_filter is not None:
-        _parcel_df = _parcel_df[parcel_filter].reset_index()
-    if df_filter is not None:
-        df = df[df_filter].reset_index()
-
-    # Calculate distance to nearest neighbor parcel
-    (
-        _dist,
-        _ix,
-    ) = nearest_neighbor(
-        _parcel_df[["xcoord_p", "ycoord_p"]], df[[xcoord_col, ycoord_col]]
+    # Merge with household records to get school/work lat and long, to filter people who home school and work at home
+    person = pd.merge(
+        person_original,
+        hh_new[
+            [
+                "household_id",
+                "final_home_lat",
+                "final_home_lng",
+                "final_home_parcel",
+                "final_home_taz",
+                "final_home_maz",
+            ]
+        ],
+        on="household_id",
     )
 
-    return _dist, _ix
-
-
-def locate_person_parcels(person, parcel_df, df_taz):
-    """Locate parcel ID for school, workplace, home location from person records."""
-
-    person_results = person.copy()  # Make local copy for storing resulting joins
+    # Add parcel location for current and previous school and workplace location
 
     parcel_df["total_students"] = parcel_df[["stugrd_p", "stuhgh_p", "stuuni_p"]].sum(
         axis=1
@@ -131,261 +149,55 @@ def locate_person_parcels(person, parcel_df, df_taz):
         },
     ]
 
-    # Find nearest school and workplace
-    for i in range(len(filter_dict_list)):
-        varname = filter_dict_list[i]["var_name"]
-        person_filter = filter_dict_list[i]["person_filter"]
-        parcel_filter = filter_dict_list[i]["parcel_filter"]
+    person = geolocate.locate_person_parcels(person, parcel_df, filter_dict_list)
 
-        # Convert GPS Coordinates to State Plane
-        gdf = gpd.GeoDataFrame(
-            person[person_filter],
-            geometry=gpd.points_from_xy(
-                person[person_filter][varname + "_lng"],
-                person[person_filter][varname + "_lat"],
-            ),
-        )
-        gdf.crs = config["lat_lng_crs"]
-        gdf[varname + "_lng_gps"] = gdf[varname + "_lng"]
-        gdf[varname + "_lat_gps"] = gdf[varname + "_lat"]
-        gdf = gdf.to_crs(config["wa_state_plane_crs"])  # convert to state plane WA
+    # For people that work from home, assign work parcel as household parcel
+    # Join this person file back to original person file to get workplace
+    for geog in ['parcel','taz','maz']:
+        person.loc[
+            person["workplace"].isin(config["usual_workplace_home"]), "work_"+geog
+        ] = person["final_home_"+geog]
 
-        # Spatial join between region taz file and person file
-        gdf = gpd.sjoin(gdf, df_taz)
-        xy_field = get_points_array(gdf.geometry)
-        gdf[varname + "_lng_gps"] = gdf[varname + "_lng"]
-        gdf[varname + "_lat_gps"] = gdf[varname + "_lat"]
-        gdf[varname + "_lng_fips_4601"] = xy_field[:, 0]
-        gdf[varname + "_lat_fips_4601"] = xy_field[:, 1]
-
-        # Return: (_dist) the distance to the closest parcel that meets given critera,
-        #         (_ix) list of the indices of parcel IDs from (_df), which is the filtered set of candidate parcels
-        _dist, _ix = locate_parcel(
-            parcel_df[parcel_filter],
-            df=gdf,
-            xcoord_col=varname + "_lng_fips_4601",
-            ycoord_col=varname + "_lat_fips_4601",
-        )
-
-        # Assign values to person df, extracting from the filtered set of parcels (_df)
-        gdf[varname + "_parcel"] = parcel_df[parcel_filter].iloc[_ix].parcelid.values
-        gdf[varname + "_parcel_distance"] = _dist
-        gdf[varname + "_taz"] = gdf["taz"]
-
-        gdf_cols = [
-            "person_id",
-            varname + "_taz",
-            varname + "_parcel",
-            varname + "_parcel_distance",
-            varname + "_lat_fips_4601",
-            varname + "_lng_fips_4601",
-            varname + "_lat_gps",
-        ]
-
-        # Refine School Location in 2 tiers
-        # Tier 2: for locations that are over 1 mile (5280 feet) from lat/lng,
-        # place them in parcel with >0 education or service employees (could be daycare or specialized school, etc. without students listed)
-
-        if varname == "school_loc":
-            hh_max_dist = 5280
-            gdf_far = gdf[gdf[varname + "_parcel_distance"] > hh_max_dist]
-            _dist, _ix = locate_parcel(
-                parcel_df[parcel_df["total_students"] > 0],
-                df=gdf_far,
-                xcoord_col=varname + "_lng_fips_4601",
-                ycoord_col=varname + "_lat_fips_4601",
-            )
-            gdf_far[varname + "_parcel"] = parcel_df.iloc[_ix].parcelid.values
-            gdf_far[varname + "_parcel_distance"] = _dist
-            gdf_far[varname + "_taz"] = gdf_far["taz"].astype("int")
-
-            # Add this new distance to the original gdf
-            gdf.loc[gdf_far.index, varname + "_parcel_original"] = gdf.loc[
-                gdf_far.index, varname + "_parcel"
-            ]
-            gdf.loc[gdf_far.index, varname + "_parcel_distance_original"] = gdf.loc[
-                gdf_far.index, varname + "_parcel_distance"
-            ]
-            gdf.loc[gdf_far.index, varname + "_parcel"] = gdf_far[varname + "_parcel"]
-            gdf.loc[gdf_far.index, varname + "_parcel_distance"] = gdf_far[
-                varname + "_parcel_distance"
-            ]
-            gdf["distance_flag"] = 0
-            gdf.loc[gdf_far.index, varname + "distance_flag"] = 1
-
-            gdf_cols += [
-                varname + "_parcel_distance_original",
-                varname + "_parcel_original",
-            ]
-
-        # Join the gdf dataframe to the person df
-        person_results = person_results.merge(gdf[gdf_cols], how="left", on="person_id")
-
-    # return person_results, person_daysim
-    return person_results
-
-
-def locate_hh_parcels(hh, parcel_df, df_taz):
-    hh_results = hh.copy()
-
-    filter_dict_list = [
-        {
-            # Current Home Location
-            "var_name": "final_home",
-            "parcel_filter": (parcel_df["hh_p"] > 0),
-            "hh_filter": (-hh["final_home_lat"].isnull()),
-        },
-        {
-            # Previous Home Location
-            "var_name": "prev_home",
-            "parcel_filter": (parcel_df["hh_p"] > 0),
-            "hh_filter": (-hh["prev_home_lat"].isnull()),
-        },
+    person_loc_fields = [
+        "school_loc_parcel",
+        "school_loc_taz",
+        "school_loc_maz",
+        "work_parcel",
+        "work_taz",
+        "work_maz",
+        "prev_work_parcel",
+        "prev_work_taz",
+        "prev_work_maz",
+        "school_loc_parcel_distance",
+        "work_parcel_distance",
+        "prev_work_parcel_distance",
     ]
 
-    # Find nearest school and workplace
-    for i in range(len(filter_dict_list)):
-        varname = filter_dict_list[i]["var_name"]
-        parcel_filter = filter_dict_list[i]["parcel_filter"]
-        hh_filter = filter_dict_list[i]["hh_filter"]
+    # Join selected fields back to the original person file
+    person_orig_update = person_original.merge(
+        person[person_loc_fields + ["person_id"]], on="person_id", how="left"
+    )
+    person_orig_update[person_loc_fields] = (
+        person_orig_update[person_loc_fields].fillna(-1).astype("int")
+    )
 
-        # Convert GPS Coordinates to State Plane
-        gdf = gpd.GeoDataFrame(
-            hh[hh_filter],
-            geometry=gpd.points_from_xy(
-                hh[hh_filter][varname + "_lng"], hh[hh_filter][varname + "_lat"]
-            ),
-        )
-        gdf.crs = config["lat_lng_crs"]
-        gdf[varname + "_lng_gps"] = gdf[varname + "_lng"]
-        gdf[varname + "_lat_gps"] = gdf[varname + "_lat"]
-        gdf = gdf.to_crs(config["wa_state_plane_crs"])  # convert to state plane WA
+    # Write to file
+    person_orig_update.to_csv(
+        os.path.join(config["output_dir"], "geolocated_person.csv"), index=False
+    )
 
-        # Spatial join between region taz file and person file
-        gdf = gpd.sjoin(gdf, df_taz)
-        xy_field = get_points_array(gdf.geometry)
-        gdf[varname + "_lng_gps"] = gdf[varname + "_lng"]
-        gdf[varname + "_lat_gps"] = gdf[varname + "_lat"]
-        gdf[varname + "_lng_fips_4601"] = xy_field[:, 0]
-        gdf[varname + "_lat_fips_4601"] = xy_field[:, 1]
-
-        # Return: (_dist) the distance to the closest parcel that meets given critera,
-        # (_ix) list of the indices of parcel IDs from (_df), which is the filtered set of candidate parcels
-        _dist, _ix = locate_parcel(
-            parcel_df[parcel_filter],
-            df=gdf,
-            xcoord_col=varname + "_lng_fips_4601",
-            ycoord_col=varname + "_lat_fips_4601",
-        )
-
-        # Assign values to person df, extracting from the filtered set of parcels (_df)
-        gdf[varname + "_parcel"] = parcel_df[parcel_filter].iloc[_ix].parcelid.values
-        gdf[varname + "_parcel_distance"] = _dist
-        gdf[varname + "_taz"] = gdf["taz"].astype("int")
-
-        # For households that are not reasonably near a parcel with households,
-        # add them to the nearset unfiltered parcel and flag
-        # Typically occurs with households living on military bases
-        hh_max_dist = 2000
-        gdf_far = gdf[gdf[varname + "_parcel_distance"] > hh_max_dist]
-        _dist, _ix = locate_parcel(
-            parcel_df,
-            df=gdf_far,
-            xcoord_col=varname + "_lng_fips_4601",
-            ycoord_col=varname + "_lat_fips_4601",
-        )
-        gdf_far[varname + "_parcel"] = parcel_df.iloc[_ix].parcelid.values
-        gdf_far[varname + "_parcel_distance"] = _dist
-        gdf_far[varname + "_taz"] = gdf_far["taz"].astype("int")
-
-        # Add this new distance to the original gdf
-        gdf.loc[gdf_far.index, varname + "_parcel_original"] = gdf.loc[
-            gdf_far.index, varname + "_parcel"
-        ]
-        gdf.loc[gdf_far.index, varname + "_parcel_distance_original"] = gdf.loc[
-            gdf_far.index, varname + "_parcel_distance"
-        ]
-        gdf.loc[gdf_far.index, varname + "_parcel"] = gdf_far[varname + "_parcel"]
-        gdf.loc[gdf_far.index, varname + "_parcel_distance"] = gdf_far[
-            varname + "_parcel_distance"
-        ]
-        gdf["distance_flag"] = 0
-        gdf.loc[gdf_far.index, varname + "distance_flag"] = 1
-
-        # Join the gdf dataframe to the person df
-        hh_results = hh_results.merge(
-            gdf[
-                [
-                    "hhid",
-                    varname + "_taz",
-                    varname + "_parcel",
-                    varname + "_parcel_distance",
-                    varname + "_parcel_distance_original",
-                    varname + "_lat_fips_4601",
-                    varname + "_parcel_original",
-                    varname + "_lng_fips_4601",
-                    varname + "_lat_gps",
-                ]
-            ],
-            on="hhid",
-            how="left",
-        )
-
-    return hh_results
-
-
-def locate_trip_parcels(trip, parcel_df, df_taz):
-    """Attach parcel ID to trip origins and destinations."""
+    ##################################################
+    # Process Trip Records
+    ##################################################
 
     opurp_field = "origin_purpose"
     dpurp_field = "dest_purpose"
 
-    trip_results = trip.copy()
+    trip_results = trip_original.copy()
 
-    for trip_end in ["origin", "dest"]:
-        lng_field = trip_end + "_lng"
-        lat_field = trip_end + "_lat"
-
-        # filter out some odd results with lng > 0 and lat < 0
-        _filter = trip[lat_field] > 0
-        logger.info(f"Dropped {len(trip[~_filter])} trips: " + trip_end + " lat > 0 ")
-        trip = trip[_filter]
-
-        _filter = trip[lng_field] < 0
-        logger.info(f"Dropped {len(trip[~_filter])} trips: " + trip_end + " lng < 0 ")
-        trip = trip[_filter]
-
-        gdf = gpd.GeoDataFrame(
-            trip, geometry=gpd.points_from_xy(trip[lng_field], trip[lat_field])
-        )
-        gdf.crs = config["lat_lng_crs"]
-        gdf = gdf.to_crs(config["wa_state_plane_crs"])  # convert to state plane WA
-
-        # Spatial join between region taz file and trip file
-        gdf = gpd.sjoin(gdf, df_taz)
-        xy_field = get_points_array(gdf.geometry)
-        gdf[trip_end + "_lng_gps"] = gdf[trip_end + "_lng"]
-        gdf[trip_end + "_lat_gps"] = gdf[trip_end + "_lat"]
-        gdf[trip_end + "_lng_fips_4601"] = xy_field[:, 0]
-        gdf[trip_end + "_lat_fips_4601"] = xy_field[:, 1]
-        gdf[trip_end + "_taz"] = gdf["taz"]
-        trip_results = trip_results.merge(
-            gdf[
-                [
-                    "trip_id",
-                    trip_end + "_lng_gps",
-                    trip_end + "_lat_gps",
-                    trip_end + "_lng_fips_4601",
-                    trip_end + "_lat_fips_4601",
-                    trip_end + "_taz",
-                ]
-            ],
-            on="trip_id",
-        )
-
-    # Dictionary of filters to be applied
+# Dictionary of filters to be applied
     # Filters are by trip purpose and define which parcels should be available for selection as nearest
-    filter_dict_list = [
+    trip_filter_dict_list = [
         # Home trips (purp == 1) should be nearest parcel with household population > 0
         {
             "parcel_filter": parcel_df["hh_p"] > 0,
@@ -530,185 +342,7 @@ def locate_trip_parcels(trip, parcel_df, df_taz):
         },
     ]
 
-    final_df = trip_results.copy()
-    # Loop through each trip end type (origin or destination) and each trip purpose
-    for trip_end_type in ["origin", "dest"]:
-        df_temp = pd.DataFrame()
-        for i in range(len(filter_dict_list)):
-            trip_filter = filter_dict_list[i][trip_end_type[0] + "_trip_filter"]
-            parcel_filter = filter_dict_list[i]["parcel_filter"]
-
-            _df = trip_results[trip_filter]
-
-            _dist, _ix = locate_parcel(
-                parcel_df[parcel_filter],
-                df=_df,
-                xcoord_col=trip_end_type + "_lng_fips_4601",
-                ycoord_col=trip_end_type + "_lat_fips_4601",
-            )
-
-            _df[trip_end_type[0] + "pcl"] = (
-                parcel_df[parcel_filter].iloc[_ix].parcelid.values
-            )
-            _df[trip_end_type[0] + "pcl_distance"] = _dist
-            _df[trip_end_type[0] + "taz"] = trip_results[trip_end_type + "_taz"]
-
-            df_temp = df_temp.append(_df)
-        # Join df_temp to final field for each trip type
-        final_df = final_df.merge(
-            df_temp[
-                [
-                    "trip_id",
-                    trip_end_type[0] + "pcl",
-                    trip_end_type[0] + "pcl_distance",
-                    trip_end_type[0] + "taz",
-                ]
-            ],
-            on="trip_id",
-        )
-
-    return final_df
-
-
-def load_elmer_geo(con, table_name):
-    """Load ElmerGeo feature class as geodataframe."""
-
-    cursor = con.cursor()
-    feature_class_name = table_name
-    geo_col_stmt = (
-        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME="
-        + "'"
-        + feature_class_name
-        + "'"
-        + " AND DATA_TYPE='geometry'"
-    )
-    geo_col = str(pd.read_sql(geo_col_stmt, con).iloc[0, 0])
-    query_string = (
-        "SELECT *,"
-        + geo_col
-        + ".STGeometryN(1).ToString()"
-        + " FROM "
-        + feature_class_name
-    )
-    df = pd.read_sql(query_string, con)
-
-    df.rename(columns={"": "geometry"}, inplace=True)
-    df["geometry"] = df["geometry"].apply(wkt.loads)
-    gdf = gpd.GeoDataFrame(df, geometry="geometry")
-
-    return gdf
-
-
-def locate_parcels():
-    if config["use_elmer"]:
-        conn_string = "DRIVER={ODBC Driver 17 for SQL Server}; SERVER=AWS-PROD-SQL\Sockeye; DATABASE=Elmer; trusted_connection=yes"
-        sql_conn = pyodbc.connect(conn_string)
-        params = urllib.parse.quote_plus(conn_string)
-        engine = sqlalchemy.create_engine("mssql+pyodbc:///?odbc_connect=%s" % params)
-
-        trip_original = pd.read_sql(
-            sql="SELECT * FROM HHSurvey.v_trips WHERE survey_year IN "
-            + config["survey_year"],
-            con=engine,
-        )
-        person_original = pd.read_sql(
-            sql="SELECT * FROM HHSurvey.v_persons WHERE survey_year IN "
-            + config["survey_year"],
-            con=engine,
-        )
-        hh_original = pd.read_sql(
-            sql="SELECT * FROM HHSurvey.v_households WHERE survey_year IN "
-            + config["survey_year"],
-            con=engine,
-        )
-    else:
-        trip_original = pd.read_csv(
-            os.path.join(config["survey_input_dir"], "trip.csv")
-        )
-        person_original = pd.read_csv(
-            os.path.join(config["survey_input_dir"], "person.csv")
-        )
-        hh_original = pd.read_csv(os.path.join(config["survey_input_dir"], "hh.csv"))
-
-    # Load TAZ shapefile from ElmerGeo
-    con = connect("AWS-Prod-SQL\Sockeye", database="ElmerGeo")
-    df_taz = load_elmer_geo(con, "taz2010")
-    con.close()
-    df_taz.crs = config["wa_state_plane_crs"]
-
-    # Load parcel data
-    parcel_df = pd.read_csv(config["parcel_file_dir"], delim_whitespace=True)
-
-    ##################################################
-    # Process Household Records
-    ##################################################
-
-    hh_new = locate_hh_parcels(hh_original.copy(), parcel_df, df_taz)
-
-    # Write to file
-    hh_new.to_csv(os.path.join(config["output_dir"], "geolocated_hh.csv"), index=False)
-
-    ###################################################
-    # Process Person Records
-    ###################################################
-
-    # Merge with household records to get school/work lat and long, to filter people who home school and work at home
-    person = pd.merge(
-        person_original,
-        hh_new[
-            [
-                "household_id",
-                "final_home_lat",
-                "final_home_lng",
-                "final_home_parcel",
-                "final_home_taz",
-            ]
-        ],
-        on="household_id",
-    )
-
-    # Add parcel location for current and previous school and workplace location
-    person = locate_person_parcels(person, parcel_df, df_taz)
-
-    # For people that work from home, assign work parcel as household parcel
-    # Join this person file back to original person file to get workplace
-    person.loc[
-        person["workplace"].isin(config["usual_workplace_home"]), "work_parcel"
-    ] = person["final_home_parcel"]
-    person.loc[
-        person["workplace"].isin(config["usual_workplace_home"]), "work_taz"
-    ] = person["final_home_taz"]
-
-    person_loc_fields = [
-        "school_loc_parcel",
-        "school_loc_taz",
-        "work_parcel",
-        "work_taz",
-        "prev_work_parcel",
-        "prev_work_taz",
-        "school_loc_parcel_distance",
-        "work_parcel_distance",
-        "prev_work_parcel_distance",
-    ]
-
-    # Join selected fields back to the original person file
-    person_orig_update = person_original.merge(
-        person[person_loc_fields + ["person_id"]], on="person_id", how="left"
-    )
-    person_orig_update[person_loc_fields] = (
-        person_orig_update[person_loc_fields].fillna(-1).astype("int")
-    )
-
-    # Write to file
-    person_orig_update.to_csv(
-        os.path.join(config["output_dir"], "geolocated_person.csv"), index=False
-    )
-
-    ##################################################
-    # Process Trip Records
-    ##################################################
-
-    trip = locate_trip_parcels(trip_original.copy(), parcel_df, df_taz)
+    trip = geolocate.locate_trip_parcels(trip_original.copy(), parcel_df, opurp_field, dpurp_field, trip_filter_dict_list)
 
     # Export original survey records
     # Merge with originals to make sure we didn't exclude records
@@ -728,6 +362,8 @@ def locate_parcels():
         how="left",
     )
     trip_original_updated["otaz"].fillna(-1, inplace=True)
+
+    # Join other geography (MAZ)
 
     # Write to file
     trip_original_updated.to_csv(

@@ -22,10 +22,10 @@ import glob
 import math
 from shutil import copyfile
 import logging
-import logcontroller
+from daysim import logcontroller
 import toml
 
-config = toml.load("configuration.toml")
+config = toml.load("daysim_configuration.toml")
 
 # Start log file
 logger = logcontroller.setup_custom_logger("attach_skims_logger.txt")
@@ -48,7 +48,7 @@ def text_to_dictionary(input_filename):
 def write_skims(df, skim_dict, otaz_field, dtaz_field, skim_output_file):
     """Look up skim values from trip records and export as csv."""
 
-    dictZoneLookup = json.load(open(os.path.join("inputs", "zone_dict.txt")))
+    dictZoneLookup = json.load(open(os.path.join("daysim\inputs", "zone_dict.txt")))
     dictZoneLookup = {int(k): int(v) for k, v in dictZoneLookup.items()}
 
     bikewalk_tod = "5to6"  # bike and walk are only assigned in 5to6
@@ -171,7 +171,7 @@ def fetch_skim(
 
     # Build a lookup variable to find skim value
     matrix_dict_loc = os.path.join(
-        config["run_root"], r"inputs\model\skim_parameters\demand_matrix_dictionary.txt"
+        config["run_root"], r"daysim\inputs\model\skim_parameters\demand_matrix_dictionary.txt"
     )
     matrix_dict = text_to_dictionary(matrix_dict_loc)
     uniqueMatrices = set(matrix_dict.values())
@@ -235,7 +235,7 @@ def fetch_skim(
     skim_dict = {}
     for tod in tods:
         contents = h5py.File(
-            os.path.join(config["run_root"], r"inputs/model/roster", tod + ".h5")
+            os.path.join(config["run_root"], r"daysim/inputs/model/roster", tod + ".h5")
         )
         skim_dict[tod] = contents
 

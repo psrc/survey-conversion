@@ -23,7 +23,7 @@ import configuration
 
 sys.path.append(os.getcwd())
 
-config = toml.load("configuration.toml")
+config = toml.load("daysim_configuration.toml")
 
 def setup_custom_logger(name):
     # create dir for main log file if it doesn't exist
