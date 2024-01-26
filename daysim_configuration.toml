@@ -7,7 +7,7 @@ output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
 
 # Specify which components to run
 run_locate_parcels = false
-run_convert_format = true
+run_convert_format = false
 run_data_validation = false
 run_attach_skims = true
 
@@ -123,11 +123,14 @@ hh_columns = [
 trip_columns = [
         "hhno",
         "pno",
-        "tsvid",
         "day",
-        "mode",
+        "tour",
+        "half",
+        "tseg",
+        "tsvid",
         "opurp",
         "dpurp",
+        "mode",
         "deptm",
         "otaz",
         "opcl",
