@@ -1,5 +1,5 @@
 # Survey Conversion 
-This repository contains code that converts Household Travel Survey (HTS) data to formats used by the Soundcast travel model. Data can be converted into formats used by Daysim (current model core of Soundcast) and Activitysim (under development). The Daysim modules are fully up to date, but Activitysim needs additional work to fit with the paradigm. The working version of the Activitysim conversion should be accessed from the [psrc_activitysim](https://github.com/psrc/psrc_activitysim/tree/main/scripts/survey_conversion) repo. 
+This repository contains code that converts Household Travel Survey (HTS) data to formats used by the Soundcast travel model. Data can be converted into formats used by Daysim (current model core of Soundcast) and Activitysim (under development). The Daysim modules are fully up to date, but Activitysim needs additional work to fit with the paradigm. 
 
 # Code
 Script specific to **activitysim** and daysim are in their respective folders. The **modules** folders contains functions shared across scripts. Currently Activitysim and Daysim are run and managed separately so they are described independently. 
