@@ -9,9 +9,11 @@ output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
 run_locate_parcels = false
 run_convert_format = true
 run_data_validation = false
-run_attach_skims = false
+run_attach_skims = true
 
-debug = false    # Use a sample of 1000 trips to speed up the process
+debug_person_id = []
+# debug_person_id = ['1710030291']    # List of person IDs to iterate over in tour creation, empty list to process all
+# debug = true
 debug_tours = false
 write_debug_files = true
 
