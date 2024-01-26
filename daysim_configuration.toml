@@ -370,6 +370,17 @@ tour_columns = [
 23 = '20to5'
 24 = '20to5'
 
+[purp_dict]
+'wk' = 1
+'sc' = 2
+'es' = 3
+'pb' = 4
+'sh' = 5
+'ml' = 6
+'so' = 7
+'re' = 8
+'me' = 9
+
 # Create an ID to match skim naming method
 [skim_mode_dict]
 1 = 'walk'

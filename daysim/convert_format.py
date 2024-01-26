@@ -34,38 +34,6 @@ logger = logcontroller.setup_custom_logger("convert_format_logger.txt")
 logger.info("--------------------convert_format.py STARTING--------------------")
 start_time = datetime.datetime.now()
 
-def process_person_file(person):
-    """Create Daysim-formatted person file."""
-
-    # Calculate fields using an expression file; delimiter only includes commas outside of parentheses
-    expr_df = pd.read_csv(r"daysim\inputs\person_expr_daysim.csv", delimiter=",(?![^\(]*[\)])")
-
-    # for index, row in expr_df.iterrows():
-    #     expr = (
-    #         "person.loc["
-    #         + row["filter"]
-    #         + ', "'
-    #         + row["result_col"]
-    #         + '"] = '
-    #         + str(row["result_value"])
-    #     )
-    #     print(row["index"])
-    #     exec(expr)
-
-    person = convert.process_expression_file(person, expr_df, config['person_columns'])
-
-    # # Add empty columns to fill in later with skims
-    # for col in config['person_columns']:
-    #     if col not in person.columns:
-    #         person[col] = -1
-    #     else:
-    #         person[col] = person[col].fillna(-1)
-
-    # person = person[config['person_columns']]
-
-    return person
-
-
 def total_persons_to_hh(
     hh,
     person,
@@ -82,6 +50,8 @@ def total_persons_to_hh(
     df = df.groupby(hhid_col).count().reset_index()[[wt_col, hhid_col]]
     df.rename(columns={wt_col: daysim_field}, inplace=True)
 
+    hh.drop(daysim_field, inplace=True, axis=1)
+
     # Join to households
     hh = pd.merge(hh, df, how="left", on=hhid_col)
     hh[daysim_field].fillna(0, inplace=True)
@@ -90,9 +60,11 @@ def total_persons_to_hh(
 
 
 def process_household_file(hh, person):
-    # Calculate fields using an expression file
+    """ Convert household columns and generate data from person table"""
+
     expr_df = pd.read_csv(r"daysim\inputs\hh_expr_daysim.csv")
 
+    # Apply expression file input
     hh = convert.process_expression_file(hh, expr_df, config['hh_columns'])
 
     # Workers in Household from Person File (hhwkrs)
@@ -135,8 +107,6 @@ def process_household_file(hh, person):
     logger.info(f"Dropped {len(hh[~_filter])} households: missing parcels")
     hh = hh[_filter]
 
-    hh = hh[config['hh_columns']]
-
     return hh
 
 
@@ -154,8 +124,6 @@ def process_trip_file(df, person):
     # Calculate fields using an expression file
     expr_df = pd.read_csv(r"daysim\inputs\trip_expr_daysim.csv")
 
-    df = convert.process_expression_file(df, expr_df, config['trip_columns'])
-
     # Select only weekday trips (M-Th)
     df = convert.apply_filter(
         df,
@@ -168,24 +136,15 @@ def process_trip_file(df, person):
     df = convert.apply_filter(
         df,
         "trips",
-        (-df["trexpfac"].isnull()) & (df["trexpfac"] > 0),
-        logger,
-        "no or null weight",
-    )
-
-    df = convert.apply_filter(
-        df,
-        "trips",
         (-df["arrival_time_timestamp"].isnull())
         & (-df["depart_time_timestamp"].isnull()),
         logger,
         "missing departure/arrival time",
     )
 
-    for col in ["opurp", "dpurp"]:
-        df = convert.apply_filter(
-            df, "trips", (df[col] >= 0), logger, "missing or unusable " + col
-        )
+    ##############################
+    # Start and end time
+    ##############################
 
     # The time_mam (minutes after midnight) data seems to be corrupted; recalculate from the timestamp
     df["arrive_hour"] = (
@@ -210,49 +169,19 @@ def process_trip_file(df, person):
         .apply(lambda x: str(x).split(" ")[-1].split(":")[1])
         .astype("int")
     )
-    df["deptm"] = df["depart_hour"] * 60 + df["depart_min"]
 
-    # Filter out trips that started before 0 minutes after midnight
-    df = convert.apply_filter(
-        df,
-        "trips",
-        df["deptm"] >= 0,
-        logger,
-        "trips started before 0 minutes after midnight",
-    )
-
-    ##############################
-    # Start and end time
-    ##############################
-
-    # if arrtm/deptm > 24*60, subtract that value to normalize to a single day
-    for colname in ["arrtm", "deptm"]:
-        for i in range(2, int(np.ceil(trip[colname] / (24 * 60)).max()) + 1):
-            filter = (trip[colname] > (24 * 60)) & (trip[colname] < (24 * 60) * i)
-            trip.loc[filter, colname] = trip.loc[filter, colname] - 24 * 60 * (i - 1)
+    df["deptm"] = df["depart_hour"] * 60 + df["depart_min"]    
 
     # Calculate start of next trip (ENDACTTM: trip destination activity end time)
     # FIXME: there are negative values in the activity_duration field
     # Note: this field name will change for 2023. It was a derived field for 2017
     # and not calculated for 2019.
-    trip["endacttm"] = trip["activity_duration"].abs() + trip["arrtm"]
+    df["endacttm"] = df["activity_duration"].abs() + df["arrtm"]
 
-    trip = convert.apply_filter(
-        trip,
-        "trips",
-        ~(
-            (trip["otaz"] == trip["dtaz"])
-            & (trip["opurp"] == trip["dpurp"])
-            & (trip["opurp"] == 1)
-        ),
-        logger,
-        "intrazonal work-related trips",
-    )
-
-    # Daysim-specific need: add pathtype by analyzing transit submode
+     # Daysim-specific need: add pathtype by analyzing transit submode
     # FIXME: Note that this field doesn't exist for some trips, should really be analyzed by grouping on the trip day or tour
-    trip["pathtype"] = 1
-    for index, row in trip.iterrows():
+    df["pathtype"] = 1
+    for index, row in df.iterrows():
         if len(
             [
                 i
@@ -265,33 +194,73 @@ def process_trip_file(df, person):
                 "Ferry or water taxi"
                 in row[["mode_1", "mode_2", "mode_3", "mode_4"]].values
             ):
-                trip.loc[index, "pathtype"] = 7
+                df.loc[index, "pathtype"] = 7
             # commuter rail
             elif (
                 "Commuter rail (Sounder, Amtrak)"
                 in row[["mode_1", "mode_2", "mode_3", "mode_4"]].values
             ):
-                trip.loc[index, "pathtype"] = 6
+                df.loc[index, "pathtype"] = 6
             # 'Urban rail (e.g., Link light rail, monorail)'
             elif [
                 "Urban Rail (e.g., Link light rail, monorail)"
                 or "Other rail (e.g., streetcar)"
             ] in row[["mode_1", "mode_2", "mode_3", "mode_4"]].values:
-                trip.loc[index, "pathtype"] = 4
+                df.loc[index, "pathtype"] = 4
             else:
-                trip.loc[index, "pathtype"] = 3
+                df.loc[index, "pathtype"] = 3
 
             # FIXME!!!
             # Note that we also need to include KnR and TNC?
 
+    df = convert.process_expression_file(df, expr_df, config['trip_columns'])
+
+    # Filter out trips that started before 0 minutes after midnight
+    df = convert.apply_filter(
+        df,
+        "trips",
+        df["deptm"] >= 0,
+        logger,
+        "trips started before 0 minutes after midnight",
+    )
+
+    df = convert.apply_filter(
+        df,
+        "trips",
+        (-df["trexpfac"].isnull()) & (df["trexpfac"] > 0),
+        logger,
+        "no or null weight",
+    )
+
+    for col in ["opurp", "dpurp"]:
+        df = convert.apply_filter(
+            df, "trips", (df[col] >= 0), logger, "missing or unusable " + col
+        )
+
+
+    # if arrtm/deptm > 24*60, subtract that value to normalize to a single day
+    for colname in ["arrtm", "deptm"]:
+        for i in range(2, int(np.ceil(df[colname] / (24 * 60)).max()) + 1):
+            filter = (df[colname] > (24 * 60)) & (df[colname] < (24 * 60) * i)
+            df.loc[filter, colname] = df.loc[filter, colname] - 24 * 60 * (i - 1)
+
+    df = convert.apply_filter(
+        df,
+        "trips",
+        ~(
+            (df["otaz"] == df["dtaz"])
+            & (df["opurp"] == df["dpurp"])
+            & (df["opurp"] == 1)
+        ),
+        logger,
+        "intrazonal work-related trips",
+    )
+
     # Filter null trips
     for col in ["mode", "opurp", "dpurp", "otaz", "dtaz"]:
-        trip = convert.apply_filter(trip, "trips", -trip[col].isnull(), logger, col + " is null")
+        df = convert.apply_filter(df, "trips", -df[col].isnull(), logger, col + " is null")
 
-    # Write to file
-    trip = trip[config['trip_columns']]
-
-    return trip
+    return df
 
 
 def build_tour_file(trip, person):
@@ -497,7 +466,6 @@ def build_tour_file(trip, person):
                                 continue
 
                     # No subtours actually found, treat as regular set of trips
-                    # FIXME: escape out with continue?
                     if len(subtours_df) < 1:
                         # No subtours actually found
                         # FIXME: make this a function, because it's called multiple times
@@ -653,17 +621,7 @@ def build_tour_file(trip, person):
     # After tour file is created, apply expression file for tours
     expr_df = pd.read_csv(r"daysim\inputs\tour_expr_daysim.csv")
 
-    for index, row in expr_df.iterrows():
-        expr = (
-            "tour.loc["
-            + row["filter"]
-            + ', "'
-            + row["result_col"]
-            + '"] = '
-            + str(row["result_value"])
-        )
-        print(row["index"])
-        exec(expr)
+    tour = convert.process_expression_file(tour, expr_df, config["tour_columns"])
 
     # Assign weight toexpfac as hhexpfac (getting it from psexpfac, which is the same as hhexpfac)
     tour = tour.merge(
@@ -678,9 +636,6 @@ def build_tour_file(trip, person):
     pd.DataFrame(bad_trips).T.to_csv(
         os.path.join(config["output_dir"], "bad_trips.csv")
     )
-
-    # Export columns in proper order
-    tour = tour[config["tour_columns"]]
 
     trip = trip[config['trip_columns'] + ["unique_person_id","household_id_elmer"]]
 
@@ -744,26 +699,13 @@ def process_person_day(tour, person, trip, hh, person_day_original_df):
                     pday.loc[person_rec, "endhom"] = 1
 
                 # Number of tours by purpose
-                purp_dict = {
-                    "wk": 1,
-                    "sc": 2,
-                    "es": 3,
-                    "pb": 4,
-                    "sh": 5,
-                    "ml": 6,
-                    "so": 7,
-                    "re": 8,
-                    "me": 9,
-                }
-
-                for purp_name, purp_val in purp_dict.items():
-                    # Number of tours
+                for purp_name, purp_val in config["purp_dict"].items():
                     pday.loc[person_rec, purp_name + "tours"] = len(
-                        day_tour[day_tour["pdpurp"] == purp_val]
+                        day_tour[day_tour["pdpurp"] == int(purp_val)]
                     )
 
                     # Number of stops
-                    day_tour_purp = day_tour[day_tour["pdpurp"] == purp_val]
+                    day_tour_purp = day_tour[day_tour["pdpurp"] == int(purp_val)]
                     if len(day_tour_purp) > 0:
                         nstops = day_tour_purp[["tripsh1", "tripsh2"]].sum().sum() - 2
                     else:
@@ -892,24 +834,17 @@ def convert_format():
 
         # Load expression files
         person_expr_df = pd.read_csv(r"daysim/inputs/person_expr_daysim.csv", delimiter=",(?![^\(]*[\)])")   # Exclude quotes within data
-        # hh_expr_df = pd.read_csv(r"daysim/inputs/hh_expr_daysim.csv")
-        # trip_expr_df = pd.read_csv(r"daysim/inputs/trip_expr_daysim.csv")
+        hh_expr_df = pd.read_csv(r"daysim/inputs/hh_expr_daysim.csv")
 
         # Recode person, household, and trip data
-        # person = process_person_file(person_original_df)
         person = convert.process_expression_file(person_original_df,
                                                  person_expr_df, config['person_columns'])
         hh = process_household_file(hh_original_df, person)
-
-        # trip = trip_original_df.merge(
-        #     person[["person_id", "pno", "pwpcl", "pspcl", "pwtaz", "pstaz"]],
-        #     how="left",
-        #     on="person_id",
-        # )
+        # hh = convert.process_expression_file(hh_original_df, hh_expr_df, config["hh_columns"])
 
         # FIXME: move this to a function or something
         # trip = convert.process_expression_file(trip, trip_expr_df, config['trip_columns'])
-        trip = process_trip_file(trip, person)
+        trip = process_trip_file(trip_original_df, person)
 
         # Write mapping between original trip_id and tsvid used on they survey
         trip[["trip_id", "tsvid"]].to_csv(
@@ -979,7 +914,7 @@ def convert_format():
     trip = trip.sort_values(["person_id_int", "day", "deptm"])
     trip = trip.reset_index()
 
-    # Use a unique person ID since the Elmer person_id has been copied for multiple days
+    # Use unique person ID since the Elmer person_id has been copied for multiple days
     trip["unique_person_id"] = trip["hhno"].astype("int").astype("str") + trip[
         "pno"
     ].astype("str")
