@@ -1,6 +1,6 @@
 # Survey Conversion 
 This repository contains code that converts Household Travel Survey (HTS) data to formats used by the Soundcast travel model. Data can be converted into formats used by Daysim (current model core of Soundcast) and Activitysim (under development). The Daysim modules are fully up to date, but Activitysim needs additional work to fit with the paradigm.
-Scripts specific to **activitysim** and daysim are in their respective folders. The **modules** folders contains functions shared across scripts. Currently Activitysim and Daysim are run and managed separately so they are described independently. In general scripts for both model versions work similarly. 
+Scripts specific to **activitysim** and **daysim** are in their respective folders. The **modules** folders contains functions shared across scripts. Currently Activitysim and Daysim are run and managed separately so they are described independently. In general scripts for both model versions work similarly. 
 
 ## Daysim
 The file **daysim_configuration.toml** contains all settings and input assumptions to run Daysim conversions. This includes which modules to run, output directories, and data dictionaries specific to Daysim and the PSRC HTS. 
@@ -9,7 +9,7 @@ The file **daysim_configuration.toml** contains all settings and input assumptio
 A virtual environment is included at **daysim/environment.yml**. Install and activate before running the scripts. 
 
 ### Running
-The script **process_daysim.py** run any of the following scripts from the daysim directory, depending on configuration settings:
+The script **process_daysim.py** runs the following scripts from the daysim directory, depending on configuration settings:
 
 - **locate_parcels.py** snaps survey records such as trip origin/destination, home, school, and work location to appropriate parcels nearest reported coordinates. 
 - **convert_format.py** converts the geolocated survey data to Daysim format, builds tour and person day files
