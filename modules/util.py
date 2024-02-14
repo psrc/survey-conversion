@@ -6,23 +6,21 @@ import sqlalchemy
 import urllib
 import pyodbc
 import toml
-import configuration
 
-config = toml.load("daysim_configuration.toml")
 
-def load_elmer_table(table_name, year):
+def load_elmer_table(table_name):
     conn_string = "DRIVER={ODBC Driver 17 for SQL Server}; SERVER=AWS-PROD-SQL\Sockeye; DATABASE=Elmer; trusted_connection=yes"
     sql_conn = pyodbc.connect(conn_string)
     params = urllib.parse.quote_plus(conn_string)
     engine = sqlalchemy.create_engine("mssql+pyodbc:///?odbc_connect=%s" % params)
 
     df = pd.read_sql(
-            sql="SELECT * FROM "+ table_name +" WHERE survey_year IN "
-            + config["survey_year"],
-            con=engine,
-        )
-    
+        sql="SELECT * FROM " + table_name,
+        con=engine,
+    )
+
     return df
+
 
 def load_elmer_geo(table_name):
     """Load ElmerGeo feature class as geodataframe."""

@@ -2,13 +2,20 @@
 # General Configuration Settings
 ########################################
 
+elmer_trip_table = "HHSurvey.v_trip_2023_modeling"
+elmer_person_table = "HHSurvey.v_person_2023_modeling"
+elmer_hh_table = "HHSurvey.v_household_2023_modeling"
+elmer_person_day_table = "HHSurvey.v_day_2023_modeling"
+
+input_dir = 'daysim/inputs/2023'
+
 # Project Output Directory
 output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
 
 # Specify which components to run
-run_locate_parcels = false
-run_convert_format = false
-run_data_validation = false
+run_locate_parcels = true
+run_convert_format = true
+run_data_validation = true
 run_attach_skims = true
 
 debug_person_id = []
@@ -21,8 +28,7 @@ write_debug_files = true
 # Parcel Location (locate_parcels.py) Config
 ################################################
 # Load Survey Data from Elmer or use CSV
-use_elmer = false
-survey_year = '(2017, 2019)'
+use_elmer = true
 
 # If not using Elmer, specify CSV directory of raw survey files 
 # Expected files: trip.csv, hh.csv, person.csv
@@ -31,6 +37,9 @@ survey_input_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/elmer'
 # Set parcel file location
 parcel_file_dir = 'R:/e2projects_two/SoundCast/Inputs/dev/landuse/2018/rtp_2018/parcels_urbansim.txt'
 parcel_maz_file_dir = 'R:/e2projects_two/activitysim/conversion/geographic_crosswalks/parcel_taz_block_lookup.csv'
+
+opurp_field = "origin_purpose"
+dpurp_field = "dest_purpose"
 
 # Spatial projection definitions
 lat_lng_crs = 'epsg:4326'    # Survey data expected in lat/lng format
@@ -42,13 +51,6 @@ usual_workplace_home = ['At home (telecommute or self-employed with home office)
 # distance in feet for max allowable distance between collected XY data and acceptable land use
 hh_max_dist = 2640    # half mile for distance near parcel with households
 school_max_dist = 5280     # mile for distance near parcel with students
-
-################################################
-# Daysim Conversion (convert_format.py) Config
-################################################
-
-# Geolocated directory
-input_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey'
 
 ################################################
 # Attach Skims (attach_skims.py) Config
@@ -187,31 +189,6 @@ tour_columns = [
         "household_id_elmer",
     ]
 
-[age_map]
-'Under 5 years old' = 2
-'5-11 years' = 8
-'12-15 years' = 14
-'16-17 years' = 17
-'18-24 years' = 21
-'25-34 years' = 30
-'35-44 years' = 40
-'45-54 years' = 50
-'55-64 years' = 60
-'65-74 years' = 70
-'75-84 years' = 80
-'85 or years older' = 85
-
-[gender_map]
-"Male" = 1
-"Female" = 2
-"Another" = 9
-"Prefer not to answer" = 9
-
-[pstyp_map]
-'No, not a student' = 0
-'Full-time student' = 1
-'Part-time student' = 2
-
 [pwtyp_map]
 'hhftw' = 1
 'hhptw' = 2
@@ -223,127 +200,6 @@ tour_columns = [
 'hhhsc' = 6
 'hh515' = 7
 'hhcu5' = 8
-
-[hownrent_map]
-'Own/paying mortgage' = 1
-'Rent' = 2
-'Provided by job or military' = 3
-'Prefer not to answer' = 3
-'Other' = 3
-
-[hhrestype_map]
-'Single-family house (detached house)' = 1
-'Townhouse (attached house)' = 2
-'Building with 3 or fewer apartments/condos' = 2
-'Building with 4 or more apartments/condos' = 3
-'Mobile home/trailer' = 4
-'Dorm or institutional housing' = 5
-'Other (including boat, RV, van, etc.)' = 6
-
-# Use the midpoint of the ranges provided since DaySim uses actual values
-[income_map]
-'Under $10,000' = 5000
-'$10,000-$24,999' = 17500
-'$25,000-$34,999' = 30000
-'$35,000-$49,999' = 42500
-'$50,000-$74,999' = 62500
-'$75,000-$99,999' = 87500
-'$100,000-$149,999' = 125000
-'$150,000-$199,999' = 175000
-'$200,000-$249,999' = 225000
-'$250,000 or more' = 250000
-'Prefer not to answer' = -1
-
-[hhsize_map]
-'1 person' = 1
-'2 people' = 2
-'3 people' = 3
-'4 people' = 4
-'5 people' = 5
-'6 people' = 6
-'7 people' = 7
-'8 people' = 8
-'9 people' = 9
-
-[hhvehs_map]
-'0 (no vehicles)' = 0
-'1 vehicle' = 1
-'2 vehicles' = 2
-'3 vehicles' = 3
-'4 vehicles' = 4
-'5 vehicles' = 5
-'6 vehicles' = 6
-'7 vehicles' = 7
-'8+ vehicles' = 8
-
-[mode_dict]
-'Walk' = 1
-'Bike' = 2
-'SOV' = 3
-'HOV2' = 4
-'HOV3+' = 5
-'Transit' = 6
-'School_Bus' = 8
-'TNC' = 9   # Note that 9 was other in older Daysim records
-'Other' = 10
-
-# FIXME = usual commute mode should consider occupancy from observed work trips
-# FIXME = usual commute transit mode should include drive to transit (assuming all walk to transit currently)
-[commute_mode_dict]
-'null' = 0
-'Bus (public transit)' = 6
-'Private bus or shuttle' = 6
-'Drive alone' = 3
-'Vanpool' = 5 # assume hov3
-'Walk, jog, or wheelchair' = 1
-'Bicycle or e-bike' = 2
-'Commuter rail (Sounder, Amtrak)' = 6
-'Airplane or helicopter' = 0
-'Carpool with other people not in household (may also include household members)' = 5  # assume hov3
-'Urban rail (Link light rail, monorail)' = 6
-'Carpool ONLY with other household members' = 4   # assume HH carpool is hov2
-'Other hired service (Uber, Lyft, or other smartphone-app car service)' = 9
-'Motorcycle/moped/scooter' = 3
-'Ferry or water taxi' = 6
-'Streetcar' = 6
-'Taxi (e.g., Yellow Cab)' = 9
-'Paratransit' = 6
-'Other (e.g. skateboard)' = 0
-'Missing = Skip Logic' = 0
-'Scooter or e-scooter (e.g., Lime, Bird, Razor)' = 0
-'Motorcycle/moped' = 3
-
-[day_map]
-'Monday' = 1
-'Tuesday' = 2
-'Wednesday' = 3
-'Thursday' = 4
-
-[purpose_map]
-'Went home' = 0 # home
-'Went to school/daycare (e.g., daycare, K-12, college)' = 2 # school
-"Dropped off/picked up someone (e.g., son at a friend's house, spouse at bus stop)" = 3 # escort
-'Went to primary workplace' = 1 # work
-'Went to work-related place (e.g., meeting, second job, delivery)' = 1 # work-related
-'Went to other work-related activity' = 1 # work-related
-'Went grocery shopping' = 5 # grocery -> shop
-'Went to other shopping (e.g., mall, pet store)' = 5 # other shopping -> shop
-'Other social/leisure (rMove only)' = 7 # personal business
-'Went to medical appointment (e.g., doctor, dentist)' = 4 # medical is combined with personal business (4)
-'Went to restaurant to eat/get take-out' = 6 # restaurant -> meal
-'Attended recreational event (e.g., movies, sporting event)' = 7 # recreational is combined with social (7)
-'Other purpose' = 7 # social
-"Went to a family activity (e.g., child's softball game)" = 7 # recreational is combined with social (7)
-'Went to religious/community/volunteer activity' = 7 # religious/community/volunteer -> social
-'Attended social event (e.g., visit with friends, family, co-workers)' = 7 # family activity -> social
-'Transferred to another mode of transportation (e.g., change from ferry to bus)' = 10 # change mode
-'Conducted personal business (e.g., bank, post office)' = 4 # personal business
-'Went to exercise (e.g., gym, walk, jog, bike ride)' = 7 # other social
-'Other appointment/errands (rMove only)' = 4 # other, setting as personal business for now (4) ?
-
-[dorp_map]
-'Driver' = 1
-'Passenger' = 2
 
 # lookup for departure hour to skim times
 [tod_dict]

@@ -19,19 +19,13 @@ import datetime
 import os, sys, errno
 import toml
 from pathlib import Path
-import configuration
 
 sys.path.append(os.getcwd())
 
-config = toml.load("daysim_configuration.toml")
+config = toml.load("main_configuration.toml")
 
-def setup_custom_logger(name):
-    # create dir for main log file if it doesn't exist
-    try:
-        os.makedirs("outputs/logs")
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
+
+def setup_custom_logger(name, config):
     logging.basicConfig(
         filename=os.path.join(config["output_dir"], name),
         format="%(asctime)s %(message)s",
@@ -42,6 +36,7 @@ def setup_custom_logger(name):
     logger.setLevel(logging.INFO)
     logger.addHandler(handler)
     return logger
+
 
 def timed(f):
     @wraps(f)

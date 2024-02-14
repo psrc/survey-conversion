@@ -1,0 +1,8 @@
+########################################
+# General Configuration Settings
+########################################
+
+# Specific which configuration file to use for each data product (Daysim/Activitysim/Urbansim)
+daysim_configuration = 'daysim\config\2023\configuration.toml'
+activitysim_coniguration = 'none'
+urbansim_configuration = 'none'

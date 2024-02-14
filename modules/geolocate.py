@@ -39,15 +39,8 @@ import logging
 from daysim import logcontroller
 import datetime
 import toml
-import configuration
 
 pd.options.mode.chained_assignment = None  # default='warn'
-
-config = toml.load("daysim_configuration.toml")
-
-logger = logcontroller.setup_custom_logger("locate_parcels_logger.txt")
-logger.info("--------------------locate_parcels.py STARTING--------------------")
-start_time = datetime.datetime.now()
 
 
 def nearest_neighbor(df_parcel_coord, df_trip_coord):
@@ -94,7 +87,7 @@ def locate_parcel(
     return _dist, _ix
 
 
-def locate_person_parcels(person, parcel_df, filter_dict_list):
+def locate_person_parcels(person, parcel_df, filter_dict_list, config):
     """Locate parcel ID for school, workplace, home location from person records."""
 
     person_results = person.copy()  # Make local copy for storing resulting joins
@@ -136,9 +129,15 @@ def locate_person_parcels(person, parcel_df, filter_dict_list):
         # Assign values to person df, extracting from the filtered set of parcels (_df)
         gdf[varname + "_parcel"] = parcel_df[parcel_filter].iloc[_ix].parcelid.values
         gdf[varname + "_parcel_distance"] = _dist
-        gdf = gdf.merge(parcel_df[['parcel_id','taz_id','maz_id']], left_on=varname+"_parcel", right_on='parcel_id')
-        gdf.rename(columns={'taz_id': varname+'_taz',
-                            'maz_id': varname+'_maz'}, inplace=True)
+        gdf = gdf.merge(
+            parcel_df[["parcel_id", "taz_id", "maz_id"]],
+            left_on=varname + "_parcel",
+            right_on="parcel_id",
+        )
+        gdf.rename(
+            columns={"taz_id": varname + "_taz", "maz_id": varname + "_maz"},
+            inplace=True,
+        )
         gdf_cols = [
             "person_id",
             varname + "_taz",
@@ -190,7 +189,8 @@ def locate_person_parcels(person, parcel_df, filter_dict_list):
     # return person_results, person_daysim
     return person_results
 
-def locate_hh_parcels(hh, parcel_df, filter_dict_list):
+
+def locate_hh_parcels(hh, parcel_df, filter_dict_list, config):
     hh_results = hh.copy()
 
     # Find nearest school and workplace
@@ -229,9 +229,15 @@ def locate_hh_parcels(hh, parcel_df, filter_dict_list):
         # Assign values to person df, extracting from the filtered set of parcels (_df)
         gdf[varname + "_parcel"] = parcel_df[parcel_filter].iloc[_ix].parcelid.values
         gdf[varname + "_parcel_distance"] = _dist
-        gdf = gdf.merge(parcel_df[['parcel_id','taz_id','maz_id']], left_on=varname+"_parcel", right_on='parcel_id')
-        gdf.rename(columns={'taz_id': varname+'_taz',
-                            'maz_id': varname+'_maz'}, inplace=True)
+        gdf = gdf.merge(
+            parcel_df[["parcel_id", "taz_id", "maz_id"]],
+            left_on=varname + "_parcel",
+            right_on="parcel_id",
+        )
+        gdf.rename(
+            columns={"taz_id": varname + "_taz", "maz_id": varname + "_maz"},
+            inplace=True,
+        )
 
         # For households that are not reasonably near a parcel with households,
         # add them to the nearset unfiltered parcel and flag
@@ -245,9 +251,15 @@ def locate_hh_parcels(hh, parcel_df, filter_dict_list):
         )
         gdf_far[varname + "_parcel"] = parcel_df.iloc[_ix].parcelid.values
         gdf_far[varname + "_parcel_distance"] = _dist
-        gdf_far = gdf_far.merge(parcel_df[['parcel_id','taz_id','maz_id']], left_on=varname+"_parcel", right_on='parcel_id')
-        gdf_far.rename(columns={'taz_id': varname+'_taz',
-                            'maz_id': varname+'_maz'}, inplace=True)
+        gdf_far = gdf_far.merge(
+            parcel_df[["parcel_id", "taz_id", "maz_id"]],
+            left_on=varname + "_parcel",
+            right_on="parcel_id",
+        )
+        gdf_far.rename(
+            columns={"taz_id": varname + "_taz", "maz_id": varname + "_maz"},
+            inplace=True,
+        )
 
         # Add this new distance to the original gdf
         gdf.loc[gdf_far.index, varname + "_parcel_original"] = gdf.loc[
@@ -286,7 +298,9 @@ def locate_hh_parcels(hh, parcel_df, filter_dict_list):
     return hh_results
 
 
-def locate_trip_parcels(trip, parcel_df, opurp_field, dpurp_field, filter_dict_list):
+def locate_trip_parcels(
+    trip, parcel_df, opurp_field, dpurp_field, filter_dict_list, config
+):
     """Attach parcel ID to trip origins and destinations."""
 
     trip_results = trip.copy()
@@ -295,20 +309,13 @@ def locate_trip_parcels(trip, parcel_df, opurp_field, dpurp_field, filter_dict_l
         lng_field = trip_end + "_lng"
         lat_field = trip_end + "_lat"
 
-        # filter out some odd results with lng > 0 and lat < 0
-        _filter = trip[lat_field] > 0
-        logger.info(f"Dropped {len(trip[~_filter])} trips: " + trip_end + " lat > 0 ")
-        trip = trip[_filter]
-
-        _filter = trip[lng_field] < 0
-        logger.info(f"Dropped {len(trip[~_filter])} trips: " + trip_end + " lng < 0 ")
-        trip = trip[_filter]
-
         gdf = gpd.GeoDataFrame(
             trip, geometry=gpd.points_from_xy(trip[lng_field], trip[lat_field])
         )
+
+        # convert from lat/lng to state plane WA
         gdf.crs = config["lat_lng_crs"]
-        gdf = gdf.to_crs(config["wa_state_plane_crs"])  # convert to state plane WA
+        gdf = gdf.to_crs(config["wa_state_plane_crs"])
 
         xy_field = get_points_array(gdf.geometry)
         gdf[trip_end + "_lng_gps"] = gdf[trip_end + "_lng"]
@@ -319,14 +326,14 @@ def locate_trip_parcels(trip, parcel_df, opurp_field, dpurp_field, filter_dict_l
         trip_results = trip_results.merge(
             gdf[
                 [
-                    "trip_id",
                     trip_end + "_lng_gps",
                     trip_end + "_lat_gps",
                     trip_end + "_lng_fips_4601",
                     trip_end + "_lat_fips_4601",
                 ]
             ],
-            on="trip_id",
+            left_index=True,
+            right_index=True,
         )
 
     final_df = trip_results.copy()
@@ -351,23 +358,35 @@ def locate_trip_parcels(trip, parcel_df, opurp_field, dpurp_field, filter_dict_l
                 parcel_df[parcel_filter].iloc[_ix].parcelid.values
             )
             _df[trip_end_type[0] + "pcl_distance"] = _dist
-            _df = _df.merge(parcel_df[['parcel_id','taz_id','maz_id']], left_on=trip_end_type[0] + "pcl", right_on='parcel_id')
-            _df.rename(columns={'taz_id': trip_end_type[0]+'taz',
-                            'maz_id': trip_end_type[0]+'maz'}, inplace=True)
+            _df["trip_id"] = _df.index
+            _df = _df.merge(
+                parcel_df[["parcel_id", "taz_id", "maz_id"]],
+                left_on=trip_end_type[0] + "pcl",
+                right_on="parcel_id",
+            )
+            _df.rename(
+                columns={
+                    "taz_id": trip_end_type[0] + "taz",
+                    "maz_id": trip_end_type[0] + "maz",
+                },
+                inplace=True,
+            )
 
             df_temp = df_temp.append(_df)
         # Join df_temp to final field for each trip type
+        df_temp.set_index("trip_id", inplace=True)
         final_df = final_df.merge(
             df_temp[
                 [
-                    "trip_id",
                     trip_end_type[0] + "pcl",
                     trip_end_type[0] + "pcl_distance",
                     trip_end_type[0] + "taz",
                     trip_end_type[0] + "maz",
                 ]
             ],
-            on="trip_id",
+            left_index=True,
+            right_index=True,
+            how="left",
         )
 
     return final_df

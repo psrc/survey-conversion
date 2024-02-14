@@ -1,7 +1,7 @@
-survey_1_dir = 'R:/e2projects_two/2018_base_year/survey/daysim_format/revised'
-survey_2_dir = 'R:/e2projects_two/SoundCast/Inputs/dev/base_year/2018/survey\RSG_version'
-survey_1_name = 'NEW'
-survey_2_name = 'RSG'
+survey_1_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format/skims_attached'
+survey_2_dir = 'R:/e2projects_two/2018_base_year/survey/daysim_format/revised/skims_attached'
+survey_1_name = '2023'
+survey_2_name = '2017_2019'
 
 psrc_color = ["#F05A28", "#00A7A0", "#8CC63E", "#91268F","#4C4C4C"]
 

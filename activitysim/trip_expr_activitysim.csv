@@ -1,26 +1,31 @@
 ﻿index,table,filter,result_col,result_value,description
-1,trip,:,person_id,trip['person_id'],
-2,trip,:,trexpfac,trip[trip_weight],
-3,trip,:,mode,trip['mode_1'].map(mode_dict),
-4,trip,(trip['travelers_total'] == 1) & (trip['mode'] == 'Auto'),mode,"""DRIVEALONEFREE""",
-5,trip,(trip['travelers_total'] == 2) & (trip['mode'] == 'Auto'),mode,"""SHARED2FREE""",
-6,trip,(trip['travelers_total'] > 2) & (trip['mode'] == 'Auto'),mode,"""SHARED3FREE""",
-7,trip,(trip['mode'] == 'Auto'),mode,"""DRIVEALONEFREE""",    # if travelers missing assume SOV
-7,trip,"(trip['mode'] == 'Transit') & (trip['mode_acc'].isin(walk_access_mode)) & (trip['mode_1'] ==""Ferry or water taxi"")",mode,"""WALK_FRY""",
-8,trip,"(trip['mode'] == 'Transit') & (trip['mode_acc'].isin(walk_access_mode)) & (trip['mode_1'] ==""Commuter rail (Sounder, Amtrak)"")",mode,"""WALK_COM""",
-9,trip,"(trip['mode'] == 'Transit') & (trip['mode_acc'].isin(walk_access_mode)) & (trip['mode_1'].isin([""Urban Rail (e.g., Link light rail, monorail)"",""Other rail (e.g., streetcar)""]))",mode,"""WALK_LR""",
-10,trip,"(trip['mode'] == 'Transit') & (trip['mode_acc'].isin(walk_access_mode)) & (trip['mode_1'].isin([""Bus (public transit)"",""Other bus (rMove only)""]))",mode,"""WALK_LOC""",
-11,trip,(trip['mode'] == 'Transit') & (trip['mode_acc'].isin(drive_access_mode)),mode,"""DRIVE_TRN""",
-12,trip,:,purpose,trip['dest_purpose'].map(full_purpose_map),
-14,trip,:,depart_time_mam,trip['depart_time_hhmm'].fillna(-1).apply(lambda x: convert_hhmm_to_mam(x)),
-15,trip,:,arrival_time_mam,trip['arrival_time_hhmm'].fillna(-1).apply(lambda x: convert_hhmm_to_mam(x)),
-16,trip,:,depart,np.floor(trip['depart_time_mam']/60),
-17,trip,:,arrive,np.floor(trip['arrival_time_mam']/60),
-18,trip,:,oadtyp,"""other""",Origin land use type as other by default
-19,trip,:,dadtyp,"""other""",Destination land use type as other by default
-20,trip,trip['origin_purpose_cat'] == 'Home',oadtyp,"""Home""",
-21,trip,trip['dest_purpose_cat'] == 'Home',dadtyp,"""Home""",
-22,trip,(trip['origin_purpose_cat'] == adtyp_school) & (trip['origin'] == trip[school_taz]),oadtyp,adtyp_school,
-23,trip,(trip['dest_purpose_cat'] == adtyp_school) & (trip['destination'] == trip[school_taz]),dadtyp,adtyp_school,
-24,trip,(trip['origin_purpose_cat'] == adtyp_work) & (trip['origin'] == trip[work_taz]),oadtyp,adtyp_work,
-25,trip,(trip['dest_purpose_cat'] == adtyp_work) & (trip['destination'] == trip[work_taz]),dadtyp,adtyp_work,
+1,df,:,hhno,df['household_id'],
+2,df,:,trexpfac,1,update when weights are available
+3,df,:,tsvid,range(len(df)),original trip_id is too long for daysim so reset values; We can export the mapping between tsvid and trip_id in the script
+4,df,:,opurp,df['origin_purpose'].map(config['purpose_map']).fillna(-1).astype('int'),
+5,df,:,dpurp,df['dest_purpose'].map(config['purpose_map']).fillna(-1).astype('int'),
+7,df,:,dorp,1,
+8,df,:,mode,'Other',
+9,df,(df['travelers_total'] == '1 traveler') & (df['mode_simple'] == 'Drive'),mode,'SOV',
+10,df,(df['travelers_total'] == '2 travelers') & (df['mode_simple'] == 'Drive'),mode,'HOV2',
+11,df,(df['travelers_total'] != '1 traveler') & (df['travelers_total'] != '2 travelers') & (df['mode_simple'] == 'Drive'),mode,'HOV3+',
+12,df,df['mode_simple'] == 'Transit',mode,'Transit',
+13,df,df['mode_simple'] == 'Walk',mode,'Walk',
+14,df,df['mode_simple'] == 'Bike',mode,'Bike',
+15,df,df['mode_1'].isin(['School bus']),mode,'School_Bus',
+16,df,"df['mode_1'].isin(['Other hired service (Uber, Lyft, or other smartphone-app car service)','Taxi (e.g., Yellow Cab)'])",mode,'TNC',
+17,df,:,mode,df['mode'].map(config['mode_dict']),
+18,df,:,oadtyp,4,origin type: assume other by default
+19,df,:,dadtyp,4,destination type: assume other by default
+20,df,df['opurp'] == 0,oadtyp,1,"Trips with origin/destination purpose of ""Home"" (0) have a origin/destination address type of ""Home"" (1)"
+21,df,df['dpurp'] == 0,dadtyp,1,"Trips with origin/destination purpose of ""Home"" (0) have a origin/destination address type of ""Home"" (1)"
+22,df,(df['opurp'] == 2) & (df['opcl'] == df['pspcl']),oadtyp,3,usual school
+23,df,(df['dpurp'] == 2) & (df['dpcl'] == df['pspcl']),dadtyp,3,usual school
+24,df,(df['opurp'] == 1) & (df['otaz'] == df['pwtaz']),oadtyp,2,If trip is to/from TAZ of usual workplace and trip purpose is work
+25,df,(df['dpurp'] == 1) & (df['dtaz'] == df['pwtaz']),dadtyp,2,If trip is to/from TAZ of usual workplace and trip purpose is work
+26,df,df['opurp'] == 10,oadtyp,6,'Change mode'
+27,df,df['dpurp'] == 10,dadtyp,6,'Change mode'
+28,df,:,travcost,-1,Set skim values to -1 until they're updated in the next script
+29,df,:,travtime,-1,Set skim values to -1 until they're updated in the next script
+30,df,:,travdist,-1,Set skim values to -1 until they're updated in the next script
+31,df,:,day,df['travel_dow'].map(config['day_map']),

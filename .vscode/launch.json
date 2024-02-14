@@ -10,7 +10,7 @@
             "request": "launch",
             // "cwd": "${fileDirname}/daysim",
             // "purpose": ["debug-in-terminal"],
-            "program": "process_daysim.py",
+            "program": "daysim/process_daysim.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }

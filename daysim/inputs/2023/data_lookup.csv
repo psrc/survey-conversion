@@ -1,0 +1,184 @@
+﻿table,elmer_name,elmer_value,model_value,model_name
+household,res_type,Single-family house (detached house),1,hrestype
+household,res_type,Townhouse (attached house),2,hrestype
+household,res_type,Building with 3 or fewer apartments/condos,2,hrestype
+household,res_type,Building with 4 or more apartments/condos,3,hrestype
+household,res_type,Mobile home/trailer,4,hrestype
+household,res_type,Dorm or institutional housing,5,hrestype
+household,res_type,"Other (including boat, RV, van, etc.)",6,hrestype
+household,res_type,Missing Response,9,hrestype
+household,rent_own,Own/paying mortgage,1,hownrent
+household,rent_own,Rent,2,hownrent
+household,rent_own,Provided by job or military,3,hownrent
+household,rent_own,Prefer not to answer,3,hownrent
+household,rent_own,Other,3,hownrent
+household,rent_own,"Provided by family, relative, or friend without payment or rent",3,hownrent
+household,rent_own,Missing Response,3,hownrent
+household,hhincome_detailed,"Under $10,000",5000,hhincome
+household,hhincome_detailed,"$10,000-$24,999",17500,hhincome
+household,hhincome_detailed,"$25,000-$34,999",30000,hhincome
+household,hhincome_detailed,"$35,000-$49,999",42500,hhincome
+household,hhincome_detailed,"$50,000-$74,999",62500,hhincome
+household,hhincome_detailed,"$75,000-$99,999",87500,hhincome
+household,hhincome_detailed,"$100,000-$149,999",125000,hhincome
+household,hhincome_detailed,"$150,000-$199,999",175000,hhincome
+household,hhincome_detailed,"$200,000-$249,999",225000,hhincome
+household,hhincome_detailed,"$250,000 or more",250000,hhincome
+household,hhincome_detailed,Prefer not to answer,-1,hhincome
+household,hhincome_detailed,Missing: Skip Logic,-1,hhincome
+household,hhsize,1 person,1,hhsize
+household,hhsize,2 people,2,hhsize
+household,hhsize,3 people,3,hhsize
+household,hhsize,4 people,4,hhsize
+household,hhsize,5 people,5,hhsize
+household,hhsize,6 people,6,hhsize
+household,hhsize,7 people,7,hhsize
+household,hhsize,8 people,8,hhsize
+household,hhsize,9 people,9,hhsize
+household,hhsize,10 people,10,hhsize
+household,hhsize,11 people,11,hhsize
+household,hhsize,12 people,12,hhsize
+household,hhsize,13 or more people,13,hhsize
+household,vehicle_count,0 (no vehicles),0,hhvehs
+household,vehicle_count,1 vehicle,1,hhvehs
+household,vehicle_count,2 vehicles,2,hhvehs
+household,vehicle_count,3 vehicles,3,hhvehs
+household,vehicle_count,4 vehicles,4,hhvehs
+household,vehicle_count,5 vehicles,5,hhvehs
+household,vehicle_count,6 vehicles,6,hhvehs
+household,vehicle_count,7 vehicles,7,hhvehs
+household,vehicle_count,8 vehicles,8,hhvehs
+household,vehicle_count,9 vehicles,9,hhvehs
+household,vehicle_count,10 or more vehicles,10,hhvehs
+person,work_mode,Walk (or jog/wheelchair),1,puwmode
+person,work_mode,Household vehicle (or motorcycle),3,puwmode
+person,work_mode,"Other vehicle (e.g., friend's car, rental, carshare, work car)",3,puwmode
+person,work_mode,"Bus, shuttle, or vanpool (public transit, private service, or shuttles for older adults and people with disabilities)",6,puwmode
+person,work_mode,Bicycle or e-bicycle,2,puwmode
+person,work_mode,Other,0,puwmode
+person,work_mode,"Rail (e.g., train, subway)",6,puwmode
+person,work_mode,"Uber/Lyft, taxi, or car service",9,puwmode
+person,work_mode,"Scooter, moped, skateboard",0,puwmode
+person,work_mode,Ferry or water taxi,6,puwmode
+person,work_mode,Missing Response,0,puwmode
+person,age,Under 5 years old,2,pagey
+person,age,5-11 years,8,pagey
+person,age,12-15 years,14,pagey
+person,age,16-17 years,17,pagey
+person,age,18-24 years,21,pagey
+person,age,25-34 years,30,pagey
+person,age,35-44 years,40,pagey
+person,age,45-54 years,50,pagey
+person,age,55-64 years,60,pagey
+person,age,65-74 years,70,pagey
+person,age,75-84 years,80,pagey
+person,age,85 or years older,85,pagey
+person,gender,Boy/Man (cisgender or transgender),1,pgend
+person,gender,Girl/Woman (cisgender or transgender),2,pgend
+person,gender,Non-binary/Something else fits better,9,pgend
+person,gender,Non-Binary,9,pgend
+person,gender,Another,9,pgend
+person,gender,Missing Response,9,pgend
+person,gender,Prefer not to answer,9,pgend
+person,student,"No, not a student",0,pstyp
+person,student,Part-time student,2,pstyp
+person,student,Full-time student,1,pstyp
+person,student,"Part-time student, currently attending some or all classes in-person",2,pstyp
+person,student,"Part-time student, ONLY online classes",0,pstyp
+person,student,"Full-time student, currently attending some or all classes in-person",1,pstyp
+person,student,"Full-time student, ONLY online classes",0,pstyp
+person,student,Missing Response,0,pstyp
+trip,origin_purpose,Not imputable,-99,opurp
+trip,origin_purpose,Went home,0,opurp
+trip,origin_purpose,"Went to school/daycare (e.g., daycare, K-12, college)",2,opurp
+trip,origin_purpose,"Dropped off/picked up someone (e.g., son at a friend's house, spouse at bus stop)",3,opurp
+trip,origin_purpose,Went to primary workplace,1,opurp
+trip,origin_purpose,"Went to work-related place (e.g., meeting, second job, delivery)",1,opurp
+trip,origin_purpose,Volunteering,7,opurp
+trip,origin_purpose,Went to other work-related activity,1,opurp
+trip,origin_purpose,Attend K-12 school,2,opurp
+trip,origin_purpose,Attend college/university,2,opurp
+trip,origin_purpose,"Attend other type of class (e.g., cooking class)",7,opurp
+trip,origin_purpose,"Attend other education-related activity (e.g., field trip)",7,opurp
+trip,origin_purpose,Attend vocational education class,7,opurp
+trip,origin_purpose,Attend daycare or preschool,2,opurp
+trip,origin_purpose,Went grocery shopping,5,opurp
+trip,origin_purpose,Got gas,5,opurp
+trip,origin_purpose,"Went to other shopping (e.g., mall, pet store)",5,opurp
+trip,origin_purpose,"Conducted personal business (e.g., bank, post office)",4,opurp
+trip,origin_purpose,"Went to medical appointment (e.g., doctor, dentist)",4,opurp
+trip,origin_purpose,"Other activity at workplace only (e.g., attend meeting, pick-up or drop-off item)",1,opurp
+trip,origin_purpose,Pick someone up,3,opurp
+trip,origin_purpose,Drop someone off,3,opurp
+trip,origin_purpose,"Accompany someone only (e.g., go along for the ride)",3,opurp
+trip,origin_purpose,BOTH pick up AND drop off,3,opurp
+trip,origin_purpose,Went to restaurant to eat/get take-out,6,opurp
+trip,origin_purpose,"Went to exercise (e.g., gym, walk, jog, bike ride)",-88,opurp
+trip,origin_purpose,"Attended social event (e.g., visit with friends, family, co-workers)",7,opurp
+trip,origin_purpose,"Attended recreational event (e.g., movies, sporting event)",7,opurp
+trip,origin_purpose,Went to religious/community/volunteer activity,7,opurp
+trip,origin_purpose,Vacation/Traveling (rMove only,7,opurp
+trip,origin_purpose,"Went to a family activity (e.g., child's softball game)",7,opurp
+trip,origin_purpose,"Transferred to another mode of transportation (e.g., change from ferry to bus)",10,opurp
+trip,origin_purpose,Other appointment/errands,4,opurp
+trip,origin_purpose,Other social/leisure,7,opurp
+trip,origin_purpose,Other reason,7,opurp
+trip,origin_purpose,"Went to another residence (e.g., someone else's home, second home)",7,opurp
+trip,origin_purpose,"Went to temporary lodging (e.g., hotel, vacation rental)",7,opurp
+trip,origin_purpose,Missing Response,-99,opurp
+trip,dest_purpose,Not imputable,-99,dpurp
+trip,dest_purpose,Went home,0,dpurp
+trip,dest_purpose,"Went to work, work-related, volunteer-related",1,dpurp
+trip,dest_purpose,Attended school/class,2,dpurp
+trip,dest_purpose,"Appointment, shopping, or errands (e.g., gas)",4,dpurp
+trip,dest_purpose,"Dropped off, picked up, or accompanied another person",3,dpurp
+trip,dest_purpose,"Went to school/daycare (e.g., daycare, K-12, college)",2,dpurp
+trip,dest_purpose,"Social, leisure, religious, entertainment activity",7,dpurp
+trip,dest_purpose,"Dropped off/picked up someone (e.g., son at a friend's house, spouse at bus stop)",3,dpurp
+trip,dest_purpose,Went to primary workplace,1,dpurp
+trip,dest_purpose,"Went to work-related activity (e.g., meeting, delivery, worksite)",1,dpurp
+trip,dest_purpose,Volunteering,7,dpurp
+trip,dest_purpose,Went to other work-related activity,1,dpurp
+trip,dest_purpose,Attend K-12 school,2,dpurp
+trip,dest_purpose,Attend college/university,2,dpurp
+trip,dest_purpose,"Attend other type of class (e.g., cooking class)",7,dpurp
+trip,dest_purpose,"Attend other education-related activity (e.g., field trip)",7,dpurp
+trip,dest_purpose,Attend vocational education class,7,dpurp
+trip,dest_purpose,Attend daycare or preschool,2,dpurp
+trip,dest_purpose,Grocery shopping,5,dpurp
+trip,dest_purpose,Got gas,5,dpurp
+trip,dest_purpose,"Other shopping (e.g., mall, pet store)",5,dpurp
+trip,dest_purpose,"Personal business (e.g., bank, post office)",4,dpurp
+trip,dest_purpose,"Medical appointment (e.g., doctor, dentist)",4,dpurp
+trip,dest_purpose,"Other activity only (e.g., attend meeting, pick-up or drop-off item)",4,dpurp
+trip,dest_purpose,Pick someone up,3,dpurp
+trip,dest_purpose,Drop someone off,3,dpurp
+trip,dest_purpose,"Accompany someone only (e.g., go along for the ride)",3,dpurp
+trip,dest_purpose,BOTH pick up AND drop off,3,dpurp
+trip,dest_purpose,Went to restaurant to eat/get take-out,6,dpurp
+trip,dest_purpose,"Exercise or recreation (e.g., gym, jog, bike, walk dog)",-88,dpurp
+trip,dest_purpose,"Social event (e.g., visit friends, family, co-workers)",7,dpurp
+trip,dest_purpose,"Recreational event (e.g., movies, sporting event)",7,dpurp
+trip,dest_purpose,Religious/civic/volunteer activity,7,dpurp
+trip,dest_purpose,Vacation/Traveling (rMove only),7,dpurp
+trip,dest_purpose,"Went to a family activity (e.g., child's softball game)",7,dpurp
+trip,dest_purpose,"Changed or transferred mode (e.g., change from ferry to bus)",10,dpurp
+trip,dest_purpose,Other appointment/errands,4,dpurp
+trip,dest_purpose,Other social/leisure,7,dpurp
+trip,dest_purpose,Other reason,7,dpurp
+trip,driver,Driver,1,dorp
+trip,driver,Passenger,2,dorp
+trip,driver,Both (switched drivers during trip),3,dorp
+trip,driver,Missing: Skip Logic,3,dorp
+trip,travel_dow,Monday,1,day
+trip,travel_dow,Tuesday,2,day
+trip,travel_dow,Wednesday,3,day
+trip,travel_dow,Thursday,4,day
+trip,travel_dow,Friday,5,day
+trip,travel_dow,Saturday,6,day
+trip,travel_dow,Sunday,7,day
+trip,travelers_total,1 traveler,1,travelers
+trip,travelers_total,2 travelers,2,travelers
+trip,travelers_total,3 travelers,3,travelers
+trip,travelers_total,4 travelers,4,travelers
+trip,travelers_total,5+ travelers,5,travelers

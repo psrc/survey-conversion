@@ -25,13 +25,6 @@ import logging
 from daysim import logcontroller
 import toml
 
-config = toml.load("daysim_configuration.toml")
-
-# Start log file
-logger = logcontroller.setup_custom_logger("attach_skims_logger.txt")
-logger.info("--------------------attach_skims.py STARTED--------------------")
-start_time = datetime.datetime.now()
-
 
 def text_to_dictionary(input_filename):
     """Convert text input to Python dictionary."""
@@ -45,7 +38,7 @@ def text_to_dictionary(input_filename):
     return my_dictionary
 
 
-def write_skims(df, skim_dict, otaz_field, dtaz_field, skim_output_file):
+def write_skims(df, skim_dict, otaz_field, dtaz_field, skim_output_file, config):
     """Look up skim values from trip records and export as csv."""
 
     dictZoneLookup = json.load(open(os.path.join("daysim\inputs", "zone_dict.txt")))
@@ -153,7 +146,7 @@ def write_skims(df, skim_dict, otaz_field, dtaz_field, skim_output_file):
 
 
 def fetch_skim(
-    df_name, df, time_field, mode_field, otaz_field, dtaz_field, use_mode=False
+    df_name, df, time_field, mode_field, otaz_field, dtaz_field, config, use_mode=False
 ):
     """
     Look up skim values form survey records.
@@ -240,12 +233,12 @@ def fetch_skim(
         skim_dict[tod] = contents
 
     # If the skim output file doesn't already exist, create it
-    write_skims(df, skim_dict, otaz_field, dtaz_field, skim_output_file)
+    write_skims(df, skim_dict, otaz_field, dtaz_field, skim_output_file, config)
     # join skim data to original .dat files
     # Attach trip-level skim data to person records
 
 
-def process_person_skims(tour, person, hh):
+def process_person_skims(tour, person, hh, config):
     """
     Add person and HH level data to trip records.
     """
@@ -338,7 +331,7 @@ def process_person_skims(tour, person, hh):
     return person
 
 
-def update_records(trip, tour, person):
+def update_records(trip, tour, person, config):
     """
     Add skim value results to original survey files.
     """
@@ -458,7 +451,7 @@ def update_records(trip, tour, person):
     )
 
 
-def dat_to_h5(file_list):
+def dat_to_h5(file_list, config):
     group_dict = {
         "household_day": "HouseholdDay",
         "household": "Household",
@@ -529,7 +522,12 @@ def hhmm_to_mam(df, field):
     return df
 
 
-def attach_skims():
+def attach_skims(config):
+    # Start log file
+    logger = logcontroller.setup_custom_logger("attach_skims_logger.txt", config)
+    logger.info("--------------------attach_skims.py STARTED--------------------")
+    start_time = datetime.datetime.now()
+
     # Create new output directory for survey records with skims attached, if needed
     if not os.path.exists(os.path.join(config["output_dir"], "skims_attached")):
         os.makedirs(os.path.join(config["output_dir"], "skims_attached"))
@@ -565,7 +563,7 @@ def attach_skims():
     tour_hh = pd.merge(tour, hh, on="hhno")
 
     # Extract person-level results from trip file
-    person_modified = process_person_skims(tour, person, hh)
+    person_modified = process_person_skims(tour, person, hh, config)
 
     # Fetch trip skims based on trip departure time
     fetch_skim(
@@ -575,6 +573,7 @@ def attach_skims():
         mode_field="mode",
         otaz_field="otaz",
         dtaz_field="dtaz",
+        config=config,
     )
 
     # Fetch tour skims based on tour departure time from origin
@@ -585,6 +584,7 @@ def attach_skims():
         mode_field="tmodetp",
         otaz_field="totaz",
         dtaz_field="tdtaz",
+        config=config,
     )
 
     # Attach person-level work skims based on home to work auto trips
@@ -595,6 +595,7 @@ def attach_skims():
         mode_field="puwmode",
         otaz_field="hhtaz",
         dtaz_field="pwtaz",
+        config=config,
         use_mode="3",
     )
 
@@ -606,6 +607,7 @@ def attach_skims():
         mode_field="puwmode",
         otaz_field="hhtaz",
         dtaz_field="pstaz",
+        config=config,
         use_mode="3",
     )
 
@@ -614,7 +616,7 @@ def attach_skims():
     person["id"] = person["hhno"].astype("str") + person["pno"].astype("str")
 
     # Update records
-    update_records(trip, tour, person)
+    update_records(trip, tour, person, config)
 
     # Write results to h5
     write_list = ["household", "person_day", "household_day"]
@@ -634,5 +636,6 @@ def attach_skims():
         [
             os.path.join(config["output_dir"], "skims_attached", "_" + file + ".tsv")
             for file in write_list
-        ]
+        ],
+        config,
     )

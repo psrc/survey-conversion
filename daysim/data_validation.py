@@ -19,8 +19,6 @@ import toml
 import pandera as pa
 from pandera import Column, Check
 
-config = toml.load("daysim_configuration.toml")
-
 tours_schema = pa.DataFrameSchema(
     {
         "hhno": Column(int, nullable=False),
@@ -194,7 +192,7 @@ household_day_schema = pa.DataFrameSchema(
 )
 
 
-def read_validate_write(fname, schema):
+def read_validate_write(fname, schema, config):
     """Load survey file, apply schema, and overwrite results."""
 
     df = pd.read_csv(os.path.join(config["output_dir"], "_" + fname + ".tsv"), sep="\t")
@@ -204,10 +202,10 @@ def read_validate_write(fname, schema):
     )
 
 
-def data_validation():
-    read_validate_write("tour", tours_schema)
-    read_validate_write("trip", trips_schema)
-    read_validate_write("person", person_schema)
-    read_validate_write("household", household_schema)
-    read_validate_write("person_day", person_day_schema)
-    read_validate_write("household_day", household_day_schema)
+def data_validation(config):
+    read_validate_write("tour", tours_schema, config)
+    read_validate_write("trip", trips_schema, config)
+    read_validate_write("person", person_schema, config)
+    read_validate_write("household", household_schema, config)
+    read_validate_write("person_day", person_day_schema, config)
+    read_validate_write("household_day", household_day_schema, config)

@@ -24,7 +24,6 @@ from sqlalchemy.engine import URL
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
-config = toml.load("daysim_configuration.toml")
 
 def apply_filter(df, df_name, filter, logger, msg):
     """Apply a filter to trim df, record changes in log file."""
@@ -33,12 +32,13 @@ def apply_filter(df, df_name, filter, logger, msg):
 
     return df[filter]
 
-def assign_tour_mode(_df, tour_dict, tour_id, mode_heirarchy=config["mode_heirarchy"]):
+
+def assign_tour_mode(_df, tour_dict, tour_id, config):
     """Get a list of transit modes and identify primary mode
     Primary mode is the first one from a heirarchy list found in the tour."""
     mode_list = _df["mode"].value_counts().index.astype("int").values
 
-    for mode in mode_heirarchy:
+    for mode in config["mode_heirarchy"]:
         if mode in mode_list:
             # If transit, check whether access mode is walk to transit or drive to transit
             if mode == 6:
@@ -55,11 +55,29 @@ def assign_tour_mode(_df, tour_dict, tour_id, mode_heirarchy=config["mode_heirar
                     return tour_mode
 
             return mode
-        
 
-def process_expression_file(df, expr_df, output_column_list):
-    """Execute each row of calculations in an expression file. 
+
+def process_expression_file(df, expr_df, output_column_list, df_lookup=None):
+    """Execute each row of calculations in an expression file.
+    Apply mapping from CSV files
     Fill empty columns in output_column_list with -1."""
+
+    # Apply direct mapping from lookup CSV
+    if df_lookup is not None:
+        for col in df_lookup["elmer_name"].unique():
+            _df_lookup = df_lookup[(df_lookup["elmer_name"] == col)]
+            model_var_name = _df_lookup["model_name"].iloc[0]
+            df = df.merge(
+                _df_lookup[["elmer_value", "model_value"]],
+                left_on=col,
+                right_on="elmer_value",
+                how="left",
+            )
+            # Update column names
+            if col == model_var_name:
+                df.drop(col, inplace=True, axis=1)  # avoid duplicate cols
+            df.drop("elmer_value", axis=1, inplace=True)
+            df.rename(columns={"model_value": model_var_name}, inplace=True)
 
     for index, row in expr_df.iterrows():
         expr = (
@@ -70,9 +88,8 @@ def process_expression_file(df, expr_df, output_column_list):
             + '"] = '
             + str(row["result_value"])
         )
-        print(row["index"])
-        exec(expr)
 
+        exec(expr)
     # Add empty columns to fill in later with skims
     for col in output_column_list:
         if col not in df.columns:
@@ -84,25 +101,25 @@ def process_expression_file(df, expr_df, output_column_list):
 
     return df
 
+
 def get_primary_index(df):
     if len(df) == 2:
         primary_index = df.index[0]
     else:
         # Identify the primary purpose
-        primary_index = df[-df["dpurp"].isin([0, 10])][
-            "duration"
-        ].idxmax()
+        primary_index = df[-df["dpurp"].isin([0, 10])]["duration"].idxmax()
 
     return primary_index
 
-def add_tour_data(df, tour_dict, tour_id, day, primary_index=None):
+
+def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
     """
     Add tour data that is standard for all trip sets. This includes
     household and person data that is always available on the first trip record.
-    Tour departure is always the departure time from the first trip. 
+    Tour departure is always the departure time from the first trip.
     """
 
-    for col in ["hhno","household_id_elmer","pno","person_id","unique_person_id"]:
+    for col in ["hhno", "household_id_elmer", "pno", "person_id", "unique_person_id"]:
         tour_dict[tour_id][col] = df.iloc[0][col]
 
     tour_dict[tour_id]["day"] = day
@@ -130,19 +147,16 @@ def add_tour_data(df, tour_dict, tour_id, day, primary_index=None):
     tour_dict[tour_id]["tripsh1"] = len(df.loc[0:primary_index])
     tour_dict[tour_id]["tripsh2"] = len(df.loc[primary_index + 1 :])
 
-    tour_dict[tour_id]["tmodetp"] = assign_tour_mode(
-                        df, tour_dict, tour_id
-                    )
+    tour_dict[tour_id]["tmodetp"] = assign_tour_mode(df, tour_dict, tour_id, config)
 
     # path type
     # Pathtype is defined by a heirarchy, where highest number is chosen first
     # Ferry > Commuter rail > Light Rail > Bus > Auto Network
     # Note that tour pathtype is different from trip path type (?)
-    tour_dict[tour_id]["tpathtp"] = df.loc[df["mode"].idxmax()][
-        "pathtype"
-    ]
+    tour_dict[tour_id]["tpathtp"] = df.loc[df["mode"].idxmax()]["pathtype"]
 
     return tour_dict
+
 
 def update_trip_data(trip, df, tour_id):
     """
@@ -152,18 +166,14 @@ def update_trip_data(trip, df, tour_id):
 
     primary_index = get_primary_index(df)
 
-    trip.loc[
-        trip["trip_id"].isin(df["trip_id"].values), "tour"
-    ] = tour_id
+    trip.loc[trip["trip_id"].isin(df["trip_id"].values), "tour"] = tour_id
 
     trip.loc[
         trip["trip_id"].isin(df.loc[0:primary_index].trip_id),
         "half",
     ] = 1
     trip.loc[
-        trip["trip_id"].isin(
-            df.loc[primary_index + 1 :].trip_id
-        ),
+        trip["trip_id"].isin(df.loc[primary_index + 1 :].trip_id),
         "half",
     ] = 2
 
@@ -173,14 +183,10 @@ def update_trip_data(trip, df, tour_id):
         "tseg",
     ] = range(1, len(df.loc[0:primary_index]) + 1)
     trip.loc[
-        trip["trip_id"].isin(
-            df.loc[primary_index + 1 :].trip_id
-        ),
+        trip["trip_id"].isin(df.loc[primary_index + 1 :].trip_id),
         "tseg",
     ] = range(1, len(df.loc[primary_index + 1 :]) + 1)
 
-    trip.loc[
-        trip["trip_id"].isin(df["trip_id"].values), "tour"
-    ] = tour_id
+    trip.loc[trip["trip_id"].isin(df["trip_id"].values), "tour"] = tour_id
 
     return trip
