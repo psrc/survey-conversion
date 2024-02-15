@@ -1,0 +1,104 @@
+########################################
+# General Configuration Settings
+########################################
+
+elmer_person_table = "HHSurvey.v_person_2023_modeling"
+elmer_hh_table = "HHSurvey.v_household_2023_modeling"
+
+# Project Output Directory
+output_dir = 'R:/e2projects_two/2023_base_year/23_on_18'
+
+# Specify which components to run
+run_locate_parcels = true
+run_convert_format = true
+
+# Inputs for expression files and data conversion
+input_dir = 'daysim/inputs/2023'
+
+################################################
+# Parcel Location (locate_parcels.py) Config
+################################################
+# Load Survey Data from Elmer or use CSV
+use_elmer = true
+
+# If not using Elmer, specify CSV directory of raw survey files 
+# Expected files: trip.csv, hh.csv, person.csv
+survey_input_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/elmer'
+
+# Set parcel file location
+# Parcels must have housing units 
+parcel_file_dir = 'R:/e2projects_two/2023_base_year/23_on_18/parcels_for_hh_survey.csv'
+parcel_file_standard_dir = 'R:/e2projects_two/SoundCast/Inputs/dev/landuse/2018/rtp_2018/parcels_urbansim.txt'
+parcel_maz_file_dir = 'R:/e2projects_two/activitysim/conversion/geographic_crosswalks/parcel_taz_block_lookup.csv'
+
+# Spatial projection definitions
+lat_lng_crs = 'epsg:4326'    # Survey data expected in lat/lng format
+wa_state_plane_crs = 'epsg:2285'    # Projection of parcel and TAZ data; survey data is converted to this
+
+# list of columns in "workplace" field that represent main work location as home
+usual_workplace_home = ['At home (telecommute or self-employed with home office)']
+
+# distance in feet for max allowable distance between collected XY data and acceptable land use
+hh_max_dist = 2640    # half mile for distance near parcel with households
+school_max_dist = 5280     # mile for distance near parcel with students
+
+person_columns = [
+        "hhno",
+        "pno",
+        "pptyp",
+        "pagey",
+        "pgend",
+        "pwtyp",
+        "pwpcl",
+        "pwtaz",
+        "pwautime",
+        "pwaudist",
+        "pstyp",
+        "pspcl",
+        "pstaz",
+        "psautime",
+        "psaudist",
+        "puwmode",
+        "puwarrp",
+        "puwdepp",
+        "ptpass",
+        "ppaidprk",
+        "pdiary",
+        "pproxy",
+        "psexpfac",
+        "person_id",
+    ]
+
+hh_columns = [
+        "hhno",
+        "hhsize",
+        "hhvehs",
+        "hhwkrs",
+        "hhftw",
+        "hhptw",
+        "hhret",
+        "hhoad",
+        "hhuni",
+        "hhhsc",
+        "hh515",
+        "hhcu5",
+        "hhincome",
+        "hownrent",
+        "hrestype",
+        "hhtaz",
+        "hhparcel",
+        "hhexpfac",
+        "samptype",
+    ]
+
+[pwtyp_map]
+'hhftw' = 1
+'hhptw' = 2
+
+[pptyp_map]
+'hhret' = 3
+'hhoad' = 4
+'hhuni' = 5
+'hhhsc' = 6
+'hh515' = 7
+'hhcu5' = 8

@@ -291,7 +291,7 @@ def build_tour_file(trip, person, config, logger):
         os.path.join(config["output_dir"], "bad_trips.csv")
     )
 
-    trip = trip[config["trip_columns"] + ["unique_person_id", "household_id_elmer"]]
+    trip = trip[config["trip_columns"] + ["unique_person_id", "hhid_elmer"]]
 
     return tour, trip, error_dict
 
@@ -359,7 +359,7 @@ def process_person_day(tour, person, trip, hh, person_day_original_df, config):
     person_day_original_df["person_id"] = person_day_original_df["person_id"].astype(
         "int64"
     )
-    pday["household_id_elmer"] = pday["household_id_elmer"].astype("int64")
+    pday["hhid_elmer"] = pday["hhid_elmer"].astype("int64")
     pday = pday.merge(
         person_day_original_df[["person_id", "day", "wkathome"]],
         left_on=["person_id", "day"],
@@ -474,9 +474,9 @@ def convert_format(config):
 
         # Create new Household and Person records for each travel day.
         # For trip/tour models we use this data as if each person-day were independent for multiple-day diaries
-        hh["household_id_elmer"] = hh["hhno"].copy()
-        trip["household_id_elmer"] = trip["hhno"].copy()
-        person["household_id_elmer"] = person["hhno"].copy()
+        hh["hhid_elmer"] = hh["hhno"].copy()
+        trip["hhid_elmer"] = trip["hhno"].copy()
+        person["hhid_elmer"] = person["hhno"].copy()
 
         hh["new_hhno"] = hh["hhno"].copy()
         hh["flag"] = 0
@@ -489,8 +489,8 @@ def convert_format(config):
             trip["new_hhno"] = trip["new_hhno"].fillna(-1).astype("int64")
 
             hh_day = hh[
-                hh["household_id_elmer"].isin(
-                    trip.loc[trip["day"] == day, "household_id_elmer"]
+                hh["hhid_elmer"].isin(
+                    trip.loc[trip["day"] == day, "hhid_elmer"]
                 )
             ].copy()
             hh_day["new_hhno"] = (hh_day["hhno"].astype("int") * 10 + day).astype("int")
@@ -499,8 +499,8 @@ def convert_format(config):
             # Only keep the renamed multi-day households and persons
 
             person_day = person[
-                person["household_id_elmer"].isin(
-                    trip.loc[trip["day"] == day, "household_id_elmer"]
+                person["hhid_elmer"].isin(
+                    trip.loc[trip["day"] == day, "hhid_elmer"]
                 )
             ].copy()
             person_day["new_hhno"] = (
@@ -523,6 +523,9 @@ def convert_format(config):
         person.rename(columns={"new_hhno": "hhno"}, inplace=True)
         hh.rename(columns={"new_hhno": "hhno"}, inplace=True)
         trip.rename(columns={"new_hhno": "hhno"}, inplace=True)
+
+        # Write lookup between new IDs and original Elmer IDs
+        hh[['hhid_elmer','hhno']].to_csv(os.path.join(config['output_dir'], "hhid_hhno_mapping.csv"), index=False)
 
         if config["write_debug_files"] == True:
             # Temporarily write file to disk so we can reload for debugging

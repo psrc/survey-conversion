@@ -13,7 +13,7 @@ input_dir = 'daysim/inputs/2023'
 output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
 
 # Specify which components to run
-run_locate_parcels = true
+run_locate_parcels = false
 run_convert_format = true
 run_data_validation = true
 run_attach_skims = true
