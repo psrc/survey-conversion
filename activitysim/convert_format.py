@@ -27,79 +27,35 @@ from modules import util, convert, tours, days
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
-
-def total_persons_to_hh(
-    hh,
-    person,
-    daysim_field,
-    filter_field,
-    filter_field_list,
-    hhid_col="hhno",
-    wt_col="hhexpfac",
-):
-    """Use person field to calculate total number of person in a household for a given field
-    e.g., total number of full-time workers. This is a Daysim-specific need."""
-
-    df = person[person[filter_field].isin(filter_field_list)]
-    df = df.groupby(hhid_col).count().reset_index()[[wt_col, hhid_col]]
-    df.rename(columns={wt_col: daysim_field}, inplace=True)
-
-    hh.drop(daysim_field, inplace=True, axis=1)
-
-    # Join to households
-    hh = pd.merge(hh, df, how="left", on=hhid_col)
-    hh[daysim_field].fillna(0, inplace=True)
-
-    return hh
-
-
 def process_household_file(hh, person, df_lookup, config, logger):
     """Convert household columns and generate data from person table"""
 
     expr_df = pd.read_csv(os.path.join(config["input_dir"], "hh_expr.csv"))
+
+    person_type_dict = config['person_type_dict']
+
+    # For each household, calculate total number of people in each person_type
+    person_type_field = "ptype"
+    hhid_col = "household_id"
+    for person_type in person[person_type_field].unique():
+        df = person[person["ptype"] == person_type]
+        df = df.groupby('household_id')['household_id'].count()
+        df.name = person_type_dict[str(person_type)]
+
+        # Join to households
+        hh = pd.merge(hh, df, how="left", left_on='household_id', right_index=True)
+        hh[person_type_dict[str(person_type)]].fillna(0, inplace=True)
+        hh[person_type_dict[str(person_type)]] = hh[person_type_dict[str(person_type)]].astype(
+            "int"
+        )
 
     # Apply expression file input
     hh = convert.process_expression_file(
         hh, expr_df, config["hh_columns"], df_lookup[df_lookup["table"] == "household"]
     )
 
-    # Workers in Household from Person File (hhwkrs)
-    hh = total_persons_to_hh(
-        hh,
-        person,
-        daysim_field="hhwkrs",
-        filter_field="pwtyp",
-        filter_field_list=[1, 2],
-        hhid_col="hhno",
-        wt_col="psexpfac",
-    )
-
-    # Workers by type in household
-    for hh_field, pwtyp_filter in config["pwtyp_map"].items():
-        hh = total_persons_to_hh(
-            hh,
-            person,
-            daysim_field=hh_field,
-            filter_field="pwtyp",
-            filter_field_list=[pwtyp_filter],
-            hhid_col="hhno",
-            wt_col="psexpfac",
-        )
-
-    # Person by type in houseohld
-    for hh_field, pptyp_filter in config["pptyp_map"].items():
-        hh = total_persons_to_hh(
-            hh,
-            person,
-            daysim_field=hh_field,
-            filter_field="pptyp",
-            filter_field_list=[pptyp_filter],
-            hhid_col="hhno",
-            wt_col="psexpfac",
-        )
-
     # Remove households without parcels
-    _filter = -hh["hhparcel"].isnull()
+    _filter = -hh["home_zone_id"].isnull()
     logger.info(f"Dropped {len(hh[~_filter])} households: missing parcels")
     hh = hh[_filter]
 
@@ -112,7 +68,7 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     # Trips to/from work are considered "usual workplace" only if dtaz == workplace TAZ
     # must join person records to get usual work and school location
     df = df.merge(
-        person[["person_id", "pno", "pwpcl", "pspcl", "pwtaz", "pstaz"]],
+        person[["person_id", "PNUM", "workplace_zone_id", "school_zone_id"]],
         how="left",
         on="person_id",
     )
@@ -122,6 +78,10 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
 
     # Calculate fields using an expression file
     expr_df = pd.read_csv(os.path.join(config["input_dir"], "trip_expr.csv"))
+
+    # Start and end time
+    df["arrtm"] = df["arrival_time_hour"] * 60 + df["arrival_time_minute"]
+    df["deptm"] = df["depart_time_hour"] * 60 + df["depart_time_minute"]
 
     # Select only weekday trips (M-Th)
     df = convert.apply_filter(
@@ -140,49 +100,6 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
         "missing departure/arrival time",
     )
 
-    # Start and end time
-    df["arrtm"] = df["arrival_time_hour"] * 60 + df["arrival_time_minute"]
-    df["deptm"] = df["depart_time_hour"] * 60 + df["depart_time_minute"]
-
-    # Calculate start of next trip (ENDACTTM: trip destination activity end time)
-    df["endacttm"] = df["duration_minutes"] + df["arrtm"]
-
-    # Daysim-specific need: add pathtype by analyzing transit submode
-    # FIXME: Note that this field doesn't exist for some trips, should really be analyzed by grouping on the trip day or tour
-    # FIXME: this is slow, vectorize
-    df["pathtype"] = 1
-    for index, row in df.iterrows():
-        if len(
-            [
-                i
-                for i in list(row[["mode_1", "mode_2", "mode_3", "mode_4"]].values)
-                if i in config["transit_mode_list"]
-            ]
-        ):
-            # ferry or water taxi
-            if (
-                "Ferry or water taxi"
-                in row[["mode_1", "mode_2", "mode_3", "mode_4"]].values
-            ):
-                df.loc[index, "pathtype"] = 7
-            # commuter rail
-            elif (
-                "Commuter rail (Sounder, Amtrak)"
-                in row[["mode_1", "mode_2", "mode_3", "mode_4"]].values
-            ):
-                df.loc[index, "pathtype"] = 6
-            # 'Urban rail (e.g., Link light rail, monorail)'
-            elif [
-                "Urban Rail (e.g., Link light rail, monorail)"
-                or "Other rail (e.g., streetcar)"
-            ] in row[["mode_1", "mode_2", "mode_3", "mode_4"]].values:
-                df.loc[index, "pathtype"] = 4
-            else:
-                df.loc[index, "pathtype"] = 3
-
-            # FIXME!!!
-            # Note that we also need to include KnR and TNC?
-
     df = convert.process_expression_file(
         df, expr_df, config["trip_columns"], df_lookup[df_lookup["table"] == "trip"]
     )
@@ -191,7 +108,7 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     df = convert.apply_filter(
         df,
         "trips",
-        df["deptm"] >= 0,
+        df["depart"] >= 0,
         logger,
         "trips started before 0 minutes after midnight",
     )
@@ -199,27 +116,23 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     df = convert.apply_filter(
         df,
         "trips",
-        (-df["trexpfac"].isnull()) & (df["trexpfac"] > 0),
+        (-df["trip_weight"].isnull()) & (df["trip_weight"] > 0),
         logger,
         "no or null weight",
     )
 
-    for col in ["opurp", "dpurp"]:
+    for col in ["origin", "destination", "depart"]:
         df = convert.apply_filter(
             df, "trips", (df[col] >= 0), logger, "missing or unusable " + col
         )
 
-    # if arrtm/deptm > 24*60, subtract that value to normalize to a single day
-    for colname in ["arrtm", "deptm"]:
-        for i in range(2, int(np.ceil(df[colname] / (24 * 60)).max()) + 1):
-            filter = (df[colname] > (24 * 60)) & (df[colname] < (24 * 60) * i)
-            df.loc[filter, colname] = df.loc[filter, colname] - 24 * 60 * (i - 1)
+    # if arrtm/deptm > 24*60, subtract that
 
     df = convert.apply_filter(
         df,
         "trips",
         ~(
-            (df["otaz"] == df["dtaz"])
+            (df["origin"] == df["destination"])
             & (df["opurp"] == df["dpurp"])
             & (df["opurp"] == 1)
         ),
@@ -228,7 +141,7 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     )
 
     # Filter null trips
-    for col in ["mode", "opurp", "dpurp", "otaz", "dtaz"]:
+    for col in ["trip_mode", "opurp", "dpurp", "origin", "destination"]:
         df = convert.apply_filter(
             df, "trips", -df[col].isnull(), logger, col + " is null"
         )
@@ -253,35 +166,31 @@ def build_tour_file(trip, person, config, logger):
     trip = convert.apply_filter(
         trip,
         "trips",
-        -((trip["opurp"] == trip["dpurp"]) & (trip["opurp"] == 0)),
+        -((trip["opurp"] == trip["dpurp"]) & (trip["opurp"] == 'Home')),
         logger,
         "trips have same origin/destination of home",
-    )
-
-    trip = convert.apply_filter(
-        trip,
-        "trips",
-        (((trip["dpurp"] >= 0)) | (trip["opurp"] >= 0)),
-        logger,
-        "trips missing purpose",
     )
 
     # Reset the index
     trip = trip.reset_index()
 
+    # Instantiate trip
+    df_mapping = pd.read_csv(r'C:\Workspace\survey-conversion\activitysim\inputs\2023\mapping.csv')
+    trip = convert.map_to_class(trip, df_mapping)
+
     # Build tour file; return df of tours and list of trips part of incomplete tours
     tour, bad_trips = tours.create(trip, error_dict, config)
 
     # After tour file is created, apply expression file for tours
-    expr_df = pd.read_csv(os.path.join(config["input_dir"], "tour_expr.csv"))
+    # expr_df = pd.read_csv(os.path.join(config["input_dir"], "tour_expr.csv"))
 
-    tour = convert.process_expression_file(tour, expr_df, config["tour_columns"])
+    # tour = convert.process_expression_file(tour, expr_df, config["tour_columns"])
 
-    # Assign weight toexpfac as hhexpfac (getting it from psexpfac, which is the same as hhexpfac)
+    # Assign weight tour_weight as hhexpfac (getting it from person_weight, which is the same as hhexpfac)
     tour = tour.merge(
-        person[["unique_person_id", "psexpfac"]], on="unique_person_id", how="left"
+        person[["unique_person_id", "person_weight"]], on="unique_person_id", how="left"
     )
-    tour.rename(columns={"psexpfac": "toexpfac"}, inplace=True)
+    tour.rename(columns={"person_weight": "tour_weight"}, inplace=True)
 
     # remove the trips that weren't included in the tour file
     _filter = -trip["trip_id"].isin(bad_trips)
@@ -291,13 +200,11 @@ def build_tour_file(trip, person, config, logger):
         os.path.join(config["output_dir"], "bad_trips.csv")
     )
 
-    trip = trip[config["trip_columns"] + ["unique_person_id", "hhid_elmer"]]
-
     return tour, trip, error_dict
 
 
 def process_household_day(tour, hh):
-    household_day = tour.groupby(["hhno", "day"]).count().reset_index()[["hhno", "day"]]
+    household_day = tour.groupby(["household_id", "day"]).count().reset_index()[["household_id", "day"]]
 
     # add day of week lookup
     household_day["dow"] = household_day["day"]
@@ -307,15 +214,15 @@ def process_household_day(tour, hh):
         household_day[col] = 0
 
     # Add expansion factor
-    household_day = household_day.merge(hh[["hhno", "hhexpfac"]], on="hhno", how="left")
-    household_day.rename(columns={"hhexpfac": "hdexpfac"}, inplace=True)
+    household_day = household_day.merge(hh[["household_id", "hh_weight"]], on="household_id", how="left")
+    household_day.rename(columns={"hh_weight": "hdexpfac"}, inplace=True)
 
     return household_day
 
 
 def process_person_day(tour, person, trip, hh, person_day_original_df, config):
     # Get the usual workplace column from person records
-    tour = tour.merge(person[["hhno", "pno", "pwpcl"]], on=["hhno", "pno"], how="left")
+    tour = tour.merge(person[["household_id", "PNUM", "workplace_zone_id"]], on=["household_id", "PNUM"], how="left")
 
     # Build person day file directly from tours and trips
     pday = days.create(tour, person, trip, config)
@@ -370,7 +277,7 @@ def process_person_day(tour, person, trip, hh, person_day_original_df, config):
     # Add person day records of no travel
     # Get the unique person ID to merge with person records
     person_day_original_df = person_day_original_df.merge(
-        person[["person_id", "hhno", "pno", "unique_person_id"]],
+        person[["person_id", "household_id", "PNUM", "unique_person_id"]],
         on="person_id",
         how="left",
     )
@@ -389,12 +296,12 @@ def process_person_day(tour, person, trip, hh, person_day_original_df, config):
     for person_rec in no_travel_df.unique_person_id.unique():
         pday.loc[person_rec, :] = 0
         pday.loc[person_rec, "no_travel_flag"] = 1
-        pday.loc[person_rec, "hhno"] = no_travel_df[
+        pday.loc[person_rec, "household_id"] = no_travel_df[
             no_travel_df["unique_person_id"] == person_rec
-        ]["hhno"].values[0]
-        pday.loc[person_rec, "pno"] = no_travel_df[
+        ]["household_id"].values[0]
+        pday.loc[person_rec, "PNUM"] = no_travel_df[
             no_travel_df["unique_person_id"] == person_rec
-        ]["pno"].values[0]
+        ]["PNUM"].values[0]
         pday.loc[person_rec, "person_id"] = no_travel_df[
             no_travel_df["unique_person_id"] == person_rec
         ]["person_id"].values[0]
@@ -409,7 +316,7 @@ def process_person_day(tour, person, trip, hh, person_day_original_df, config):
         ]["wkathome"].values[0]
         pday.loc[person_rec, "pdexpfac"] = person[
             person["unique_person_id"] == person_rec
-        ]["psexpfac"].values[0]
+        ]["person_weight"].values[0]
 
     return pday
 
@@ -464,14 +371,7 @@ def convert_format(config):
         trip_original_df, person, person_day_original_df, df_lookup, config, logger
     )
 
-
-    # Paid parking data is not available from Elmer; calculate from workplace location
-    parcel_df = pd.read_csv(config["parcel_file_dir"], delim_whitespace=True, usecols=['parcelid','parkhr_p'])
-    person = person.merge(parcel_df, left_on='pwpcl', right_on='parcelid', how='left')
-    # If person works at a parcel with paid parking, assume they pay to park
-    person.loc[person['parkhr_p'] > 0, 'ppaidprk'] = 1
-    # Note that the 2023 survey does not include data about employer-paid benefits
-    # We may have to estimate using older data...
+    # Calculate person fields using trips with updated format
 
     # Write mapping between original trip_id and tsvid used on they survey
     trip[["trip_id", "tsvid"]].to_csv(
@@ -480,21 +380,26 @@ def convert_format(config):
 
     # Create new Household and Person records for each travel day.
     # For trip/tour models we use this data as if each person-day were independent for multiple-day diaries
-    hh, trip, person = convert.create_multiday_records(hh, trip, person, "hhno", config)
+    hh, trip, person = convert.create_multiday_records(hh, trip, person, "household_id", config)
 
     # Make sure trips are properly ordered, where deptm is increasing for each person's travel day
-    trip["person_id_int"] = trip["person_id"].astype("int")
-    trip = trip.sort_values(["person_id_int", "day", "deptm"])
+    trip["person_id_int"] = trip["person_id"].astype("int64")
+    trip = trip.sort_values(["person_id_int", "day", "depart"])
     trip = trip.reset_index()
 
     # Use unique person ID since the Elmer person_id has been copied for multiple days
-    trip = convert.unique_person_id(trip)
-    person = convert.unique_person_id(person)
+    trip["unique_person_id"] = trip["household_id"].astype("int64").astype("str") + trip[
+        "PNUM"
+    ].astype("int64").astype("str")
+    person["unique_person_id"] = person["household_id"].astype("int64").astype("str") + person[
+        "PNUM"
+    ].astype("int64").astype("str")
 
     # Create tour file and update the trip file with tour info
     tour, trip, error_dict = build_tour_file(trip, person, config, logger)
-    person = convert.unique_person_id(tour)
-
+        
+    # Create household day file
+    tour.rename(columns={'hhno': 'household_id', 'pno': 'PNUM'}, inplace=True)
     household_day = process_household_day(tour, hh)
 
     error_dict_df = pd.DataFrame(
@@ -508,12 +413,21 @@ def convert_format(config):
         tour, person, trip, hh, person_day_original_df, config
     )
 
+    # FIXME!!
+    # For person file, calculate whether parking was paid at the workplace
+
+    # FIXME!!
+    # Excercise trips are coded as -88, make sure those are excluded (?)
+
     # Set all travel days to 1
     trip["day"] = 1
     tour["day"] = 1
     household_day["day"] = 1
     household_day["dow"] = 1
     person_day["day"] = 1
+
+    # Activitysim significant clean up at this point
+    
 
     trip[["travdist", "travcost", "travtime"]] = "-1.00"
 

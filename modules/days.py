@@ -28,8 +28,8 @@ def create(tour, person, trip, config):
                 pday.loc[person_rec, "hhno"] = day_tour["hhno"].iloc[0]
                 pday.loc[person_rec, "pno"] = day_tour["pno"].iloc[0]
                 pday.loc[person_rec, "person_id"] = day_tour["person_id"].iloc[0]
-                pday.loc[person_rec, "household_id_elmer"] = day_tour[
-                    "household_id_elmer"
+                pday.loc[person_rec, "hhid_elmer"] = day_tour[
+                    "hhid_elmer"
                 ].iloc[0]
                 pday.loc[person_rec, "unique_person_id"] = person_rec
                 pday.loc[person_rec, "day"] = day

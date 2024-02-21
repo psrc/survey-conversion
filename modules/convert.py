@@ -24,6 +24,19 @@ from sqlalchemy.engine import URL
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
+def map_to_class(df_trip, df_mapping):
+    df_mapping = df_mapping[~df_mapping['model_variable'].isnull()]
+    df_mapping = df_mapping.set_index('model_variable')
+    map_dict = df_mapping.to_dict()['class_variable']
+
+    df_trip.rename(columns=map_dict, inplace=True)
+
+    return df_trip
+
+def unique_person_id(df):
+    df["unique_person_id"] = df["hhno"].astype("int64").astype("str") + df[
+        "pno"
+    ].astype("int64").astype("str")
 
 def apply_filter(df, df_name, filter, logger, msg):
     """Apply a filter to trim df, record changes in log file."""
@@ -119,7 +132,7 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
     Tour departure is always the departure time from the first trip.
     """
 
-    for col in ["hhno", "household_id_elmer", "pno", "person_id", "unique_person_id"]:
+    for col in ["hhno", "hhid_elmer", "pno", "person_id", "unique_person_id"]:
         tour_dict[tour_id][col] = df.iloc[0][col]
 
     tour_dict[tour_id]["day"] = day
@@ -127,8 +140,9 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
 
     # First trip row contains departure time and origin info
     tour_dict[tour_id]["tlvorig"] = df.iloc[0]["deptm"]
-    tour_dict[tour_id]["totaz"] = df.iloc[0]["otaz"]
-    tour_dict[tour_id]["topcl"] = df.iloc[0]["opcl"]
+    tour_dict[tour_id]["totaz"] = df.iloc[0]['otaz']
+    if "opcl" in df.columns:
+        tour_dict[tour_id]["topcl"] = df.iloc[0]['opcl']
     tour_dict[tour_id]["toadtyp"] = df.iloc[0]["oadtyp"]
 
     # Last trip row contains return info
@@ -141,19 +155,20 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
     tour_dict[tour_id]["pdpurp"] = df.loc[primary_index]["dpurp"]
     tour_dict[tour_id]["tlvdest"] = df.loc[primary_index]["deptm"]
     tour_dict[tour_id]["tdtaz"] = df.loc[primary_index]["dtaz"]
-    tour_dict[tour_id]["tdpcl"] = df.loc[primary_index]["dpcl"]
+    if "dpcl" in df.columns:
+        tour_dict[tour_id]["tdpcl"] = df.loc[primary_index]["dpcl"]
     tour_dict[tour_id]["tdadtyp"] = df.loc[primary_index]["dadtyp"]
     tour_dict[tour_id]["tardest"] = df.iloc[-1]["arrtm"]
     tour_dict[tour_id]["tripsh1"] = len(df.loc[0:primary_index])
     tour_dict[tour_id]["tripsh2"] = len(df.loc[primary_index + 1 :])
-
     tour_dict[tour_id]["tmodetp"] = assign_tour_mode(df, tour_dict, tour_id, config)
 
     # path type
     # Pathtype is defined by a heirarchy, where highest number is chosen first
     # Ferry > Commuter rail > Light Rail > Bus > Auto Network
     # Note that tour pathtype is different from trip path type (?)
-    tour_dict[tour_id]["tpathtp"] = df.loc[df["mode"].idxmax()]["pathtype"]
+    if "pathtype" in df.columns:
+        tour_dict[tour_id]["tpathtp"] = df.loc[df["mode"].idxmax()]["pathtype"]
 
     return tour_dict
 
@@ -190,3 +205,59 @@ def update_trip_data(trip, df, tour_id):
     trip.loc[trip["trip_id"].isin(df["trip_id"].values), "tour"] = tour_id
 
     return trip
+
+def create_multiday_records(hh, trip, person, hhid_col, config):
+
+    hh["hhid_elmer"] = hh[hhid_col].copy()
+    trip["hhid_elmer"] = trip[hhid_col].copy()
+    person["hhid_elmer"] = person[hhid_col].copy()
+
+    hh["new_hhno"] = hh[hhid_col].copy()
+    hh["flag"] = 0
+
+    for day in trip["day"].unique():
+        trip.loc[trip["day"] == day, "new_hhno"] = (
+            trip[hhid_col].astype("int") * 10 + int(day)
+        )
+        trip["new_hhno"] = trip["new_hhno"].fillna(-1).astype("int64")
+
+        hh_day = hh[
+            hh["hhid_elmer"].isin(
+                trip.loc[trip["day"] == day, "hhid_elmer"]
+            )
+        ].copy()
+        hh_day["new_hhno"] = (hh_day[hhid_col].astype("int") * 10 + int(day)).astype("int")
+        hh_day["flag"] = 1
+        hh = hh.append(hh_day)
+        # Only keep the renamed multi-day households and persons
+
+        person_day = person[
+            person["hhid_elmer"].isin(
+                trip.loc[trip["day"] == day, "hhid_elmer"]
+            )
+        ].copy()
+        person_day["new_hhno"] = (
+            person_day[hhid_col].astype("int") * 10 + int(day)
+        ).astype("int")
+        person_day["flag"] = 1
+        person = person.append(person_day)
+
+    # Remove duplicates of the original cloned households and persons
+    person = person[person["flag"] == 1]
+    hh = hh[hh["flag"] == 1]
+
+    hh = hh[~hh.duplicated()]
+    person = person[~person.duplicated()]
+
+    person.drop(hhid_col, axis=1, inplace=True)
+    hh.drop(hhid_col, axis=1, inplace=True)
+    trip.drop(hhid_col, axis=1, inplace=True)
+
+    person.rename(columns={"new_hhno": hhid_col}, inplace=True)
+    hh.rename(columns={"new_hhno": hhid_col}, inplace=True)
+    trip.rename(columns={"new_hhno": hhid_col}, inplace=True)
+
+    # Write lookup between new IDs and original Elmer IDs
+    hh[['hhid_elmer',hhid_col]].to_csv(os.path.join(config['output_dir'], "hhid_hhno_mapping.csv"), index=False)
+
+    return hh, trip, person

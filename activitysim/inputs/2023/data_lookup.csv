@@ -1,0 +1,180 @@
+﻿table,elmer_name,elmer_value,model_value,model_name
+household,res_type,Single-family house (detached house),1,hrestype
+household,res_type,Townhouse (attached house),2,hrestype
+household,res_type,Building with 3 or fewer apartments/condos,2,hrestype
+household,res_type,Building with 4 or more apartments/condos,3,hrestype
+household,res_type,Mobile home/trailer,4,hrestype
+household,res_type,Dorm or institutional housing,5,hrestype
+household,res_type,"Other (including boat, RV, van, etc.)",6,hrestype
+household,res_type,Missing Response,9,hrestype
+household,rent_own,Own/paying mortgage,1,hownrent
+household,rent_own,Rent,2,hownrent
+household,rent_own,Provided by job or military,3,hownrent
+household,rent_own,Prefer not to answer,3,hownrent
+household,rent_own,Other,3,hownrent
+household,rent_own,"Provided by family, relative, or friend without payment or rent",3,hownrent
+household,rent_own,Missing Response,3,hownrent
+household,hhincome_detailed,"Under $10,000",5000,income
+household,hhincome_detailed,"$10,000-$24,999",17500,income
+household,hhincome_detailed,"$25,000-$34,999",30000,income
+household,hhincome_detailed,"$35,000-$49,999",42500,income
+household,hhincome_detailed,"$50,000-$74,999",62500,income
+household,hhincome_detailed,"$75,000-$99,999",87500,income
+household,hhincome_detailed,"$100,000-$149,999",125000,income
+household,hhincome_detailed,"$150,000-$199,999",175000,income
+household,hhincome_detailed,"$200,000-$249,999",225000,income
+household,hhincome_detailed,"$250,000 or more",250000,income
+household,hhincome_detailed,Prefer not to answer,-1,income
+household,hhincome_detailed,Missing: Skip Logic,-1,income
+household,hhsize,1 person,1,hhsize
+household,hhsize,2 people,2,hhsize
+household,hhsize,3 people,3,hhsize
+household,hhsize,4 people,4,hhsize
+household,hhsize,5 people,5,hhsize
+household,hhsize,6 people,6,hhsize
+household,hhsize,7 people,7,hhsize
+household,hhsize,8 people,8,hhsize
+household,hhsize,9 people,9,hhsize
+household,hhsize,10 people,10,hhsize
+household,hhsize,11 people,11,hhsize
+household,hhsize,12 people,12,hhsize
+household,hhsize,13 or more people,13,hhsize
+household,vehicle_count,0 (no vehicles),0,auto_ownership
+household,vehicle_count,1 vehicle,1,auto_ownership
+household,vehicle_count,2 vehicles,2,auto_ownership
+household,vehicle_count,3 vehicles,3,auto_ownership
+household,vehicle_count,4 vehicles,4,auto_ownership
+household,vehicle_count,5 vehicles,5,auto_ownership
+household,vehicle_count,6 vehicles,6,auto_ownership
+household,vehicle_count,7 vehicles,7,auto_ownership
+household,vehicle_count,8 vehicles,8,auto_ownership
+household,vehicle_count,9 vehicles,9,auto_ownership
+household,vehicle_count,10 or more vehicles,10,auto_ownership
+person,age,Under 5 years old,2,age
+person,age,5-11 years,8,age
+person,age,12-15 years,14,age
+person,age,16-17 years,17,age
+person,age,18-24 years,21,age
+person,age,25-34 years,30,age
+person,age,35-44 years,40,age
+person,age,45-54 years,50,age
+person,age,55-64 years,60,age
+person,age,65-74 years,70,age
+person,age,75-84 years,80,age
+person,age,85 or years older,85,age
+person,gender,Boy/Man (cisgender or transgender),1,sex
+person,gender,Girl/Woman (cisgender or transgender),2,sex
+person,gender,Non-binary/Something else fits better,9,sex
+person,gender,Non-Binary,9,sex
+person,gender,Another,9,sex
+person,gender,Missing Response,9,sex
+person,gender,Prefer not to answer,9,sex
+person,student,"No, not a student",0,student
+person,student,Part-time student,2,student
+person,student,Full-time student,1,student
+person,student,"Part-time student, currently attending some or all classes in-person",2,student
+person,student,"Part-time student, ONLY online classes",0,student
+person,student,"Full-time student, currently attending some or all classes in-person",1,student
+person,student,"Full-time student, ONLY online classes",0,student
+person,student,Missing Response,0,student
+person,race_category,'White Only',1,race
+person,race_category,'African American',2,race
+person,race_category,'Asian',3,race
+person,race_category,'Other',4,race
+person,race_category,'Hispanice',5,race
+person,race_category,'Child',8,race
+person,race_category,'Missing',-1,race
+trip,origin_purpose,Not imputable,-99,opurp
+trip,origin_purpose,Went home,"Home",opurp
+trip,origin_purpose,"Went to school/daycare (e.g., daycare, K-12, college)","school",opurp
+trip,origin_purpose,"Dropped off/picked up someone (e.g., son at a friend's house, spouse at bus stop)","escort",opurp
+trip,origin_purpose,Went to primary workplace,"work",opurp
+trip,origin_purpose,"Went to work-related place (e.g., meeting, second job, delivery)","work",opurp
+trip,origin_purpose,Volunteering,"social",opurp
+trip,origin_purpose,Went to other work-related activity,"work",opurp
+trip,origin_purpose,Attend K-12 school,"school",opurp
+trip,origin_purpose,Attend college/university,"school",opurp
+trip,origin_purpose,"Attend other type of class (e.g., cooking class)","othdiscr",opurp
+trip,origin_purpose,"Attend other education-related activity (e.g., field trip)","othdiscr",opurp
+trip,origin_purpose,Attend vocational education class,"othdiscr",opurp
+trip,origin_purpose,Attend daycare or preschool,"school",opurp
+trip,origin_purpose,Went grocery shopping,"shopping",opurp
+trip,origin_purpose,Got gas,"shopping",opurp
+trip,origin_purpose,"Went to other shopping (e.g., mall, pet store)","shopping",opurp
+trip,origin_purpose,"Conducted personal business (e.g., bank, post office)","othmaint",opurp
+trip,origin_purpose,"Went to medical appointment (e.g., doctor, dentist)","othmaint",opurp
+trip,origin_purpose,"Other activity at workplace only (e.g., attend meeting, pick-up or drop-off item)","work",opurp
+trip,origin_purpose,Pick someone up,"escort",opurp
+trip,origin_purpose,Drop someone off,"escort",opurp
+trip,origin_purpose,"Accompany someone only (e.g., go along for the ride)","escort",opurp
+trip,origin_purpose,BOTH pick up AND drop off,"escort",opurp
+trip,origin_purpose,Went to restaurant to eat/get take-out,"eatout",opurp
+trip,origin_purpose,"Went to exercise (e.g., gym, walk, jog, bike ride)",-88,opurp
+trip,origin_purpose,"Attended social event (e.g., visit with friends, family, co-workers)","social",opurp
+trip,origin_purpose,"Attended recreational event (e.g., movies, sporting event)","social",opurp
+trip,origin_purpose,Went to religious/community/volunteer activity,"social",opurp
+trip,origin_purpose,Vacation/Traveling (rMove only,"social",opurp
+trip,origin_purpose,"Went to a family activity (e.g., child's softball game)","social",opurp
+trip,origin_purpose,"Transferred to another mode of transportation (e.g., change from ferry to bus)","change_mode",opurp
+trip,origin_purpose,Other appointment/errands,"othmaint",opurp
+trip,origin_purpose,Other social/leisure,"social",opurp
+trip,origin_purpose,Other reason,"othdiscr",opurp
+trip,origin_purpose,"Went to another residence (e.g., someone else's home, second home)","social",opurp
+trip,origin_purpose,"Went to temporary lodging (e.g., hotel, vacation rental)","social",opurp
+trip,origin_purpose,Missing Response,-99,opurp
+trip,dest_purpose,Not imputable,-99,dpurp
+trip,dest_purpose,Went home,"Home",dpurp
+trip,dest_purpose,"Went to work, work-related, volunteer-related","work",dpurp
+trip,dest_purpose,Attended school/class,"school",dpurp
+trip,dest_purpose,"Appointment, shopping, or errands (e.g., gas)","othmaint",dpurp
+trip,dest_purpose,"Dropped off, picked up, or accompanied another person","escort",dpurp
+trip,dest_purpose,"Went to school/daycare (e.g., daycare, K-12, college)","school",dpurp
+trip,dest_purpose,"Social, leisure, religious, entertainment activity","social",dpurp
+trip,dest_purpose,"Dropped off/picked up someone (e.g., son at a friend's house, spouse at bus stop)","escort",dpurp
+trip,dest_purpose,Went to primary workplace,"work",dpurp
+trip,dest_purpose,"Went to work-related activity (e.g., meeting, delivery, worksite)","work",dpurp
+trip,dest_purpose,Volunteering,"social",dpurp
+trip,dest_purpose,Went to other work-related activity,"work",dpurp
+trip,dest_purpose,Attend K-12 school,"school",dpurp
+trip,dest_purpose,Attend college/university,"school",dpurp
+trip,dest_purpose,"Attend other type of class (e.g., cooking class)","othdiscr",dpurp
+trip,dest_purpose,"Attend other education-related activity (e.g., field trip)","othdiscr",dpurp
+trip,dest_purpose,Attend vocational education class,"othdiscr",dpurp
+trip,dest_purpose,Attend daycare or preschool,"school",dpurp
+trip,dest_purpose,Grocery shopping,"shopping",dpurp
+trip,dest_purpose,Got gas,"shopping",dpurp
+trip,dest_purpose,"Other shopping (e.g., mall, pet store)","shopping",dpurp
+trip,dest_purpose,"Personal business (e.g., bank, post office)","othmaint",dpurp
+trip,dest_purpose,"Medical appointment (e.g., doctor, dentist)","othmaint",dpurp
+trip,dest_purpose,"Other activity only (e.g., attend meeting, pick-up or drop-off item)","othmaint",dpurp
+trip,dest_purpose,Pick someone up,"escort",dpurp
+trip,dest_purpose,Drop someone off,"escort",dpurp
+trip,dest_purpose,"Accompany someone only (e.g., go along for the ride)","escort",dpurp
+trip,dest_purpose,BOTH pick up AND drop off,"escort",dpurp
+trip,dest_purpose,Went to restaurant to eat/get take-out,"eatout",dpurp
+trip,dest_purpose,"Exercise or recreation (e.g., gym, jog, bike, walk dog)",-88,dpurp
+trip,dest_purpose,"Social event (e.g., visit friends, family, co-workers)","social",dpurp
+trip,dest_purpose,"Recreational event (e.g., movies, sporting event)","social",dpurp
+trip,dest_purpose,Religious/civic/volunteer activity,"social",dpurp
+trip,dest_purpose,Vacation/Traveling (rMove only),"social",dpurp
+trip,dest_purpose,"Went to a family activity (e.g., child's softball game)","social",dpurp
+trip,dest_purpose,"Changed or transferred mode (e.g., change from ferry to bus)",change_mode,dpurp
+trip,dest_purpose,Other appointment/errands,"othmaint",dpurp
+trip,dest_purpose,Other social/leisure,"social",dpurp
+trip,dest_purpose,Other reason,"othdiscr",dpurp
+trip,driver,Driver,1,dorp
+trip,driver,Passenger,2,dorp
+trip,driver,Both (switched drivers during trip),3,dorp
+trip,driver,Missing: Skip Logic,3,dorp
+trip,travel_dow,Monday,1,day
+trip,travel_dow,Tuesday,2,day
+trip,travel_dow,Wednesday,3,day
+trip,travel_dow,Thursday,4,day
+trip,travel_dow,Friday,5,day
+trip,travel_dow,Saturday,6,day
+trip,travel_dow,Sunday,7,day
+trip,travelers_total,1 traveler,1,travelers
+trip,travelers_total,2 travelers,2,travelers
+trip,travelers_total,3 travelers,3,travelers
+trip,travelers_total,4 travelers,4,travelers
+trip,travelers_total,5+ travelers,5,travelers

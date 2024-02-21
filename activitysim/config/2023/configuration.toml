@@ -7,20 +7,22 @@ elmer_person_table = "HHSurvey.v_person_2023_modeling"
 elmer_hh_table = "HHSurvey.v_household_2023_modeling"
 elmer_person_day_table = "HHSurvey.v_day_2023_modeling"
 
-input_dir = 'daysim/inputs/2023'
+input_dir = 'activitysim/inputs/2023'
 
 # Project Output Directory
-output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
+output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format'
 
 # Specify which components to run
 run_locate_parcels = false
 run_convert_format = true
-run_data_validation = true
-run_attach_skims = true
+run_data_validation = false
+run_attach_skims = false
 
 debug_person_id = []
 # debug_person_id = ['1710030291']    # List of person IDs to iterate over in tour creation, empty list to process all
-
+# debug = true
+debug_tours = false
+write_debug_files = true
 
 ################################################
 # Parcel Location (locate_parcels.py) Config
@@ -51,6 +53,22 @@ hh_max_dist = 2640    # half mile for distance near parcel with households
 school_max_dist = 5280     # mile for distance near parcel with students
 
 ################################################
+# 
+################################################
+
+hh_weight = 'hh_weight_2023'
+trip_weight = 'trip_weight_2023'
+person_weight = 'person_weight_2023'
+
+hhid = 'household_id'
+pno = 'PNUM'
+home_purp = 'Home'
+change_mode_purp = 'change_mode'
+origin = 'origin'
+dest = 'destination'
+
+
+################################################
 # Attach Skims (attach_skims.py) Config
 ################################################
 # Specify soundcast root directory to obtain skim values
@@ -60,13 +78,6 @@ run_root = 'L:/RTP_2022/final_runs/sc_rtp_2018_final/soundcast'
 # Assumed travel speeds of walk and bike modes (generated from distance skims)
 bike_speed = 10 # miles per hour
 walk_speed = 3 # miles per hour
-
-hhid = 'hhno'
-pno = 'pno'
-home_purp = 0
-change_mode_purp = 10
-origin = 'otaz'
-dest = 'dtaz'
 
 # Heirarchy order for tour mode, per DaySim docs: https://www.psrc.org/sites/default/files/2015psrc-modechoiceautomodels.pdf
 # Drive to Transit > Walk to Transit > School Bus > HOV3+ > HOV2 > SOV > Bike > Walk > Other
@@ -79,120 +90,83 @@ transit_mode_list = ['Ferry or water taxi',
                     'Other rail (e.g., streetcar)']
 
 person_columns = [
-        "hhno",
-        "pno",
-        "pptyp",
-        "pagey",
-        "pgend",
-        "pwtyp",
-        "pwpcl",
-        "pwtaz",
-        "pwautime",
-        "pwaudist",
-        "pstyp",
-        "pspcl",
-        "pstaz",
-        "psautime",
-        "psaudist",
-        "puwmode",
-        "puwarrp",
-        "puwdepp",
-        "ptpass",
-        "ppaidprk",
-        "pdiary",
-        "pproxy",
-        "psexpfac",
         "person_id",
+        "household_id",
+        "age",
+        "PNUM",
+        "sex",
+        "pemploy",
+        "pstudent",
+        "ptype",
+        "school_zone_id",
+        "workplace_zone_id",
+        "free_parking_at_work",
+        "race_category",
+        "person_id_elmer",
+        "person_weight",
     ]
-
-hh_columns = [
-        "hhno",
-        "hhsize",
-        "hhvehs",
-        "hhwkrs",
-        "hhftw",
-        "hhptw",
-        "hhret",
-        "hhoad",
-        "hhuni",
-        "hhhsc",
-        "hh515",
-        "hhcu5",
-        "hhincome",
-        "hownrent",
-        "hrestype",
-        "hhtaz",
-        "hhparcel",
-        "hhexpfac",
-        "samptype",
-    ]
+tour_columns = [
+    "tour_id",
+    "person_id",
+    "household_id",
+    "tour_type",
+    "tour_category",
+    "destination",
+    "origin",
+    "start",
+    "end",
+    "tour_mode",
+    "parent_tour_id",
+    "household_id_elmer",
+]
 
 trip_columns = [
-        "hhno",
-        "pno",
-        "day",
-        "tour",
-        "half",
-        "tseg",
-        "tsvid",
-        "opurp",
-        "dpurp",
-        "mode",
-        "deptm",
-        "otaz",
-        "opcl",
-        "dtaz",
-        "dpcl",
-        "oadtyp",
-        "dadtyp",
-        "arrtm",
-        "trexpfac",
-        "travcost",
-        "travtime",
-        "travdist",
-        "pathtype",
-        "mode_acc",
-        "dorp",
-        "endacttm",
-        "trip_id",
-        "person_id",
-    ]
+    "tsvid",
+    "trip_id",
+    "person_id",
+    "PNUM",
+    "household_id",
+    "day",
+    "tour_id",
+    "outbound",
+    "purpose",
+    "opurp",
+    "dpurp",
+    "origin",
+    "destination",
+    "oadtyp",
+    "dadtyp",
+    "depart",
+    "deptm",
+    "arrtm",
+    "trip_mode",
+    "trip_id_elmer",
+    "trip_weight",
+    "household_id_elmer",
+]
 
-tour_columns = [
-        "hhno",
-        "pno",
-        "day",
-        "tour",
-        "jtindex",
-        "parent",
-        "subtrs",
-        "pdpurp",
-        "tlvorig",
-        "tardest",
-        "tlvdest",
-        "tarorig",
-        "toadtyp",
-        "tdadtyp",
-        "topcl",
-        "totaz",
-        "tdpcl",
-        "tdtaz",
-        "tmodetp",
-        "tpathtp",
-        "tautotime",
-        "tautocost",
-        "tautodist",
-        "tripsh1",
-        "tripsh2",
-        "phtindx1",
-        "phtindx2",
-        "fhtindx1",
-        "fhtindx2",
-        "toexpfac",
-        "person_id",
-        "unique_person_id",
-        "hhid_elmer",
-    ]
+hh_columns = [
+    "household_id",
+    "home_zone_id",
+    "income",
+    "hhsize",
+    "HHT",
+    "auto_ownership",
+    "num_workers",
+    "hh_race_category",
+    "household_id_elmer",
+    "hh_weight",
+]
+
+[person_type_dict]
+1 = "hhftw"  # full time workers
+2 = "hhptw"  # part time workers
+3 = "hhret"  # retirees
+4 = "hhoad"  # other adults,
+5 = "hhuni"  # university students
+6 = "hhhsc"  # high school students
+7 = "hh515"  # k12 age 5-15,
+8 = "hhcu5"  # age under 5
 
 [pwtyp_map]
 'hhftw' = 1

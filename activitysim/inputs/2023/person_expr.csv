@@ -1,0 +1,42 @@
+﻿index,table,filter,result_col,result_value,description
+1,df,df['work_lat'] > 0,workplace_zone_id,0
+2,df,:,age,df['age'].astype('int'),
+2,df,:,person_weight,1,FIXME:fill in with appropriate column when available
+3,df,:,student,df['student'].astype('int'),
+5,df,(df['school_loc_lat'] > 0) & (df['student'].isin([1,2])),school_zone_id,9999999999999
+9,df,df['employment'] == 'Employed full time (35+ hours/week, paid)',ptype,1,Full time worker
+10,df,df['employment'].isin(['Employed part time (fewer than 35 hours/week, paid)', 'Self-employed']),ptype,2,Part time worker (includes part time worker and self-employed people
+11,df,(df['jobs_count'] == "Missing: Skip Logic") & (df['age']<65) & (df['student'] == 3),ptype,4,Non working adult age <65
+12,df,(df['jobs_count'] == "Missing: Skip Logic") & (df['age']>=65),ptype,5, Non-working adult age 65+
+13,df,(df['age'] >= 16) & (df['schooltype'].isin(['K-12 public school','K-12 private school'])),ptype,6,driving age student
+14,df,(df['age'] < 16) & (df['schooltype'].isin(['K-12 public school','K-12 private school','Preschool'])),ptype,7,non-driving age student
+15,df,(df['schooltype'].isin(['College, graduate, or professional school','Vocational/technical school'])) & (df['student'] != 3),ptype,3,college student
+15,df,(df['age'] > 18) & (df['student'] != 3),ptype,3,if missing schooltype but coded as a full/part-time student and over 18 set ptype as college student
+16,df,df['age'] < 5,ptype,8,child too young for school
+17,df,df['ptype'].isnull(),ptype,-1,Replace null values with -1 flag
+18,df,:,ptype,df['ptype'].astype('int'),
+19,df,:,pemploy,3,Set default value to Not in Labor Force
+20,df,df['employment'] == 'Employed full time (35+ hours/week, paid)',pemploy,1,
+21,df,df['employment'].isin(['Employed part time (fewer than 35 hours/week, paid)', 'Self-employed']),pemploy,2,
+22,df,df['age'] < 16,pemploy,3,
+23,df,:,pstudent,3,Set default student value to non-student
+24,df,df['ptype'].isin([7,6]),pstudent,1,pre-k through k12
+25,df,df['ptype']==3,pstudent,2,university/professional student
+26,df,(df['school_zone_id'] > 0) & (df['pstudent'] != 3) & (df['age'] < 18),pstudent,1,
+27,df,(df['school_zone_id'] > 0) & (df['pstudent'] != 3) & (df['age'] >= 18),pstudent,2,
+30,df,(df['ptype'] == -1) & (df['student'] ==2) & (df['age']>18),ptype,3, university student 
+32,df,(df['ptype'] == -1) & (df['pemploy'] == 3) & (df['age']<65),ptype,4,non-working adult under 65
+29,df,(df['ptype'] == -1) & (df['pemploy'] ==3) & (df['age']>=65),ptype,5,Non-worker over 65
+31,df,(df['ptype'] == -1) & (df['student'] < 3) & (df['age']<=18),ptype,6,high school student
+33,df,:,free_parking_at_work,0,set default parking at work to 0
+36,df,(df['workplace_zone_id'] > 0) & (df['pemploy'] >= 3) & (df['age'] >= 16),pemploy,2,
+37,df,(df['ptype'] == 3) & (df['pemploy'] == 1),pemploy,2,
+38,df,(df['ptype'] == 4) & (df['pemploy'] == 2),ptype,2,
+39,df,(df['ptype'] == 5) & (df['pemploy'] == 2),ptype,2,
+40,df,(df['ptype'] == 6) & (df['pstudent'] == 3) & (df['pemploy'] == 2),ptype,2,
+41,df,(df['age'] < 16) & (df['pstudent'] == 3),pemploy,3,
+42,df,(df['pemploy'] == 1) & (df['pstudent'].isin([1,2])),pstudent,2,
+43,df,(df['pemploy'] == 1) & (df['pstudent'].isin([1,2])),pemploy,2,
+44,df,(df['pemploy'] == 1) & (df['pstudent'].isin([1,2])),ptype,2,
+45,df,(df['pstudent'] == 3) & (df['pemploy'] == 2),ptype,2,
+28,df,:,PNUM,df['person_id'].astype('str').apply(lambda x: x[-2:]).astype('int'),Extract from df ID field which appends the df number to the household on the last 2 columns

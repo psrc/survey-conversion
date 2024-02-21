@@ -7,10 +7,10 @@ elmer_person_table = "HHSurvey.v_person_2023_modeling"
 elmer_hh_table = "HHSurvey.v_household_2023_modeling"
 elmer_person_day_table = "HHSurvey.v_day_2023_modeling"
 
-input_dir = 'daysim/inputs/2023'
+input_dir = 'daysim/inputs/2017_2019'
 
 # Project Output Directory
-output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
+output_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/test'
 
 # Specify which components to run
 run_locate_parcels = false
@@ -20,7 +20,9 @@ run_attach_skims = true
 
 debug_person_id = []
 # debug_person_id = ['1710030291']    # List of person IDs to iterate over in tour creation, empty list to process all
-
+# debug = true
+debug_tours = false
+write_debug_files = true
 
 ################################################
 # Parcel Location (locate_parcels.py) Config
@@ -60,13 +62,6 @@ run_root = 'L:/RTP_2022/final_runs/sc_rtp_2018_final/soundcast'
 # Assumed travel speeds of walk and bike modes (generated from distance skims)
 bike_speed = 10 # miles per hour
 walk_speed = 3 # miles per hour
-
-hhid = 'hhno'
-pno = 'pno'
-home_purp = 0
-change_mode_purp = 10
-origin = 'otaz'
-dest = 'dtaz'
 
 # Heirarchy order for tour mode, per DaySim docs: https://www.psrc.org/sites/default/files/2015psrc-modechoiceautomodels.pdf
 # Drive to Transit > Walk to Transit > School Bus > HOV3+ > HOV2 > SOV > Bike > Walk > Other
@@ -191,7 +186,7 @@ tour_columns = [
         "toexpfac",
         "person_id",
         "unique_person_id",
-        "hhid_elmer",
+        "household_id_elmer",
     ]
 
 [pwtyp_map]

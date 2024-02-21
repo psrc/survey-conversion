@@ -48,8 +48,8 @@ def create(trip, error_dict, config):
             # First O and last D of person's travel day should be home; if not, skip this trip set
             # FIXME: consider keeping other trips that conform
             if (
-                df.groupby("unique_person_id").first()["opurp"].values[0] != 0
-            ) or df.groupby("unique_person_id").last()["dpurp"].values[0] != 0:
+                df.groupby("unique_person_id").first()["opurp"].values[0] != config['home_purp']
+            ) or df.groupby("unique_person_id").last()["dpurp"].values[0] != config['home_purp']:
                 bad_trips += df["trip_id"].tolist()
                 error_dict["first O and last D are not home"] += 1
                 continue
@@ -85,8 +85,8 @@ def create(trip, error_dict, config):
                 continue
 
             # Identify home-based tours
-            home_tours_start = df[df["opurp"] == 0]
-            home_tours_end = df[df["dpurp"] == 0]
+            home_tours_start = df[df["opurp"] == config['home_purp']]
+            home_tours_end = df[df["dpurp"] == config['home_purp']]
 
             # Skip person if they have a different number of tour starts/ends at home
             if len(home_tours_start) != len(home_tours_end):
@@ -114,7 +114,8 @@ def create(trip, error_dict, config):
                     continue
 
                 # If no other trip purposes besides home and change mode, skip
-                if _df.loc[_df["dpurp"] != 0, "dpurp"].unique()[0] == 10:
+                if _df.loc[_df["dpurp"] != config['home_purp'],
+                            "dpurp"].unique()[0] == config['change_mode_purp']:
                     bad_trips += _df["trip_id"].tolist()
                     error_dict["no purposes provided except change mode"] += 1
                     continue
@@ -217,7 +218,7 @@ def create(trip, error_dict, config):
                         # Fill out primary tour and trip data
                         for col in [
                             "hhno",
-                            "household_id_elmer",
+                            "hhid_elmer",
                             "pno",
                             "person_id",
                             "unique_person_id",
@@ -228,7 +229,8 @@ def create(trip, error_dict, config):
                         # First trip row contains departure time and origin info
                         tour_dict[tour_id]["tlvorig"] = df.iloc[0]["deptm"]
                         tour_dict[tour_id]["totaz"] = df.iloc[0]["otaz"]
-                        tour_dict[tour_id]["topcl"] = df.iloc[0]["opcl"]
+                        if "opcl" in df.columns:
+                            tour_dict[tour_id]["topcl"] = df.iloc[0]["opcl"]
                         tour_dict[tour_id]["toadtyp"] = df.iloc[0]["oadtyp"]
 
                         # Last trip row contains return info
@@ -250,25 +252,27 @@ def create(trip, error_dict, config):
                         tour_dict[tour_id]["tdtaz"] = _df.loc[main_tour_start_index][
                             "dtaz"
                         ]
-                        tour_dict[tour_id]["tdpcl"] = _df.loc[main_tour_start_index][
-                            "dpcl"
-                        ]
+                        if "dpcl" in df.columns:
+                            tour_dict[tour_id]["tdpcl"] = _df.loc[main_tour_start_index][
+                                "dpcl"
+                            ]
                         tour_dict[tour_id]["tdadtyp"] = _df.loc[main_tour_start_index][
                             "dadtyp"
                         ]
 
-                        # Pathtype is defined by a heirarchy, where highest number is chosen first
-                        # Ferry > Commuter rail > Light Rail > Bus > Auto Network
-                        # Note that tour pathtype is different from trip path type (?)
-                        subtours_excluded_df = pd.concat(
-                            [
-                                df.loc[start_row_id:main_tour_start_index],
-                                df.loc[main_tour_end_index:end_row_id],
-                            ]
-                        )
-                        tour_dict[tour_id]["tpathtp"] = subtours_excluded_df.loc[
-                            subtours_excluded_df["mode"].idxmax()
-                        ]["pathtype"]
+                        if "pathtype" in df.columns:
+                            # Pathtype is defined by a heirarchy, where highest number is chosen first
+                            # Ferry > Commuter rail > Light Rail > Bus > Auto Network
+                            # Note that tour pathtype is different from trip path type (?)
+                            subtours_excluded_df = pd.concat(
+                                [
+                                    df.loc[start_row_id:main_tour_start_index],
+                                    df.loc[main_tour_end_index:end_row_id],
+                                ]
+                            )
+                            tour_dict[tour_id]["tpathtp"] = subtours_excluded_df.loc[
+                                subtours_excluded_df["mode"].idxmax()
+                            ]["pathtype"]
 
                         # Calculate tour halves, etc
                         tour_dict[tour_id]["tripsh1"] = len(
@@ -354,5 +358,8 @@ def create(trip, error_dict, config):
                 tour_id = tour_id + subtour_count + 1
 
     tour = pd.DataFrame.from_dict(tour_dict, orient="index")
+
+    tour["unique_person_id"] = tour["hhno"].astype("int").astype("str") + tour["pno"].astype("str")
+
 
     return tour, bad_trips

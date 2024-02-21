@@ -8,8 +8,8 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            // "program": "daysim/process_daysim.py",
-            "program": "urbansim/process_urbansim.py",
+            "program": "daysim/process_daysim.py",
+            // "program": "activitysim/process_activitysim.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }

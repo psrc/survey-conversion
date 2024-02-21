@@ -1,0 +1,6 @@
+﻿index,table ,filter,result_col,result_value,description
+1,df,:,household_id,df['household_id'],
+2,df,:,hh_weight,1,FIXME:fill in with appropriate column when available
+3,df,:,num_workers,df['numworkers'],
+4,df,:,home_zone_id,df['home_maz'],
+5,df,:,HHT,1,FIXME:  Set household type to 1 for now
