@@ -25,6 +25,7 @@ from sqlalchemy.engine import URL
 pd.options.mode.chained_assignment = None  # default='warn'
 
 def map_to_class(df_trip, df_mapping):
+    """Create a dictionary to map between model format and this script."""
     df_mapping = df_mapping[~df_mapping['model_variable'].isnull()]
     df_mapping = df_mapping.set_index('model_variable')
     map_dict = df_mapping.to_dict()['class_variable']
@@ -34,9 +35,12 @@ def map_to_class(df_trip, df_mapping):
     return df_trip
 
 def unique_person_id(df):
+    """Create an unique person ID from household and person number."""
     df["unique_person_id"] = df["hhno"].astype("int64").astype("str") + df[
         "pno"
     ].astype("int64").astype("str")
+
+    return df
 
 def apply_filter(df, df_name, filter, logger, msg):
     """Apply a filter to trim df, record changes in log file."""
