@@ -170,15 +170,15 @@ trip,driver,Driver,1,dorp
 trip,driver,Passenger,2,dorp
 trip,driver,Both (switched drivers during trip),3,dorp
 trip,driver,Missing: Skip Logic,3,dorp
-trip,travel_dow,Monday,1,day
-trip,travel_dow,Tuesday,2,day
-trip,travel_dow,Wednesday,3,day
-trip,travel_dow,Thursday,4,day
-trip,travel_dow,Friday,5,day
-trip,travel_dow,Saturday,6,day
-trip,travel_dow,Sunday,7,day
 trip,travelers_total,1 traveler,1,travelers
 trip,travelers_total,2 travelers,2,travelers
 trip,travelers_total,3 travelers,3,travelers
 trip,travelers_total,4 travelers,4,travelers
 trip,travelers_total,5+ travelers,5,travelers
+day,travel_dow,Monday,1,day
+day,travel_dow,Tuesday,2,day
+day,travel_dow,Wednesday,3,day
+day,travel_dow,Thursday,4,day
+day,travel_dow,Friday,5,day
+day,travel_dow,Saturday,6,day
+day,travel_dow,Sunday,7,day

@@ -18,6 +18,7 @@ run_convert_format = true
 run_data_validation = true
 run_attach_skims = true
 
+debug = true
 debug_person_id = []
 # debug_person_id = ['1710030291']    # List of person IDs to iterate over in tour creation, empty list to process all
 

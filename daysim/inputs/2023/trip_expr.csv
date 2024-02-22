@@ -3,6 +3,7 @@
 2,df,:,trexpfac,1,FIXME: update when weights are available
 3,df,:,tsvid,range(len(df)),original trip_id is too long for daysim so reset values; We can export the mapping between tsvid and trip_id in the script
 8,df,:,dorp,df['dorp'].fillna(9),fill missing driver information with missing value
+4,df,:,day,df['travel_dow'],day of week in integer format joined from person day file
 8,df,:,mode,10,
 9,df,(df['travelers'] == 1) & (df['mode_simple'] == 'Drive'),mode,3,
 10,df,(df['travelers'] == 2) & (df['mode_simple'] == 'Drive'),mode,4,

@@ -218,7 +218,6 @@ def create(trip, error_dict, config):
                         # Fill out primary tour and trip data
                         for col in [
                             "hhno",
-                            "hhid_elmer",
                             "pno",
                             "person_id",
                             "unique_person_id",

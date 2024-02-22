@@ -34,10 +34,10 @@ def map_to_class(df_trip, df_mapping):
 
     return df_trip
 
-def unique_person_id(df):
+def unique_person_id(df, hhid_col, pno_col):
     """Create an unique person ID from household and person number."""
-    df["unique_person_id"] = df["hhno"].astype("int64").astype("str") + df[
-        "pno"
+    df["unique_person_id"] = df[hhid_col].astype("int64").astype("str") + df[
+        pno_col
     ].astype("int64").astype("str")
 
     return df
@@ -136,7 +136,7 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
     Tour departure is always the departure time from the first trip.
     """
 
-    for col in ["hhno", "hhid_elmer", "pno", "person_id", "unique_person_id"]:
+    for col in ["hhno", "pno", "person_id", "unique_person_id"]:
         tour_dict[tour_id][col] = df.iloc[0][col]
 
     tour_dict[tour_id]["day"] = day
@@ -210,41 +210,48 @@ def update_trip_data(trip, df, tour_id):
 
     return trip
 
-def create_multiday_records(hh, trip, person, hhid_col, config):
+
+def create_multiday_records(hh, trip, person, person_day, hhid_col, config):
 
     hh["hhid_elmer"] = hh[hhid_col].copy()
     trip["hhid_elmer"] = trip[hhid_col].copy()
     person["hhid_elmer"] = person[hhid_col].copy()
+    person_day['hhid_elmer'] = person_day[hhid_col].copy()
 
     hh["new_hhno"] = hh[hhid_col].copy()
     hh["flag"] = 0
 
-    for day in trip["day"].unique():
-        trip.loc[trip["day"] == day, "new_hhno"] = (
+    for day in person_day.travel_dow.unique():
+        trip.loc[trip["travel_dow"] == day, "new_hhno"] = (
             trip[hhid_col].astype("int") * 10 + int(day)
         )
         trip["new_hhno"] = trip["new_hhno"].fillna(-1).astype("int64")
 
+        person_day.loc[person_day["travel_dow"] == day, "new_hhno"] = (
+            person_day[hhid_col].astype("int") * 10 + int(day)
+        )
+        person_day["new_hhno"] = person_day["new_hhno"].fillna(-1).astype("int64")
+
         hh_day = hh[
             hh["hhid_elmer"].isin(
-                trip.loc[trip["day"] == day, "hhid_elmer"]
+                trip.loc[trip["travel_dow"] == day, "hhid_elmer"]
             )
         ].copy()
         hh_day["new_hhno"] = (hh_day[hhid_col].astype("int") * 10 + int(day)).astype("int")
         hh_day["flag"] = 1
         hh = hh.append(hh_day)
-        # Only keep the renamed multi-day households and persons
 
-        person_day = person[
+        # Only keep the renamed multi-day households and persons
+        _person_day = person[
             person["hhid_elmer"].isin(
-                trip.loc[trip["day"] == day, "hhid_elmer"]
+                trip.loc[trip["travel_dow"] == day, "hhid_elmer"]
             )
         ].copy()
-        person_day["new_hhno"] = (
-            person_day[hhid_col].astype("int") * 10 + int(day)
+        _person_day["new_hhno"] = (
+            _person_day[hhid_col].astype("int") * 10 + int(day)
         ).astype("int")
-        person_day["flag"] = 1
-        person = person.append(person_day)
+        _person_day["flag"] = 1
+        person = person.append(_person_day)
 
     # Remove duplicates of the original cloned households and persons
     person = person[person["flag"] == 1]
@@ -256,12 +263,14 @@ def create_multiday_records(hh, trip, person, hhid_col, config):
     person.drop(hhid_col, axis=1, inplace=True)
     hh.drop(hhid_col, axis=1, inplace=True)
     trip.drop(hhid_col, axis=1, inplace=True)
+    person_day.drop(hhid_col, axis=1, inplace=True)
 
     person.rename(columns={"new_hhno": hhid_col}, inplace=True)
     hh.rename(columns={"new_hhno": hhid_col}, inplace=True)
     trip.rename(columns={"new_hhno": hhid_col}, inplace=True)
+    person_day.rename(columns={"new_hhno": hhid_col}, inplace=True)
 
     # Write lookup between new IDs and original Elmer IDs
     hh[['hhid_elmer',hhid_col]].to_csv(os.path.join(config['output_dir'], "hhid_hhno_mapping.csv"), index=False)
 
-    return hh, trip, person
+    return hh, trip, person, person_day
