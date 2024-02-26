@@ -112,9 +112,9 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     # Trips to/from work are considered "usual workplace" only if dtaz == workplace TAZ
     # must join person records to get usual work and school location
     df = df.merge(
-        person[["person_id", "pno", "pwpcl", "pspcl", "pwtaz", "pstaz"]],
+        person[["unique_person_id", "pno", "pwpcl", "pspcl", "pwtaz", "pstaz"]],
         how="left",
-        on="person_id",
+        on="unique_person_id",
     )
 
     # Calculate fields using an expression file
@@ -124,7 +124,7 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     df = convert.apply_filter(
         df,
         "trips",
-        df["travel_dow_label"].isin(['Monday','Tuesday','Wednesday','Thursday']),
+        df["travel_dow_label"].isin(["Monday", "Tuesday", "Wednesday", "Thursday"]),
         logger,
         "trip taken on Friday, Saturday, or Sunday",
     )
@@ -288,15 +288,24 @@ def build_tour_file(trip, person, config, logger):
         os.path.join(config["output_dir"], "bad_trips.csv")
     )
 
-    trip = trip[config["trip_columns"] + ["unique_person_id"]]
+    trip = trip[config["trip_columns"]]
 
     return tour, trip, error_dict
 
 
-def process_household_day(person_day_original_df, hh):
-    household_day = person_day_original_df.groupby(["household_id", "travel_dow"]).count().reset_index()[["household_id", "travel_dow"]]
+def process_household_day(person_day_original_df, hh, config):
+    person_day_original_df["household_id"] = person_day_original_df[
+        "household_id"
+    ].astype("int64")
+    household_day = (
+        person_day_original_df.groupby(["household_id", "travel_dow"])
+        .count()
+        .reset_index()[["household_id", "travel_dow"]]
+    )
 
-    household_day.rename(columns={'household_id': 'hhno', 'travel_dow':'day'}, inplace=True)
+    household_day.rename(
+        columns={"household_id": "hhno", "travel_dow": "day"}, inplace=True
+    )
 
     # add day of week lookup
     household_day["dow"] = household_day["day"]
@@ -306,16 +315,26 @@ def process_household_day(person_day_original_df, hh):
         household_day[col] = 0
 
     # Add an ID column
-    household_day['id'] = range(1,len(household_day)+1)
+    household_day["id"] = range(1, len(household_day) + 1)
 
     # Add expansion factor
-    household_day = household_day.merge(hh[["hhno", "hhexpfac"]], on="hhno", how="left")
-    household_day.rename(columns={"hhexpfac": "hdexpfac"}, inplace=True)
+    # FIXME: no weights yet, replace with the weights column when available
+    hh[config["hh_weight_col"]] = 1
+    household_day = household_day.merge(
+        hh[["household_id", config["hh_weight_col"]]],
+        left_on="hhno",
+        right_on="household_id",
+        how="left",
+    )
+    household_day.rename(columns={config["hh_weight_col"]: "hdexpfac"}, inplace=True)
+    household_day["hdexpfac"] = household_day["hdexpfac"].fillna(-1)
 
     return household_day
 
 
-def process_person_day(tour, person, trip, hh, person_day_original_df, household_day, config):
+def process_person_day(
+    tour, person, trip, hh, person_day_original_df, household_day, config
+):
     # Get the usual workplace column from person records
     tour = tour.merge(person[["hhno", "pno", "pwpcl"]], on=["hhno", "pno"], how="left")
 
@@ -354,8 +373,7 @@ def process_person_day(tour, person, trip, hh, person_day_original_df, household
         + person_day_original_df["telework_min"] / 60.0
     )
 
-        # Add work at home from Person Day Elmer file
-    # pday["hhid_elmer"] = pday["hhid_elmer"].astype("int64")
+    # Add work at home from Person Day Elmer file
     pday = pday.merge(
         person_day_original_df[["household_id", "pernum", "travel_dow", "wkathome"]],
         left_on=["hhno", "pno", "day"],
@@ -363,23 +381,12 @@ def process_person_day(tour, person, trip, hh, person_day_original_df, household
         how="inner",
     )
 
-    # # Add person day records of no travel
-    # # Get the unique person ID to merge with person records
-    # person_day_original_df = person_day_original_df.merge(
-    #     hh[["hhid_elmer", "hhno"]],
-    #     left_on="household_id",
-    #     right_on="hhid_elmer",
-    # )
-
-    # person_day_original_df["unique_person_id"] = person_day_original_df["hhno"].astype(
-    #     "str"
-    # ) + person_day_original_df["pernum"].astype("str")
-
-    # FIXME: we need a unique_person_id 
-
-    no_travel_df = person_day_original_df[(person_day_original_df["num_trips"] == 0) & 
-                                          person_day_original_df["travel_dow_label"].isin(['Monday','Tuesday','Wednesday','Thursday'])
-                                          ]
+    no_travel_df = person_day_original_df[
+        (person_day_original_df["num_trips"] == 0)
+        & person_day_original_df["travel_dow_label"].isin(
+            ["Monday", "Tuesday", "Wednesday", "Thursday"]
+        )
+    ]
     no_travel_df = no_travel_df[
         no_travel_df["unique_person_id"].isin(person["unique_person_id"])
     ]
@@ -401,8 +408,8 @@ def process_person_day(tour, person, trip, hh, person_day_original_df, household
             no_travel_df["unique_person_id"] == person_rec
         ]["person_id"].values[0]
         pday.loc[person_rec, "unique_person_id"] = person_rec
-         # these will all be replaced after this step so set to 1
-        pday.loc[person_rec, "day"] = 1 
+        # these will all be replaced after this step so set to 1
+        pday.loc[person_rec, "day"] = 1
         pday.loc[person_rec, "beghom"] = 1
         pday.loc[person_rec, "endhom"] = 1
         pday.loc[person_rec, "wkathome"] = no_travel_df[
@@ -413,8 +420,10 @@ def process_person_day(tour, person, trip, hh, person_day_original_df, household
         ]["psexpfac"].values[0]
 
     # Join household day ID to person Day
-    pday = pday.merge(household_day[['hhno','day','id']], on=['hhno','day'], how='left')
-    pday.rename(columns={'id': 'household_day_id'}, inplace=True)
+    pday = pday.merge(
+        household_day[["hhno", "day", "id"]], on=["hhno", "day"], how="left"
+    )
+    pday.rename(columns={"id": "household_day_id"}, inplace=True)
 
     return pday
 
@@ -443,8 +452,10 @@ def convert_format(config):
         right_on="elmer_value",
         how="left",
     )
-    person_day_original_df.rename(columns={"travel_dow": "travel_dow_label",
-                                           "model_value":'travel_dow'}, inplace=True)
+    person_day_original_df.rename(
+        columns={"travel_dow": "travel_dow_label", "model_value": "travel_dow"},
+        inplace=True,
+    )
 
     # Load geolocated survey data
     trip_original_df = pd.read_csv(
@@ -457,35 +468,44 @@ def convert_format(config):
         os.path.join(config["output_dir"], "geolocated_person.csv")
     )
 
-    # !!! FIXME: add pernum to Elmer export; ask Chris Peak
-    # For now, join it from the person file (?)
-    person_day_original_df['person_id'] = person_day_original_df['person_id'].astype('int64')
-    person_original_df['person_id'] = person_original_df['person_id'].astype('int64')
-    person_day_original_df = person_day_original_df.merge(
-        person_original_df[['person_id','pernum']],
-        on='person_id',
-        how='left'
-    )
-
     # !! FIXME: have Chris Peak include this field for trips
     # Get day of week from day ID
-    trip_original_df = trip_original_df.merge(person_day_original_df[["day_id", "travel_dow",'travel_dow_label']], how="left", on="day_id")
+    trip_original_df = trip_original_df.merge(
+        person_day_original_df[["day_id", "travel_dow", "travel_dow_label"]],
+        how="left",
+        on="day_id",
+    )
 
     # Create new Household and Person records for each travel day.
     # For trip/tour models we use this data as if each person-day were independent for multiple-day diaries
-    hh_original_df, trip_original_df, person_original_df, person_day_original_df = convert.create_multiday_records(
-        hh_original_df, 
-        trip_original_df, 
+    (
+        hh_original_df,
+        trip_original_df,
         person_original_df,
-        person_day_original_df, "household_id", config)
+        person_day_original_df,
+    ) = convert.create_multiday_records(
+        hh_original_df,
+        trip_original_df,
+        person_original_df,
+        person_day_original_df,
+        "household_id",
+        config,
+    )
 
-    
     if config["debug"]:
         person_original_df = person_original_df.iloc[0:100]
-        trip_original_df = trip_original_df[trip_original_df['person_id'].isin(person_original_df.person_id)]
-        trip_original_df = trip_original_df[trip_original_df['household_id'].isin(person_original_df.household_id)]
-        hh_original_df = hh_original_df[hh_original_df['household_id'].isin(person_original_df.household_id)]
-        person_day_original_df = person_day_original_df[person_day_original_df['household_id'].isin(person_original_df.household_id)]
+        trip_original_df = trip_original_df[
+            trip_original_df["person_id"].isin(person_original_df.person_id)
+        ]
+        trip_original_df = trip_original_df[
+            trip_original_df["household_id"].isin(person_original_df.household_id)
+        ]
+        hh_original_df = hh_original_df[
+            hh_original_df["household_id"].isin(person_original_df.household_id)
+        ]
+        person_day_original_df = person_day_original_df[
+            person_day_original_df["household_id"].isin(person_original_df.household_id)
+        ]
 
     # Recode person, household, and trip data
     person = convert.process_expression_file(
@@ -501,30 +521,33 @@ def convert_format(config):
     )
 
     # Paid parking data is not available from Elmer; calculate from workplace location
-    parcel_df = pd.read_csv(config["parcel_file_dir"], delim_whitespace=True, usecols=['parcelid','parkhr_p'])
-    person = person.merge(parcel_df, left_on='pwpcl', right_on='parcelid', how='left')
+    parcel_df = pd.read_csv(
+        config["parcel_file_dir"],
+        delim_whitespace=True,
+        usecols=["parcelid", "parkhr_p"],
+    )
+    person = person.merge(parcel_df, left_on="pwpcl", right_on="parcelid", how="left")
     # If person works at a parcel with paid parking, assume they pay to park
-    person.loc[person['parkhr_p'] > 0, 'ppaidprk'] = 1
+    # FIXME! come up with a better process for this...
+    person.loc[person["parkhr_p"] > 0, "ppaidprk"] = 1
     # Note that the 2023 survey does not include data about employer-paid benefits
     # We may have to estimate using older data...
 
     # reconcile new multi-day IDs with the Elmer person day table
 
     # Make sure trips are properly ordered, where deptm is increasing for each person's travel day
-    trip["person_id_int"] = trip["person_id"].astype("int")
-    trip = trip.sort_values(["person_id_int", "day", "deptm"])
+    trip["unique_person_id_int"] = trip["unique_person_id"].astype("int64")
+    trip = trip.sort_values(["unique_person_id_int", "day", "deptm"])
     trip = trip.reset_index()
-
-    # Use unique person ID since the Elmer person_id has been copied for multiple days
-    trip = convert.unique_person_id(trip, 'hhno', 'pno')
-    person = convert.unique_person_id(person, 'hhno', 'pno')
-    person_day_original_df = convert.unique_person_id(person_day_original_df, 'household_id', 'pernum')
 
     # Create tour file and update the trip file with tour info
     tour, trip, error_dict = build_tour_file(trip, person, config, logger)
-    tour = convert.unique_person_id(tour,'hhno', 'pno')
+    # tour = convert.unique_person_id(tour, 'hhno', 'pno')
 
-    household_day = process_household_day(person_day_original_df, hh)
+    # !!!FIXME! we are assigning weights = 1 here, replace with the weights column from original hh file when available
+    household_day = process_household_day(
+        person_day_original_df, hh_original_df, config
+    )
 
     error_dict_df = pd.DataFrame(
         error_dict.values(), index=error_dict.keys(), columns=["errors"]

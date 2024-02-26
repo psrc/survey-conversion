@@ -40,7 +40,7 @@ tours_schema = pa.DataFrameSchema(
         "tdpcl": Column(int, nullable=False),
         "tdtaz": Column(int, nullable=False),
         "tmodetp": Column(
-            int, Check.isin([1, 2, 3, 4, 5, 6, 8, 9, 10]), nullable=False
+            int, Check.isin([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), nullable=False
         ),
         "tpathtp": Column(int, Check.isin([1, 3, 4, 6, 7]), nullable=False),
         "tripsh1": Column(int, nullable=False),

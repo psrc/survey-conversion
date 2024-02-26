@@ -27,27 +27,28 @@ from modules import util, convert, tours, days
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
+
 def process_household_file(hh, person, df_lookup, config, logger):
     """Convert household columns and generate data from person table"""
 
     expr_df = pd.read_csv(os.path.join(config["input_dir"], "hh_expr.csv"))
 
-    person_type_dict = config['person_type_dict']
+    person_type_dict = config["person_type_dict"]
 
     # For each household, calculate total number of people in each person_type
     person_type_field = "ptype"
     hhid_col = "household_id"
     for person_type in person[person_type_field].unique():
         df = person[person["ptype"] == person_type]
-        df = df.groupby('household_id')['household_id'].count()
+        df = df.groupby("household_id")["household_id"].count()
         df.name = person_type_dict[str(person_type)]
 
         # Join to households
-        hh = pd.merge(hh, df, how="left", left_on='household_id', right_index=True)
+        hh = pd.merge(hh, df, how="left", left_on="household_id", right_index=True)
         hh[person_type_dict[str(person_type)]].fillna(0, inplace=True)
-        hh[person_type_dict[str(person_type)]] = hh[person_type_dict[str(person_type)]].astype(
-            "int"
-        )
+        hh[person_type_dict[str(person_type)]] = hh[
+            person_type_dict[str(person_type)]
+        ].astype("int")
 
     # Apply expression file input
     hh = convert.process_expression_file(
@@ -166,7 +167,7 @@ def build_tour_file(trip, person, config, logger):
     trip = convert.apply_filter(
         trip,
         "trips",
-        -((trip["opurp"] == trip["dpurp"]) & (trip["opurp"] == 'Home')),
+        -((trip["opurp"] == trip["dpurp"]) & (trip["opurp"] == "Home")),
         logger,
         "trips have same origin/destination of home",
     )
@@ -175,7 +176,9 @@ def build_tour_file(trip, person, config, logger):
     trip = trip.reset_index()
 
     # Instantiate trip
-    df_mapping = pd.read_csv(r'C:\Workspace\survey-conversion\activitysim\inputs\2023\mapping.csv')
+    df_mapping = pd.read_csv(
+        r"C:\Workspace\survey-conversion\activitysim\inputs\2023\mapping.csv"
+    )
     trip = convert.map_to_class(trip, df_mapping)
 
     # Build tour file; return df of tours and list of trips part of incomplete tours
@@ -204,7 +207,11 @@ def build_tour_file(trip, person, config, logger):
 
 
 def process_household_day(tour, hh):
-    household_day = tour.groupby(["household_id", "day"]).count().reset_index()[["household_id", "day"]]
+    household_day = (
+        tour.groupby(["household_id", "day"])
+        .count()
+        .reset_index()[["household_id", "day"]]
+    )
 
     # add day of week lookup
     household_day["dow"] = household_day["day"]
@@ -214,7 +221,9 @@ def process_household_day(tour, hh):
         household_day[col] = 0
 
     # Add expansion factor
-    household_day = household_day.merge(hh[["household_id", "hh_weight"]], on="household_id", how="left")
+    household_day = household_day.merge(
+        hh[["household_id", "hh_weight"]], on="household_id", how="left"
+    )
     household_day.rename(columns={"hh_weight": "hdexpfac"}, inplace=True)
 
     return household_day
@@ -222,7 +231,11 @@ def process_household_day(tour, hh):
 
 def process_person_day(tour, person, trip, hh, person_day_original_df, config):
     # Get the usual workplace column from person records
-    tour = tour.merge(person[["household_id", "PNUM", "workplace_zone_id"]], on=["household_id", "PNUM"], how="left")
+    tour = tour.merge(
+        person[["household_id", "PNUM", "workplace_zone_id"]],
+        on=["household_id", "PNUM"],
+        how="left",
+    )
 
     # Build person day file directly from tours and trips
     pday = days.create(tour, person, trip, config)
@@ -380,7 +393,9 @@ def convert_format(config):
 
     # Create new Household and Person records for each travel day.
     # For trip/tour models we use this data as if each person-day were independent for multiple-day diaries
-    hh, trip, person = convert.create_multiday_records(hh, trip, person, "household_id", config)
+    hh, trip, person = convert.create_multiday_records(
+        hh, trip, person, "household_id", config
+    )
 
     # Make sure trips are properly ordered, where deptm is increasing for each person's travel day
     trip["person_id_int"] = trip["person_id"].astype("int64")
@@ -388,18 +403,18 @@ def convert_format(config):
     trip = trip.reset_index()
 
     # Use unique person ID since the Elmer person_id has been copied for multiple days
-    trip["unique_person_id"] = trip["household_id"].astype("int64").astype("str") + trip[
-        "PNUM"
-    ].astype("int64").astype("str")
-    person["unique_person_id"] = person["household_id"].astype("int64").astype("str") + person[
-        "PNUM"
-    ].astype("int64").astype("str")
+    trip["unique_person_id"] = trip["household_id"].astype("int64").astype(
+        "str"
+    ) + trip["PNUM"].astype("int64").astype("str")
+    person["unique_person_id"] = person["household_id"].astype("int64").astype(
+        "str"
+    ) + person["PNUM"].astype("int64").astype("str")
 
     # Create tour file and update the trip file with tour info
     tour, trip, error_dict = build_tour_file(trip, person, config, logger)
-        
+
     # Create household day file
-    tour.rename(columns={'hhno': 'household_id', 'pno': 'PNUM'}, inplace=True)
+    tour.rename(columns={"hhno": "household_id", "pno": "PNUM"}, inplace=True)
     household_day = process_household_day(tour, hh)
 
     error_dict_df = pd.DataFrame(
@@ -427,7 +442,6 @@ def convert_format(config):
     person_day["day"] = 1
 
     # Activitysim significant clean up at this point
-    
 
     trip[["travdist", "travcost", "travtime"]] = "-1.00"
 

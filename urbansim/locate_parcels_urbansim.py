@@ -43,8 +43,8 @@ from modules import geolocate, util
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
-def locate_parcels_urbansim(config):
 
+def locate_parcels_urbansim(config):
     logger = logcontroller.setup_custom_logger("locate_parcels_logger.txt", config)
     logger.info("--------------------locate_parcels.py STARTING--------------------")
     start_time = datetime.datetime.now()
@@ -60,12 +60,14 @@ def locate_parcels_urbansim(config):
 
     # Load parcel data with residential unit data
     parcel_df = pd.read_csv(config["parcel_file_dir"])
-    parcel_df.rename(columns={'parcel_id': 'parcelid'}, inplace=True)
-    parcel_df.drop(['xcoord_p','ycoord_p'], inplace=True, axis=1)
+    parcel_df.rename(columns={"parcel_id": "parcelid"}, inplace=True)
+    parcel_df.drop(["xcoord_p", "ycoord_p"], inplace=True, axis=1)
 
     # Join with usual parcel data file that includes jobs and students
-    parcel_df_standard = pd.read_csv(config["parcel_file_standard_dir"], delim_whitespace=True)
-    parcel_df = parcel_df.merge(parcel_df_standard, on='parcelid', how='left')
+    parcel_df_standard = pd.read_csv(
+        config["parcel_file_standard_dir"], delim_whitespace=True
+    )
+    parcel_df = parcel_df.merge(parcel_df_standard, on="parcelid", how="left")
 
     # Script expects MAZ and TAZ data
     parcel_maz_df = pd.read_csv(config["parcel_maz_file_dir"])
@@ -78,7 +80,7 @@ def locate_parcels_urbansim(config):
     hh_filter_dict_list = [
         {
             # Place current home location based on presence of residential units
-             "var_name": "home",
+            "var_name": "home",
             "parcel_filter": (parcel_df["residential_units"] > 0),
             "hh_filter": (-hh_original["home_lat"].isnull()),
         }
@@ -121,7 +123,8 @@ def locate_parcels_urbansim(config):
     filter_dict_list = [
         {
             "var_name": "work",
-            "parcel_filter": (parcel_df["emptot_p"] > 0) & (parcel_df['number_of_buildings'] > 0),
+            "parcel_filter": (parcel_df["emptot_p"] > 0)
+            & (parcel_df["number_of_buildings"] > 0),
             "person_filter": (-person["work_lng"].isnull())
             & (  # workplace is at a consistent location
                 person["workplace"] == "Usually the same location (outside home)"
@@ -130,7 +133,8 @@ def locate_parcels_urbansim(config):
         {
             # Student
             "var_name": "school_loc",
-            "parcel_filter": (parcel_df["total_students"] > 0) & (parcel_df['number_of_buildings'] > 0),
+            "parcel_filter": (parcel_df["total_students"] > 0)
+            & (parcel_df["number_of_buildings"] > 0),
             "person_filter": (-person["school_loc_lat"].isnull())
             & (-(person["home_lat"] == person["school_loc_lat"]))
             & (  # Exclude home-school students
@@ -173,7 +177,6 @@ def locate_parcels_urbansim(config):
     person_orig_update.to_csv(
         os.path.join(config["output_dir"], "geolocated_person.csv"), index=False
     )
-
 
     # Conclude log
     end_time = datetime.datetime.now()

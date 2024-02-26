@@ -24,23 +24,41 @@ from sqlalchemy.engine import URL
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
+
 def map_to_class(df_trip, df_mapping):
     """Create a dictionary to map between model format and this script."""
-    df_mapping = df_mapping[~df_mapping['model_variable'].isnull()]
-    df_mapping = df_mapping.set_index('model_variable')
-    map_dict = df_mapping.to_dict()['class_variable']
+    df_mapping = df_mapping[~df_mapping["model_variable"].isnull()]
+    df_mapping = df_mapping.set_index("model_variable")
+    map_dict = df_mapping.to_dict()["class_variable"]
 
     df_trip.rename(columns=map_dict, inplace=True)
 
     return df_trip
 
+
 def unique_person_id(df, hhid_col, pno_col):
-    """Create an unique person ID from household and person number."""
+    """Create an unique person ID from household and person number.
+    Returns str
+    """
     df["unique_person_id"] = df[hhid_col].astype("int64").astype("str") + df[
         pno_col
     ].astype("int64").astype("str")
 
     return df
+
+
+def unique_household_id(df, hhid_col, day_col):
+    """Create an unique person ID from household and person number.
+    Returns int64
+    """
+    df["household_id"] = df[hhid_col].astype("int64").astype("str") + df[
+        day_col
+    ].astype("int64").astype("str")
+
+    df["household_id"] = df["household_id"].astype("int64")
+
+    return df
+
 
 def apply_filter(df, df_name, filter, logger, msg):
     """Apply a filter to trim df, record changes in log file."""
@@ -52,24 +70,25 @@ def apply_filter(df, df_name, filter, logger, msg):
 
 def assign_tour_mode(_df, tour_dict, tour_id, config):
     """Get a list of transit modes and identify primary mode
-    Primary mode is the first one from a heirarchy list found in the tour."""
+    Primary mode is the first one from a heirarchy list found in the tour.
+    Assumes modes are values and not strings.
+    """
     mode_list = _df["mode"].value_counts().index.astype("int").values
 
     for mode in config["mode_heirarchy"]:
         if mode in mode_list:
             # If transit, check whether access mode is walk to transit or drive to transit
-            if mode == 6:
+            if mode == config["walk_to_transit_mode"]:
                 # Try to use the access mode field values to get access mode
-                try:
-                    if len([i for i in _df["mode_acc"].values if i in [3, 4, 5, 6, 7]]):
-                        tour_mode = 7  # park and ride
-                    else:
-                        tour_mode = 6
-                    return tour_mode
-                except:
-                    # otherwise, assume walk to transit
-                    tour_mode = 6  # walk
-                    return tour_mode
+                # FIXME: make this more general, note requirements
+                if len(
+                    [
+                        i
+                        for i in _df["mode_acc"].values
+                        if i in config["drive_to_transit_access_list"]
+                    ]
+                ):
+                    mode = config["drive_to_transit_mode"]  # park and ride
 
             return mode
 
@@ -144,9 +163,9 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
 
     # First trip row contains departure time and origin info
     tour_dict[tour_id]["tlvorig"] = df.iloc[0]["deptm"]
-    tour_dict[tour_id]["totaz"] = df.iloc[0]['otaz']
+    tour_dict[tour_id]["totaz"] = df.iloc[0]["otaz"]
     if "opcl" in df.columns:
-        tour_dict[tour_id]["topcl"] = df.iloc[0]['opcl']
+        tour_dict[tour_id]["topcl"] = df.iloc[0]["opcl"]
     tour_dict[tour_id]["toadtyp"] = df.iloc[0]["oadtyp"]
 
     # Last trip row contains return info
@@ -212,65 +231,64 @@ def update_trip_data(trip, df, tour_id):
 
 
 def create_multiday_records(hh, trip, person, person_day, hhid_col, config):
+    """Treat different travel days as unique person/household records.
+    Modify household ID as original ID concatenated with travel day.
+    Replicate household and person records to match these "new" person/households.
+    """
 
     hh["hhid_elmer"] = hh[hhid_col].copy()
     trip["hhid_elmer"] = trip[hhid_col].copy()
     person["hhid_elmer"] = person[hhid_col].copy()
-    person_day['hhid_elmer'] = person_day[hhid_col].copy()
+    person_day["hhid_elmer"] = person_day[hhid_col].copy()
 
-    hh["new_hhno"] = hh[hhid_col].copy()
-    hh["flag"] = 0
+    person_day = unique_household_id(person_day, "hhid_elmer", "travel_dow")
+    trip = unique_household_id(trip, "hhid_elmer", "travel_dow")
 
-    for day in person_day.travel_dow.unique():
-        trip.loc[trip["travel_dow"] == day, "new_hhno"] = (
-            trip[hhid_col].astype("int") * 10 + int(day)
-        )
-        trip["new_hhno"] = trip["new_hhno"].fillna(-1).astype("int64")
+    multiday_hh = pd.DataFrame()
+    multiday_person = pd.DataFrame()
 
-        person_day.loc[person_day["travel_dow"] == day, "new_hhno"] = (
-            person_day[hhid_col].astype("int") * 10 + int(day)
-        )
-        person_day["new_hhno"] = person_day["new_hhno"].fillna(-1).astype("int64")
-
-        hh_day = hh[
+    # Build person and household records for each of these person days
+    for day in person_day["travel_dow"].unique():
+        _hh = hh.loc[
             hh["hhid_elmer"].isin(
-                trip.loc[trip["travel_dow"] == day, "hhid_elmer"]
+                person_day[person_day["travel_dow"] == day].hhid_elmer
             )
         ].copy()
-        hh_day["new_hhno"] = (hh_day[hhid_col].astype("int") * 10 + int(day)).astype("int")
-        hh_day["flag"] = 1
-        hh = hh.append(hh_day)
+        _hh["travel_dow"] = day
+        _hh = unique_household_id(_hh, "hhid_elmer", "travel_dow")
+        multiday_hh = multiday_hh.append(_hh)
 
-        # Only keep the renamed multi-day households and persons
-        _person_day = person[
+        _person = person.loc[
             person["hhid_elmer"].isin(
-                trip.loc[trip["travel_dow"] == day, "hhid_elmer"]
+                person_day[person_day["travel_dow"] == day].hhid_elmer
             )
         ].copy()
-        _person_day["new_hhno"] = (
-            _person_day[hhid_col].astype("int") * 10 + int(day)
-        ).astype("int")
-        _person_day["flag"] = 1
-        person = person.append(_person_day)
+        _person["travel_dow"] = day
+        _person = unique_household_id(_person, "hhid_elmer", "travel_dow")
+        multiday_person = multiday_person.append(_person)
 
-    # Remove duplicates of the original cloned households and persons
-    person = person[person["flag"] == 1]
-    hh = hh[hh["flag"] == 1]
+    multiday_person.drop("travel_dow", axis=1, inplace=True)
+    multiday_hh.drop("travel_dow", axis=1, inplace=True)
 
-    hh = hh[~hh.duplicated()]
-    person = person[~person.duplicated()]
+    assert (
+        len(
+            multiday_person[
+                ~multiday_person["household_id"].isin(multiday_hh.household_id)
+            ]
+        )
+        == 0
+    )
+    assert len(trip[~trip["household_id"].isin(multiday_hh.household_id)]) == 0
+    assert (
+        len(person_day[~person_day["household_id"].isin(multiday_hh.household_id)]) == 0
+    )
 
-    person.drop(hhid_col, axis=1, inplace=True)
-    hh.drop(hhid_col, axis=1, inplace=True)
-    trip.drop(hhid_col, axis=1, inplace=True)
-    person_day.drop(hhid_col, axis=1, inplace=True)
-
-    person.rename(columns={"new_hhno": hhid_col}, inplace=True)
-    hh.rename(columns={"new_hhno": hhid_col}, inplace=True)
-    trip.rename(columns={"new_hhno": hhid_col}, inplace=True)
-    person_day.rename(columns={"new_hhno": hhid_col}, inplace=True)
+    # Generate unique person ID since the Elmer person_id has been copied for multiple days
+    trip = unique_person_id(trip, "household_id", "pernum")
+    multiday_person = unique_person_id(multiday_person, "household_id", "pernum")
+    person_day = unique_person_id(person_day, "household_id", "pernum")
 
     # Write lookup between new IDs and original Elmer IDs
-    hh[['hhid_elmer',hhid_col]].to_csv(os.path.join(config['output_dir'], "hhid_hhno_mapping.csv"), index=False)
+    # hh[['hhid_elmer',hhid_col]].to_csv(os.path.join(config['output_dir'], "household_hhno_mapping.csv"), index=False)
 
-    return hh, trip, person, person_day
+    return multiday_hh, trip, multiday_person, person_day

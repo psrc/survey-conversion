@@ -43,6 +43,7 @@ from modules import geolocate, util
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
+
 def locate_parcels(config):
     logger = logcontroller.setup_custom_logger("locate_parcels_logger.txt", config)
     logger.info("--------------------locate_parcels.py STARTING--------------------")
@@ -212,10 +213,10 @@ def locate_parcels(config):
             "type": "home",
             "parcel_filter": parcel_df["hh_p"] > 0,
             "o_trip_filter": trip_results[config["opurp_field"]].isin(
-                df_lookup_o.loc[df_lookup_o["model_value"] == 'Home', "elmer_value"]
+                df_lookup_o.loc[df_lookup_o["model_value"] == "Home", "elmer_value"]
             ),
             "d_trip_filter": trip_results[config["dpurp_field"]].isin(
-                df_lookup_d.loc[df_lookup_d["model_value"] == 'Home', "elmer_value"]
+                df_lookup_d.loc[df_lookup_d["model_value"] == "Home", "elmer_value"]
             ),
         },
         # Work and work-related trips parcels must have jobs (emptot>0)
@@ -223,10 +224,10 @@ def locate_parcels(config):
             "type": "work",
             "parcel_filter": parcel_df["emptot_p"] > 0,
             "o_trip_filter": trip_results[config["opurp_field"]].isin(
-                df_lookup_o.loc[df_lookup_o["model_value"] == 'work', "elmer_value"]
+                df_lookup_o.loc[df_lookup_o["model_value"] == "work", "elmer_value"]
             ),
             "d_trip_filter": trip_results[config["dpurp_field"]].isin(
-                df_lookup_d.loc[df_lookup_d["model_value"] == 'work', "elmer_value"]
+                df_lookup_d.loc[df_lookup_d["model_value"] == "work", "elmer_value"]
             ),
         },
         # School (purp==2); parcel must have students (either grade, high, or uni students)
@@ -238,10 +239,10 @@ def locate_parcels(config):
                 | (parcel_df["stuuni_p"] > 0)
             ),
             "o_trip_filter": trip_results[config["opurp_field"]].isin(
-                df_lookup_o.loc[df_lookup_o["model_value"] == 'school', "elmer_value"]
+                df_lookup_o.loc[df_lookup_o["model_value"] == "school", "elmer_value"]
             ),
             "d_trip_filter": trip_results[config["dpurp_field"]].isin(
-                df_lookup_d.loc[df_lookup_d["model_value"] == 'school', "elmer_value"]
+                df_lookup_d.loc[df_lookup_d["model_value"] == "school", "elmer_value"]
             ),
         },
         # Personal Business/other apporintments, errands; parcel must have either retail or service jobs
@@ -251,10 +252,16 @@ def locate_parcels(config):
                 (parcel_df["empret_p"] > 0) | (parcel_df["empsvc_p"] > 0)
             ),
             "o_trip_filter": trip_results[config["opurp_field"]].isin(
-                df_lookup_o.loc[df_lookup_o["model_value"].isin(['othdiscr','othmaint']), "elmer_value"]
+                df_lookup_o.loc[
+                    df_lookup_o["model_value"].isin(["othdiscr", "othmaint"]),
+                    "elmer_value",
+                ]
             ),
             "d_trip_filter": trip_results[config["dpurp_field"]].isin(
-                df_lookup_d.loc[df_lookup_d["model_value"].isin(['othdiscr','othmaint']), "elmer_value"]
+                df_lookup_d.loc[
+                    df_lookup_d["model_value"].isin(["othdiscr", "othmaint"]),
+                    "elmer_value",
+                ]
             ),
         },
         # Shopping (purp.isin([30,32])); parcel must have retail jobs
@@ -262,10 +269,10 @@ def locate_parcels(config):
             "type": "shopping",
             "parcel_filter": parcel_df["empret_p"] > 0,
             "o_trip_filter": trip_results[config["opurp_field"]].isin(
-                df_lookup_o.loc[df_lookup_o["model_value"] == 'shopping', "elmer_value"]
+                df_lookup_o.loc[df_lookup_o["model_value"] == "shopping", "elmer_value"]
             ),
             "d_trip_filter": trip_results[config["dpurp_field"]].isin(
-                df_lookup_d.loc[df_lookup_d["model_value"] == 'shopping', "elmer_value"]
+                df_lookup_d.loc[df_lookup_d["model_value"] == "shopping", "elmer_value"]
             ),
         },
         # Meal (purp==50); parcel must have food service jobs; FIXME: maybe allow retail/other for things like grocery stores
@@ -273,10 +280,10 @@ def locate_parcels(config):
             "type": "meal",
             "parcel_filter": parcel_df["empret_p"] > 0,
             "o_trip_filter": trip_results[config["opurp_field"]].isin(
-                df_lookup_o.loc[df_lookup_o["model_value"] == 'eatout', "elmer_value"]
+                df_lookup_o.loc[df_lookup_o["model_value"] == "eatout", "elmer_value"]
             ),
             "d_trip_filter": trip_results[config["dpurp_field"]].isin(
-                df_lookup_d.loc[df_lookup_d["model_value"] == 'eatout', "elmer_value"]
+                df_lookup_d.loc[df_lookup_d["model_value"] == "eatout", "elmer_value"]
             ),
         },
         # Social, recreational, change mode, escort, missing, no constraints
@@ -285,20 +292,18 @@ def locate_parcels(config):
             "parcel_filter": -parcel_df.isnull(),
             "o_trip_filter": trip_results[config["opurp_field"]].isin(
                 df_lookup_o.loc[
-                    df_lookup_o["model_value"].isin(['social',
-                                                     'escort',
-                                                     'change_mode',
-                                                     -88,
-                                                     -99]), "elmer_value"
+                    df_lookup_o["model_value"].isin(
+                        ["social", "escort", "change_mode", -88, -99]
+                    ),
+                    "elmer_value",
                 ]
             ),
             "d_trip_filter": trip_results[config["dpurp_field"]].isin(
                 df_lookup_d.loc[
-                    df_lookup_d["model_value"].isin(['social',
-                                                     'escort',
-                                                     'change_mode',
-                                                     -88,
-                                                     -99]), "elmer_value"
+                    df_lookup_d["model_value"].isin(
+                        ["social", "escort", "change_mode", -88, -99]
+                    ),
+                    "elmer_value",
                 ]
             ),
         },

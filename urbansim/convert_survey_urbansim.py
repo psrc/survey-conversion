@@ -58,7 +58,9 @@ def convert_format_urbansim(config):
         df_lookup[df_lookup["table"] == "person"],
     )
 
-    hh = convert_format.process_household_file(hh_original_df, person, df_lookup, config, logger)
+    hh = convert_format.process_household_file(
+        hh_original_df, person, df_lookup, config, logger
+    )
 
     for df_name, df in {
         "1_household": hh,
@@ -66,9 +68,7 @@ def convert_format_urbansim(config):
     }.items():
         print(df_name)
 
-        df.to_csv(
-            os.path.join(config["output_dir"], df_name + ".csv"), index=False
-        )
+        df.to_csv(os.path.join(config["output_dir"], df_name + ".csv"), index=False)
 
     # Conclude log
     end_time = datetime.datetime.now()

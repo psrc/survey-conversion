@@ -18,10 +18,19 @@ run_convert_format = true
 run_data_validation = true
 run_attach_skims = true
 
-debug = true
+debug = false
 debug_person_id = []
 # debug_person_id = ['1710030291']    # List of person IDs to iterate over in tour creation, empty list to process all
 
+hh_weight_col = 'hh_weight_2023'
+walk_to_transit_mode = 6
+drive_to_transit_mode = 7
+drive_to_transit_access_list = [
+    "Drove and parked my own household's vehicle (or motorcycle)",
+    "Drove and parked another vehicle (or motorcycle)",
+    "Got dropped off in my own household's vehicle (or motorcycle)",
+    "Got dropped off in another vehicle (or motorcycle)"
+]
 
 ################################################
 # Parcel Location (locate_parcels.py) Config
@@ -104,6 +113,7 @@ person_columns = [
         "pproxy",
         "psexpfac",
         "person_id",
+        "unique_person_id"
     ]
 
 hh_columns = [
@@ -157,6 +167,7 @@ trip_columns = [
         "endacttm",
         "trip_id",
         "person_id",
+        "unique_person_id",
     ]
 
 tour_columns = [

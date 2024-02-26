@@ -27,6 +27,9 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 
 def create(trip, error_dict, config):
+    """Create tours from trip records.
+    Report errors for tour formation.
+    """
     tour_dict = {}
     bad_trips = []
     tour_id = 1
@@ -48,8 +51,11 @@ def create(trip, error_dict, config):
             # First O and last D of person's travel day should be home; if not, skip this trip set
             # FIXME: consider keeping other trips that conform
             if (
-                df.groupby("unique_person_id").first()["opurp"].values[0] != config['home_purp']
-            ) or df.groupby("unique_person_id").last()["dpurp"].values[0] != config['home_purp']:
+                df.groupby("unique_person_id").first()["opurp"].values[0]
+                != config["home_purp"]
+            ) or df.groupby("unique_person_id").last()["dpurp"].values[0] != config[
+                "home_purp"
+            ]:
                 bad_trips += df["trip_id"].tolist()
                 error_dict["first O and last D are not home"] += 1
                 continue
@@ -85,8 +91,8 @@ def create(trip, error_dict, config):
                 continue
 
             # Identify home-based tours
-            home_tours_start = df[df["opurp"] == config['home_purp']]
-            home_tours_end = df[df["dpurp"] == config['home_purp']]
+            home_tours_start = df[df["opurp"] == config["home_purp"]]
+            home_tours_end = df[df["dpurp"] == config["home_purp"]]
 
             # Skip person if they have a different number of tour starts/ends at home
             if len(home_tours_start) != len(home_tours_end):
@@ -114,8 +120,10 @@ def create(trip, error_dict, config):
                     continue
 
                 # If no other trip purposes besides home and change mode, skip
-                if _df.loc[_df["dpurp"] != config['home_purp'],
-                            "dpurp"].unique()[0] == config['change_mode_purp']:
+                if (
+                    _df.loc[_df["dpurp"] != config["home_purp"], "dpurp"].unique()[0]
+                    == config["change_mode_purp"]
+                ):
                     bad_trips += _df["trip_id"].tolist()
                     error_dict["no purposes provided except change mode"] += 1
                     continue
@@ -252,9 +260,9 @@ def create(trip, error_dict, config):
                             "dtaz"
                         ]
                         if "dpcl" in df.columns:
-                            tour_dict[tour_id]["tdpcl"] = _df.loc[main_tour_start_index][
-                                "dpcl"
-                            ]
+                            tour_dict[tour_id]["tdpcl"] = _df.loc[
+                                main_tour_start_index
+                            ]["dpcl"]
                         tour_dict[tour_id]["tdadtyp"] = _df.loc[main_tour_start_index][
                             "dadtyp"
                         ]
@@ -358,7 +366,8 @@ def create(trip, error_dict, config):
 
     tour = pd.DataFrame.from_dict(tour_dict, orient="index")
 
-    tour["unique_person_id"] = tour["hhno"].astype("int").astype("str") + tour["pno"].astype("str")
-
+    tour["unique_person_id"] = tour["hhno"].astype("int").astype("str") + tour[
+        "pno"
+    ].astype("str")
 
     return tour, bad_trips
