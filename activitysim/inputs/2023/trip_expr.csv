@@ -2,16 +2,16 @@
 1,df,:,household_id,df['household_id'],
 2,df,:,trip_weight,1,FIXME:fill in with appropriate column when available
 3,df,:,tsvid,range(len(df)),original trip_id is too long for daysim so reset values; We can export the mapping between tsvid and trip_id in the script
+4,df,:,day,df['travel_dow'],day of week in integer format joined from person day file
 7,df,:,dorp,1,
-8,df,:,mode,'Other',
-9,df,(df['travelers_total'] == '1 traveler') & (df['mode_simple'] == 'Drive'),mode,'SOV',
-10,df,(df['travelers_total'] == '2 travelers') & (df['mode_simple'] == 'Drive'),mode,'HOV2',
-11,df,(df['travelers_total'] != '1 traveler') & (df['travelers_total'] != '2 travelers') & (df['mode_simple'] == 'Drive'),mode,'HOV3+',
-12,df,df['mode_simple'] == 'Transit',mode,'Transit',
-13,df,df['mode_simple'] == 'Walk',mode,'Walk',
-14,df,df['mode_simple'] == 'Bike',mode,'Bike',
-15,df,df['mode_1'].isin(['School bus']),mode,'School_Bus',
-16,df,"df['mode_1'].isin(['Other hired service (Uber, Lyft, or other smartphone-app car service)','Taxi (e.g., Yellow Cab)'])",mode,'TNC',
+9,df,(df['travelers_total'] == '1 traveler') & (df['mode_simple'] == 'Drive'),trip_mode,'DRIVEALONEFREE',
+10,df,(df['travelers_total'] == '2 travelers') & (df['mode_simple'] == 'Drive'),trip_mode,'SHARED2FREE',
+11,df,(df['travelers_total'] != '1 traveler') & (df['travelers_total'] != '2 travelers') & (df['mode_simple'] == 'Drive'),trip_mode,'SHARED3FREE',
+13,df,df['mode_simple'] == 'Walk',trip_mode,'WALK',
+14,df,df['mode_simple'] == 'Bike',trip_mode,'BIKE',
+15,df,df['mode_1'].isin(['School bus']),trip_mode,'SCH_BUS',
+16,df,"df['mode_1'].isin(['Other hired service (Uber, Lyft, or other smartphone-app car service)','Taxi (e.g., Yellow Cab)'])",trip_mode,'TNC',
+17,df,df["trip_mode"].isnull(),trip_mode,'Other'
 18,df,:,oadtyp,4,origin type: assume other by default
 19,df,:,dadtyp,4,destination type: assume other by default
 20,df,df['opurp'] == 0,oadtyp,1,"Trips with origin/destination purpose of ""Home"" (0) have a origin/destination address type of ""Home"" (1)"

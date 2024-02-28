@@ -24,6 +24,32 @@ debug_person_id = []
 debug_tours = false
 write_debug_files = true
 
+hh_weight_col = 'hh_weight_2023'
+drive_to_transit_access_list = [
+    "Drove and parked a car (e.g., a vehicle in my household)",
+    "Drove and parked a carshare vehicle (e.g., ZipCar, Car2Go)",
+    "Drove and parked my own household's vehicle (or motorcycle)",
+    "Drove and parked another vehicle (or motorcycle)",
+    "Got dropped off in my own household's vehicle (or motorcycle)",
+    "Got dropped off in another vehicle (or motorcycle)",
+    "Uber/Lyft, taxi, or car service"
+]
+
+
+
+# Heirarchy order for tour mode, per DaySim docs: https://www.psrc.org/sites/default/files/2015psrc-modechoiceautomodels.pdf
+# Drive to Transit > Walk to Transit > School Bus > HOV3+ > HOV2 > SOV > Bike > Walk > Other
+transit_heirarchy = ['FRY','COM','LR','LOC']
+TRANSIT_DRIVE_MODE = 'DRIVE_TRN'
+mode_heirarchy = ["DRIVE_TRN","WLK_FRY","WLK_COM","WLK_LR","WLK_LOC","SCH_BUS","TNC",
+                  "SHARED3FREE","SHARED2FREE","DRIVEALONEFREE","BIKE","WALK","Other"]
+
+transit_mode_list = ['WLK_FRY',
+                    'WLK_COM',
+                    'WLK_LR',
+                    'WLK_LOC',
+                    'DRIVE_TRN']
+
 ################################################
 # Parcel Location (locate_parcels.py) Config
 ################################################
@@ -79,15 +105,6 @@ run_root = 'L:/RTP_2022/final_runs/sc_rtp_2018_final/soundcast'
 bike_speed = 10 # miles per hour
 walk_speed = 3 # miles per hour
 
-# Heirarchy order for tour mode, per DaySim docs: https://www.psrc.org/sites/default/files/2015psrc-modechoiceautomodels.pdf
-# Drive to Transit > Walk to Transit > School Bus > HOV3+ > HOV2 > SOV > Bike > Walk > Other
-mode_heirarchy = [6,8,9,5,4,3,2,1,10]
-
-transit_mode_list = ['Ferry or water taxi',
-                    'Commuter rail (Sounder, Amtrak)',
-                    'Urban Rail (e.g., Link light rail, monorail)',
-                    'Bus (public transit)',
-                    'Other rail (e.g., streetcar)']
 
 person_columns = [
         "person_id",
@@ -104,6 +121,7 @@ person_columns = [
         "race_category",
         "person_id_elmer",
         "person_weight",
+        "unique_person_id"
     ]
 tour_columns = [
     "tour_id",
@@ -118,6 +136,7 @@ tour_columns = [
     "tour_mode",
     "parent_tour_id",
     "household_id_elmer",
+    "unique_person_id"
 ]
 
 trip_columns = [
@@ -143,6 +162,7 @@ trip_columns = [
     "trip_id_elmer",
     "trip_weight",
     "household_id_elmer",
+    "unique_person_id"
 ]
 
 hh_columns = [
@@ -157,6 +177,12 @@ hh_columns = [
     "household_id_elmer",
     "hh_weight",
 ]
+
+[submode_dict]
+FRY = ['Ferry or water taxi']
+COM = ['Commuter rail (Sounder, Amtrak)']
+LR = ['Urban Rail (e.g., Link light rail, monorail, streetcar)','Other rail']
+LOC = ['Bus (public transit)','Other bus (rMove only)']
 
 [person_type_dict]
 1 = "hhftw"  # full time workers

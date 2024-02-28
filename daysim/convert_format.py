@@ -44,7 +44,8 @@ def total_persons_to_hh(
     df = df.groupby(hhid_col).count().reset_index()[[wt_col, hhid_col]]
     df.rename(columns={wt_col: daysim_field}, inplace=True)
 
-    hh.drop(daysim_field, inplace=True, axis=1)
+    if daysim_field in hh.columns:
+        hh.drop(daysim_field, inplace=True, axis=1)
 
     # Join to households
     hh = pd.merge(hh, df, how="left", on=hhid_col)
@@ -60,7 +61,7 @@ def process_household_file(hh, person, df_lookup, config, logger):
 
     # Apply expression file input
     hh = convert.process_expression_file(
-        hh, expr_df, config["hh_columns"], df_lookup[df_lookup["table"] == "household"]
+        hh, expr_df, None, df_lookup[df_lookup["table"] == "household"]
     )
 
     # Workers in Household from Person File (hhwkrs)

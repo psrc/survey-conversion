@@ -106,10 +106,10 @@ def locate_person_parcels(person, parcel_df, filter_dict_list, config):
                 person[person_filter][varname + "_lat"],
             ),
         )
-        gdf.crs = config["lat_lng_crs"]
+        gdf.crs = config["LAT_LNG_CRS"]
         gdf[varname + "_lng_gps"] = gdf[varname + "_lng"]
         gdf[varname + "_lat_gps"] = gdf[varname + "_lat"]
-        gdf = gdf.to_crs(config["wa_state_plane_crs"])  # convert to state plane WA
+        gdf = gdf.to_crs(config["WA_STATE_PLANE_CRS"])  # convert to state plane WA
 
         xy_field = get_points_array(gdf.geometry)
         gdf[varname + "_lng_gps"] = gdf[varname + "_lng"]
@@ -206,10 +206,10 @@ def locate_hh_parcels(hh, parcel_df, filter_dict_list, config):
                 hh[hh_filter][varname + "_lng"], hh[hh_filter][varname + "_lat"]
             ),
         )
-        gdf.crs = config["lat_lng_crs"]
+        gdf.crs = config["LAT_LNG_CRS"]
         gdf[varname + "_lng_gps"] = gdf[varname + "_lng"]
         gdf[varname + "_lat_gps"] = gdf[varname + "_lat"]
-        gdf = gdf.to_crs(config["wa_state_plane_crs"])  # convert to state plane WA
+        gdf = gdf.to_crs(config["WA_STATE_PLANE_CRS"])  # convert to state plane WA
 
         xy_field = get_points_array(gdf.geometry)
         gdf[varname + "_lng_gps"] = gdf[varname + "_lng"]
@@ -239,58 +239,20 @@ def locate_hh_parcels(hh, parcel_df, filter_dict_list, config):
             inplace=True,
         )
 
-        # For households that are not reasonably near a parcel with households,
-        # add them to the nearset unfiltered parcel and flag
-        # Typically occurs with households living on military bases
-        gdf_far = gdf[gdf[varname + "_parcel_distance"] > config["hh_max_dist"]]
-        _dist, _ix = locate_parcel(
-            parcel_df,
-            df=gdf_far,
-            xcoord_col=varname + "_lng_fips_4601",
-            ycoord_col=varname + "_lat_fips_4601",
-        )
-        gdf_far[varname + "_parcel"] = parcel_df.iloc[_ix].parcelid.values
-        gdf_far[varname + "_parcel_distance"] = _dist
-        gdf_far = gdf_far.merge(
-            parcel_df[["parcel_id", "taz_id", "maz_id"]],
-            left_on=varname + "_parcel",
-            right_on="parcel_id",
-        )
-        gdf_far.rename(
-            columns={"taz_id": varname + "_taz", "maz_id": varname + "_maz"},
-            inplace=True,
-        )
-
-        # Add this new distance to the original gdf
-        gdf.loc[gdf_far.index, varname + "_parcel_original"] = gdf.loc[
-            gdf_far.index, varname + "_parcel"
-        ]
-        gdf.loc[gdf_far.index, varname + "_parcel_distance_original"] = gdf.loc[
-            gdf_far.index, varname + "_parcel_distance"
-        ]
-        gdf.loc[gdf_far.index, varname + "_parcel"] = gdf_far[varname + "_parcel"]
-        gdf.loc[gdf_far.index, varname + "_parcel_distance"] = gdf_far[
-            varname + "_parcel_distance"
-        ]
-        gdf["distance_flag"] = 0
-        gdf.loc[gdf_far.index, varname + "distance_flag"] = 1
-
-        # Join the gdf dataframe to the person df
-        hh_results = hh_results.merge(
-            gdf[
-                [
+        col_list = [
                     "hhid",
                     varname + "_taz",
                     varname + "_maz",
                     varname + "_parcel",
                     varname + "_parcel_distance",
-                    varname + "_parcel_distance_original",
                     varname + "_lat_fips_4601",
-                    varname + "_parcel_original",
                     varname + "_lng_fips_4601",
                     varname + "_lat_gps",
                 ]
-            ],
+
+        # Join the gdf dataframe to the person df
+        hh_results = hh_results.merge(
+            gdf[col_list],
             on="hhid",
             how="left",
         )
@@ -314,8 +276,8 @@ def locate_trip_parcels(
         )
 
         # convert from lat/lng to state plane WA
-        gdf.crs = config["lat_lng_crs"]
-        gdf = gdf.to_crs(config["wa_state_plane_crs"])
+        gdf.crs = config["LAT_LNG_CRS"]
+        gdf = gdf.to_crs(config["WA_STATE_PLANE_CRS"])
 
         xy_field = get_points_array(gdf.geometry)
         gdf[trip_end + "_lng_gps"] = gdf[trip_end + "_lng"]

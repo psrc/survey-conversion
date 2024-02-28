@@ -68,30 +68,22 @@ def apply_filter(df, df_name, filter, logger, msg):
     return df[filter]
 
 
-def assign_tour_mode(_df, tour_dict, tour_id, config):
+def assign_tour_mode(df, config):
     """Get a list of transit modes and identify primary mode
-    Primary mode is the first one from a heirarchy list found in the tour.
-    Assumes modes are values and not strings.
+    Primary mode is the first one from a heirarchy list found in a set of trips.
+    e.g., a tour has 3 walk trips, 1 local bus, and 1 light rail trip. 
+          The heirarchy assumes light rail > bus > walk, so tour mode is light rail.
     """
-    mode_list = _df["mode"].value_counts().index.astype("int").values
+
+    assert(len(df[~df['mode'].isin(config['mode_heirarchy'])]) == 0, 'missing mode not listed in mode_heirarchy')
 
     for mode in config["mode_heirarchy"]:
-        if mode in mode_list:
-            # If transit, check whether access mode is walk to transit or drive to transit
-            if mode == config["walk_to_transit_mode"]:
-                # Try to use the access mode field values to get access mode
-                # FIXME: make this more general, note requirements
-                if len(
-                    [
-                        i
-                        for i in _df["mode_acc"].values
-                        if i in config["drive_to_transit_access_list"]
-                    ]
-                ):
-                    mode = config["drive_to_transit_mode"]  # park and ride
-
+        if mode in df['mode'].values:
             return mode
 
+def transit_mode(df, config):
+    """Determine transit submode"""
+    pass
 
 def process_expression_file(df, expr_df, output_column_list, df_lookup=None):
     """Execute each row of calculations in an expression file.
@@ -126,14 +118,16 @@ def process_expression_file(df, expr_df, output_column_list, df_lookup=None):
         )
 
         exec(expr)
-    # Add empty columns to fill in later with skims
-    for col in output_column_list:
-        if col not in df.columns:
-            df[col] = -1
-        else:
-            df[col] = df[col].fillna(-1)
 
-    df = df[output_column_list]
+    if output_column_list is not None:
+        # Add empty columns to fill in later with skims
+        for col in output_column_list:
+            if col not in df.columns:
+                df[col] = -1
+            else:
+                df[col] = df[col].fillna(-1)
+
+        df = df[output_column_list]
 
     return df
 
@@ -184,7 +178,7 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
     tour_dict[tour_id]["tardest"] = df.iloc[-1]["arrtm"]
     tour_dict[tour_id]["tripsh1"] = len(df.loc[0:primary_index])
     tour_dict[tour_id]["tripsh2"] = len(df.loc[primary_index + 1 :])
-    tour_dict[tour_id]["tmodetp"] = assign_tour_mode(df, tour_dict, tour_id, config)
+    tour_dict[tour_id]["tmodetp"] = assign_tour_mode(df, config)
 
     # path type
     # Pathtype is defined by a heirarchy, where highest number is chosen first

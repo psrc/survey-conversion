@@ -1,0 +1,28 @@
+﻿index,table ,filter,result_col,result_value,description
+1,df,df['employment'] == "Employed full time (35+ hours/week, paid)",pptyp,1,full-time worker
+2,df,(df['jobs_count'] != "Missing: Skip Logic") & (df['hours_work'].isin(['31-40 hours','41–50 hours','More than 50 hours','More than 50 hours','31-34 hours'])),pptyp,1,self-employed with minimum work hours classified full-time worker
+3,df,df['employment'] == "Employed part time (fewer than 35 hours/week, paid)",pptyp,2,part-time worker
+4,df,(df['jobs_count'] != "Missing: Skip Logic") & (~df['hours_work'].isin(['31-40 hours','41–50 hours','More than 50 hours','More than 50 hours','31-34 hours'])),pptyp,2,self-employed with less than minimum work hours classified part-time worker
+5,df,(df['jobs_count'] == "Missing: Skip Logic") & (df['age'].isin(['65-74 years','75-84 years','85 or years older'])),pptyp,3,Non-working adult age over 65
+6,df,(df['jobs_count'] == "Missing: Skip Logic") & (df['age'].isin(['18-24 years','25-34 years','35-44 years','45-54 years','55-64 years'])),pptyp,4,Non working adult age <65
+7,df,(df['schooltype'].isin(['2-year college','4-year college', 'Vocational/technical school','Graduate or professional school'])) & (df['student'].isin(['Full-time student, currently attending some or all classes in-person','Full-time student, ONLY online classes'])),pptyp,5,University student (full-time)
+8,df,(~df['age'].isin(['Under 5 years old','5-11 years','12-15 years'])) & (df['schooltype'].isin(['K-12 home school (full-time or part-time)','K-12 public school','K-12 private school'])),pptyp,6,High school student age 16+
+9,df,df['age'].isin(['5-11 years','12-15 years']),pptyp,7,Child age 5-15
+10,df,df['age']=='Under 5 years old',pptyp,8,Child Under 5
+11,df,df['pptyp'].isnull(),pptyp,-1,Assign any missing df -1 value as missing logic flag
+12,df,(df['age'].isin(['16-17 years'])) & (df['pptyp'] == -1),pptyp,6,Assume anyone 16-17 is a student if they have missing school data
+13,df,df['employment'].isin(["Employed full time (35+ hours/week, paid)"]),pwtyp,1,Full time worker
+14,df,df['employment'].isin(["Employed part time (fewer than 35 hours/week, paid)"]),pwtyp,2,Part time worker
+15,df,~df['pwtyp'].isin([1,2]),pwtyp,0,Non-worker
+16,df,:,ptpass,0,Default of no transit pass availability
+17,df,(df['transit_pass'] == "Yes"),ptpass,1,
+18,df,:,ppaidprk,0,FIXME: must get this from trip info since its removed from survey
+27,df,:,hhno,df['household_id'].astype('int'),
+28,df,:,pno,df['person_id'].astype('str').apply(lambda x: x[-2:]).astype('int'),"Extract from df ID field which appends the person number to the household on the last 2 columns"
+29,df,:,psexpfac,1,update when weights are available
+30,df,:,pwtaz,df['work_taz'],
+34,df,:,pstaz,df['school_loc_taz'],
+35,df,:,pwpcl,df['work_parcel'],
+36,df,:,pspcl,df['school_loc_parcel'],
+37,df,:,pdiary,0,
+38,df,:,pproxy,0,

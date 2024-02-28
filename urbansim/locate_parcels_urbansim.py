@@ -60,8 +60,8 @@ def locate_parcels_urbansim(config):
 
     # Load parcel data with residential unit data
     parcel_df = pd.read_csv(config["parcel_file_dir"])
-    parcel_df.rename(columns={"parcel_id": "parcelid"}, inplace=True)
-    parcel_df.drop(["xcoord_p", "ycoord_p"], inplace=True, axis=1)
+    parcel_df.rename(columns={"parcel_id": "parcelid", 'xcoord_p': 'xcoord_p_new_file', 'ycoord_p': 'ycoord_p_new_file'}, inplace=True)
+    # parcel_df.drop(["xcoord_p", "ycoord_p"], inplace=True, axis=1)
 
     # Join with usual parcel data file that includes jobs and students
     parcel_df_standard = pd.read_csv(
@@ -154,27 +154,8 @@ def locate_parcels_urbansim(config):
             person["workplace"].isin(config["usual_workplace_home"]), "work_" + geog
         ] = person["home_" + geog]
 
-    person_loc_fields = [
-        "school_loc_parcel",
-        "school_loc_taz",
-        "school_loc_maz",
-        "work_parcel",
-        "work_taz",
-        "work_maz",
-        "school_loc_parcel_distance",
-        "work_parcel_distance",
-    ]
-
-    # Join selected fields back to the original person file
-    person_orig_update = person_original.merge(
-        person[person_loc_fields + ["person_id"]], on="person_id", how="left"
-    )
-    person_orig_update[person_loc_fields] = (
-        person_orig_update[person_loc_fields].fillna(-1).astype("int")
-    )
-
     # Write to file
-    person_orig_update.to_csv(
+    person.to_csv(
         os.path.join(config["output_dir"], "geolocated_person.csv"), index=False
     )
 

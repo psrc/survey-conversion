@@ -44,7 +44,7 @@ def create(trip, error_dict, config):
         print(str(tour_id))
         person_df = trip.loc[trip["unique_person_id"] == person_id]
 
-        # Loop through each travel day
+        # Evaluate each person's travel day
         for day in person_df["day"].unique():
             df = person_df.loc[person_df["day"] == day]
 
@@ -142,7 +142,7 @@ def create(trip, error_dict, config):
 
                 # Check if we are dealing with work-based subtours
                 # There must be 4+ trips for a subtour to exist; usual workplace destination appears at least twice (oadtyp==2)
-                # Ensure we don't capture return trips home by requiring destination purpose of usualy workplace and non-home types
+                # Ensure we don't capture return trips home by requiring destination purpose of usual workplace and non-home types
                 if (
                     (len(_df) >= 4)
                     & (len(_df[_df["oadtyp"] == 2]) >= 2)
@@ -176,8 +176,6 @@ def create(trip, error_dict, config):
                             if next_row["dadtyp"] == 2:
                                 subtour_df = _df.loc[subtour_start_value:i]
 
-                                # local_tour_id += 1
-
                                 tour_dict[subtour_id] = {}
                                 # Process this subtour
                                 # Create a new tour record for the subtour
@@ -210,8 +208,6 @@ def create(trip, error_dict, config):
 
                     # No subtours actually found, treat as regular set of trips
                     if len(subtours_df) < 1:
-                        # No subtours actually found
-                        # FIXME: make this a function, because it's called multiple times
                         tour_dict[tour_id]["subtrs"] = 0
                         tour_dict[tour_id]["parent"] = 0
 
@@ -268,9 +264,8 @@ def create(trip, error_dict, config):
                         ]
 
                         if "pathtype" in df.columns:
-                            # Pathtype is defined by a heirarchy, where highest number is chosen first
-                            # Ferry > Commuter rail > Light Rail > Bus > Auto Network
-                            # Note that tour pathtype is different from trip path type (?)
+                            # Pathtype is a heirarchy of modes, set in config in "mode_heirarchy"
+                            # Note that tour pathtype is different from trip path type
                             subtours_excluded_df = pd.concat(
                                 [
                                     df.loc[start_row_id:main_tour_start_index],

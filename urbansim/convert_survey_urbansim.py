@@ -54,7 +54,7 @@ def convert_format_urbansim(config):
     person = convert.process_expression_file(
         person_original_df,
         person_expr_df,
-        config["person_columns"],
+        None,
         df_lookup[df_lookup["table"] == "person"],
     )
 

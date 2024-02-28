@@ -69,13 +69,10 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     # Trips to/from work are considered "usual workplace" only if dtaz == workplace TAZ
     # must join person records to get usual work and school location
     df = df.merge(
-        person[["person_id", "PNUM", "workplace_zone_id", "school_zone_id"]],
+        person[["unique_person_id", "PNUM", "workplace_zone_id", "school_zone_id"]],
         how="left",
-        on="person_id",
+        on="unique_person_id",
     )
-
-    # Get day of week from day ID
-    df = df.merge(day[["day_id", "travel_dow"]], how="left", on="day_id")
 
     # Calculate fields using an expression file
     expr_df = pd.read_csv(os.path.join(config["input_dir"], "trip_expr.csv"))
@@ -88,7 +85,7 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     df = convert.apply_filter(
         df,
         "trips",
-        df["travel_dow"].isin(["Monday", "Tuesday", "Wednesday", "Thursday"]),
+        df["travel_dow_label"].isin(["Monday", "Tuesday", "Wednesday", "Thursday"]),
         logger,
         "trip taken on Friday, Saturday, or Sunday",
     )
@@ -101,9 +98,32 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
         "missing departure/arrival time",
     )
 
+    # Get transit submode 
+    # convert.assign_tour_mode(df, tour_dict, tour_id, config)
+    df['access_mode'] = 'WALK'
+    df.loc[df['mode_acc'].isin(config['drive_to_transit_access_list']),'access_mode'] = 'DRIVE'
+
+    for col in ['mode_1','mode_2','mode_3','mode_4']:
+        for mode, mode_list in config['submode_dict'].items():
+            df.loc[df[col].isin(mode_list), mode+'_flag'] = 1
+
+    # Use mode heirarchy to deterimine primary transit submode
+    df['transit_mode'] = np.nan
+    for mode in config['transit_heirarchy']:
+        df.loc[(df['transit_mode'].isnull()) & (df[mode+'_flag'] == 1), 'transit_mode'] = mode
+
+    # Join access method to complete transit submode
+    df['trip_mode'] = df['access_mode'] + "_" + df['transit_mode']
+
+    # We don't separate drive access by submode so reset those values
+    df.loc[df['access_mode'] == 'DRIVE', 'trip_mode'] = config['TRANSIT_DRIVE_MODE']
+        
     df = convert.process_expression_file(
         df, expr_df, config["trip_columns"], df_lookup[df_lookup["table"] == "trip"]
     )
+
+
+
 
     # Filter out trips that started before 0 minutes after midnight
     df = convert.apply_filter(
@@ -175,7 +195,7 @@ def build_tour_file(trip, person, config, logger):
     # Reset the index
     trip = trip.reset_index()
 
-    # Instantiate trip
+    # Map to standard columns
     df_mapping = pd.read_csv(
         r"C:\Workspace\survey-conversion\activitysim\inputs\2023\mapping.csv"
     )
@@ -206,11 +226,18 @@ def build_tour_file(trip, person, config, logger):
     return tour, trip, error_dict
 
 
-def process_household_day(tour, hh):
+def process_household_day(person_day_original_df, hh, config):
+    person_day_original_df["household_id"] = person_day_original_df[
+        "household_id"
+    ].astype("int64")
     household_day = (
-        tour.groupby(["household_id", "day"])
+        person_day_original_df.groupby(["household_id", "travel_dow"])
         .count()
-        .reset_index()[["household_id", "day"]]
+        .reset_index()[["household_id", "travel_dow"]]
+    )
+
+    household_day.rename(
+        columns={"household_id": "hhno", "travel_dow": "day"}, inplace=True
     )
 
     # add day of week lookup
@@ -220,11 +247,20 @@ def process_household_day(tour, hh):
     for col in ["jttours", "phtours", "fhtours"]:
         household_day[col] = 0
 
+    # Add an ID column
+    household_day["id"] = range(1, len(household_day) + 1)
+
     # Add expansion factor
+    # FIXME: no weights yet, replace with the weights column when available
+    hh[config["hh_weight_col"]] = 1
     household_day = household_day.merge(
-        hh[["household_id", "hh_weight"]], on="household_id", how="left"
+        hh[["household_id", config["hh_weight_col"]]],
+        left_on="hhno",
+        right_on="household_id",
+        how="left",
     )
-    household_day.rename(columns={"hh_weight": "hdexpfac"}, inplace=True)
+    household_day.rename(columns={config["hh_weight_col"]: "hdexpfac"}, inplace=True)
+    household_day["hdexpfac"] = household_day["hdexpfac"].fillna(-1)
 
     return household_day
 
@@ -236,6 +272,12 @@ def process_person_day(tour, person, trip, hh, person_day_original_df, config):
         on=["household_id", "PNUM"],
         how="left",
     )
+
+    # Map to standard columns
+    df_mapping = pd.read_csv(
+        r"C:\Workspace\survey-conversion\activitysim\inputs\2023\mapping.csv"
+    )
+    tour = convert.map_to_class(tour, df_mapping)
 
     # Build person day file directly from tours and trips
     pday = days.create(tour, person, trip, config)
@@ -357,8 +399,11 @@ def convert_format(config):
         right_on="elmer_value",
         how="left",
     )
-    person_day_original_df.rename(columns={"model_value": "day"}, inplace=True)
-    person_day_original_df["day"] = person_day_original_df["day"].astype("int")
+
+    person_day_original_df.rename(
+        columns={"travel_dow": "travel_dow_label", "model_value": "travel_dow"},
+        inplace=True,
+    )
 
     # Load geolocated survey data
     trip_original_df = pd.read_csv(
@@ -369,6 +414,30 @@ def convert_format(config):
     )
     person_original_df = pd.read_csv(
         os.path.join(config["output_dir"], "geolocated_person.csv")
+    )
+
+    # # Get travel day label from person Day file
+    trip_original_df.rename(columns={'travel_dow': 'travel_dow_label'}, inplace=True)
+    trip_original_df = trip_original_df.merge(
+        person_day_original_df[["day_id", "travel_dow"]],
+        how="left",
+        on="day_id",
+    )
+
+    # Create new Household and Person records for each travel day.
+    # For trip/tour models we use this data as if each person-day were independent for multiple-day diaries
+    (
+        hh_original_df,
+        trip_original_df,
+        person_original_df,
+        person_day_original_df,
+    ) = convert.create_multiday_records(
+        hh_original_df,
+        trip_original_df,
+        person_original_df,
+        person_day_original_df,
+        "household_id",
+        config,
     )
 
     # Recode person, household, and trip data
@@ -387,35 +456,25 @@ def convert_format(config):
     # Calculate person fields using trips with updated format
 
     # Write mapping between original trip_id and tsvid used on they survey
-    trip[["trip_id", "tsvid"]].to_csv(
-        os.path.join(config["output_dir"], "trip_id_tsvid_mapping.csv")
-    )
-
-    # Create new Household and Person records for each travel day.
-    # For trip/tour models we use this data as if each person-day were independent for multiple-day diaries
-    hh, trip, person = convert.create_multiday_records(
-        hh, trip, person, "household_id", config
-    )
+    # trip[["trip_id", "tsvid"]].to_csv(
+    #     os.path.join(config["output_dir"], "trip_id_tsvid_mapping.csv")
+    # )
 
     # Make sure trips are properly ordered, where deptm is increasing for each person's travel day
     trip["person_id_int"] = trip["person_id"].astype("int64")
     trip = trip.sort_values(["person_id_int", "day", "depart"])
     trip = trip.reset_index()
 
-    # Use unique person ID since the Elmer person_id has been copied for multiple days
-    trip["unique_person_id"] = trip["household_id"].astype("int64").astype(
-        "str"
-    ) + trip["PNUM"].astype("int64").astype("str")
-    person["unique_person_id"] = person["household_id"].astype("int64").astype(
-        "str"
-    ) + person["PNUM"].astype("int64").astype("str")
-
     # Create tour file and update the trip file with tour info
     tour, trip, error_dict = build_tour_file(trip, person, config, logger)
 
     # Create household day file
     tour.rename(columns={"hhno": "household_id", "pno": "PNUM"}, inplace=True)
-    household_day = process_household_day(tour, hh)
+    
+    # !!!FIXME! we are assigning weights = 1 here, replace with the weights column from original hh file when available
+    household_day = process_household_day(
+        person_day_original_df, hh_original_df, config
+    )
 
     error_dict_df = pd.DataFrame(
         error_dict.values(), index=error_dict.keys(), columns=["errors"]

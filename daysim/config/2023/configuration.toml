@@ -13,7 +13,7 @@ input_dir = 'daysim/inputs/2023'
 output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
 
 # Specify which components to run
-run_locate_parcels = false
+run_locate_parcels = true
 run_convert_format = true
 run_data_validation = true
 run_attach_skims = true
@@ -50,14 +50,13 @@ opurp_field = "origin_purpose"
 dpurp_field = "dest_purpose"
 
 # Spatial projection definitions
-lat_lng_crs = 'epsg:4326'    # Survey data expected in lat/lng format
-wa_state_plane_crs = 'epsg:2285'    # Projection of parcel and TAZ data; survey data is converted to this
+LAT_LNG_CRS = 'epsg:4326'    # Survey data expected in lat/lng format
+WA_STATE_PLANE_CRS = 'epsg:2285'    # Projection of parcel and TAZ data; survey data is converted to this
 
 # list of columns in "workplace" field that represent main work location as home
 usual_workplace_home = ['At home (telecommute or self-employed with home office)']
 
 # distance in feet for max allowable distance between collected XY data and acceptable land use
-hh_max_dist = 2640    # half mile for distance near parcel with households
 school_max_dist = 5280     # mile for distance near parcel with students
 
 ################################################
@@ -78,9 +77,10 @@ change_mode_purp = 10
 origin = 'otaz'
 dest = 'dtaz'
 
-# Heirarchy order for tour mode, per DaySim docs: https://www.psrc.org/sites/default/files/2015psrc-modechoiceautomodels.pdf
+# Heirarchy order for tour mode, per DaySim docs: 
+# https://www.psrc.org/sites/default/files/2015psrc-modechoiceautomodels.pdf
 # Drive to Transit > Walk to Transit > School Bus > HOV3+ > HOV2 > SOV > Bike > Walk > Other
-mode_heirarchy = [6,8,9,5,4,3,2,1,10]
+mode_heirarchy = [7,6,8,9,5,4,3,2,1,10]
 
 transit_mode_list = ['Ferry or water taxi',
                     'Commuter rail (Sounder, Amtrak)',
