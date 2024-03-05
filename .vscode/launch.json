@@ -8,10 +8,12 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "daysim/process_daysim.py",
-            // "program": "activitysim/process_activitysim.py",
+            // "program": "daysim/process_daysim.py",
+            "program": "activitysim_psrc/process_activitysim.py",
+            // "program": "urbansim/process_urbansim.py",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            // "args": ["C:/Workspace/psrc_activitysim_psrc_dev/configs_dev"]
         }
     ]
 }

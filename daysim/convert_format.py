@@ -113,9 +113,9 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     # Trips to/from work are considered "usual workplace" only if dtaz == workplace TAZ
     # must join person records to get usual work and school location
     df = df.merge(
-        person[["unique_person_id", "pno", "pwpcl", "pspcl", "pwtaz", "pstaz"]],
+        person[["person_id", "pno", "pwpcl", "pspcl", "pwtaz", "pstaz"]],
         how="left",
-        on="unique_person_id",
+        on="person_id",
     )
 
     # Calculate fields using an expression file
@@ -276,9 +276,7 @@ def build_tour_file(trip, person, config, logger):
     tour = convert.process_expression_file(tour, expr_df, config["tour_columns"])
 
     # Assign weight toexpfac as hhexpfac (getting it from psexpfac, which is the same as hhexpfac)
-    tour = tour.merge(
-        person[["unique_person_id", "psexpfac"]], on="unique_person_id", how="left"
-    )
+    tour = tour.merge(person[["person_id", "psexpfac"]], on="person_id", how="left")
     tour.rename(columns={"psexpfac": "toexpfac"}, inplace=True)
 
     # remove the trips that weren't included in the tour file
@@ -388,37 +386,35 @@ def process_person_day(
             ["Monday", "Tuesday", "Wednesday", "Thursday"]
         )
     ]
-    no_travel_df = no_travel_df[
-        no_travel_df["unique_person_id"].isin(person["unique_person_id"])
-    ]
+    no_travel_df = no_travel_df[no_travel_df["person_id"].isin(person["person_id"])]
     # Only add entries for completed survey days
     # no_travel_df = no_travel_df[no_travel_df["svy_complete"] == "Complete"]
 
     pday["no_travel_flag"] = 0
 
-    for person_rec in no_travel_df.unique_person_id.unique():
+    for person_rec in no_travel_df.person_id.unique():
         pday.loc[person_rec, :] = 0
         pday.loc[person_rec, "no_travel_flag"] = 1
         pday.loc[person_rec, "hhno"] = no_travel_df[
-            no_travel_df["unique_person_id"] == person_rec
+            no_travel_df["person_id"] == person_rec
         ]["household_id"].values[0]
         pday.loc[person_rec, "pno"] = no_travel_df[
-            no_travel_df["unique_person_id"] == person_rec
+            no_travel_df["person_id"] == person_rec
         ]["pernum"].values[0]
         pday.loc[person_rec, "person_id"] = no_travel_df[
-            no_travel_df["unique_person_id"] == person_rec
+            no_travel_df["person_id"] == person_rec
         ]["person_id"].values[0]
-        pday.loc[person_rec, "unique_person_id"] = person_rec
+        pday.loc[person_rec, "person_id"] = person_rec
         # these will all be replaced after this step so set to 1
         pday.loc[person_rec, "day"] = 1
         pday.loc[person_rec, "beghom"] = 1
         pday.loc[person_rec, "endhom"] = 1
         pday.loc[person_rec, "wkathome"] = no_travel_df[
-            no_travel_df["unique_person_id"] == person_rec
+            no_travel_df["person_id"] == person_rec
         ]["wkathome"].values[0]
-        pday.loc[person_rec, "pdexpfac"] = person[
-            person["unique_person_id"] == person_rec
-        ]["psexpfac"].values[0]
+        pday.loc[person_rec, "pdexpfac"] = person[person["person_id"] == person_rec][
+            "psexpfac"
+        ].values[0]
 
     # Join household day ID to person Day
     pday = pday.merge(
@@ -537,13 +533,13 @@ def convert_format(config):
     # reconcile new multi-day IDs with the Elmer person day table
 
     # Make sure trips are properly ordered, where deptm is increasing for each person's travel day
-    trip["unique_person_id_int"] = trip["unique_person_id"].astype("int64")
-    trip = trip.sort_values(["unique_person_id_int", "day", "deptm"])
+    trip["person_id_int"] = trip["person_id"].astype("int64")
+    trip = trip.sort_values(["person_id_int", "day", "deptm"])
     trip = trip.reset_index()
 
     # Create tour file and update the trip file with tour info
     tour, trip, error_dict = build_tour_file(trip, person, config, logger)
-    # tour = convert.unique_person_id(tour, 'hhno', 'pno')
+    # tour = convert.person_id(tour, 'hhno', 'pno')
 
     # !!!FIXME! we are assigning weights = 1 here, replace with the weights column from original hh file when available
     household_day = process_household_day(

@@ -19,26 +19,19 @@
 # multiple filter tiers can be applied (e.g., first find parcel with students; for parcels with high distances,
 # use a looser criteria like a parcel with service jobs, followed by parcels with household population.)
 
-import os, sys
 import pandas as pd
 import geopandas as gpd
 from scipy.spatial import cKDTree
-from pysal.lib.weights.distance import get_points_array
+
+# from pysal.lib.weights.distance.util import get_points_array
 from shapely.geometry import LineString
 from pyproj import Proj, transform
-import pyproj
 import numpy as np
 from operator import itemgetter
-import urllib
-import pyodbc
-import sqlalchemy
 from sqlalchemy.engine import URL
 from pymssql import connect
 from shapely import wkt
-import logging
 from daysim import logcontroller
-import datetime
-import toml
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -111,11 +104,11 @@ def locate_person_parcels(person, parcel_df, filter_dict_list, config):
         gdf[varname + "_lat_gps"] = gdf[varname + "_lat"]
         gdf = gdf.to_crs(config["WA_STATE_PLANE_CRS"])  # convert to state plane WA
 
-        xy_field = get_points_array(gdf.geometry)
+        # xy_field = get_points_array(gdf.geometry)
         gdf[varname + "_lng_gps"] = gdf[varname + "_lng"]
         gdf[varname + "_lat_gps"] = gdf[varname + "_lat"]
-        gdf[varname + "_lng_fips_4601"] = xy_field[:, 0]
-        gdf[varname + "_lat_fips_4601"] = xy_field[:, 1]
+        gdf[varname + "_lng_fips_4601"] = gdf.geometry.x
+        gdf[varname + "_lat_fips_4601"] = gdf.geometry.y
 
         # Return: (_dist) the distance to the closest parcel that meets given critera,
         #         (_ix) list of the indices of parcel IDs from (_df), which is the filtered set of candidate parcels
@@ -211,11 +204,11 @@ def locate_hh_parcels(hh, parcel_df, filter_dict_list, config):
         gdf[varname + "_lat_gps"] = gdf[varname + "_lat"]
         gdf = gdf.to_crs(config["WA_STATE_PLANE_CRS"])  # convert to state plane WA
 
-        xy_field = get_points_array(gdf.geometry)
+        # xy_field = get_points_array(gdf.geometry)
         gdf[varname + "_lng_gps"] = gdf[varname + "_lng"]
         gdf[varname + "_lat_gps"] = gdf[varname + "_lat"]
-        gdf[varname + "_lng_fips_4601"] = xy_field[:, 0]
-        gdf[varname + "_lat_fips_4601"] = xy_field[:, 1]
+        gdf[varname + "_lng_fips_4601"] = gdf.geometry.x
+        gdf[varname + "_lat_fips_4601"] = gdf.geometry.y
 
         # Return: (_dist) the distance to the closest parcel that meets given critera,
         # (_ix) list of the indices of parcel IDs from (_df), which is the filtered set of candidate parcels
@@ -240,15 +233,15 @@ def locate_hh_parcels(hh, parcel_df, filter_dict_list, config):
         )
 
         col_list = [
-                    "hhid",
-                    varname + "_taz",
-                    varname + "_maz",
-                    varname + "_parcel",
-                    varname + "_parcel_distance",
-                    varname + "_lat_fips_4601",
-                    varname + "_lng_fips_4601",
-                    varname + "_lat_gps",
-                ]
+            "hhid",
+            varname + "_taz",
+            varname + "_maz",
+            varname + "_parcel",
+            varname + "_parcel_distance",
+            varname + "_lat_fips_4601",
+            varname + "_lng_fips_4601",
+            varname + "_lat_gps",
+        ]
 
         # Join the gdf dataframe to the person df
         hh_results = hh_results.merge(
@@ -279,11 +272,11 @@ def locate_trip_parcels(
         gdf.crs = config["LAT_LNG_CRS"]
         gdf = gdf.to_crs(config["WA_STATE_PLANE_CRS"])
 
-        xy_field = get_points_array(gdf.geometry)
+        # xy_field = get_points_array(gdf.geometry)
         gdf[trip_end + "_lng_gps"] = gdf[trip_end + "_lng"]
         gdf[trip_end + "_lat_gps"] = gdf[trip_end + "_lat"]
-        gdf[trip_end + "_lng_fips_4601"] = xy_field[:, 0]
-        gdf[trip_end + "_lat_fips_4601"] = xy_field[:, 1]
+        gdf[trip_end + "_lng_fips_4601"] = gdf.geometry.x
+        gdf[trip_end + "_lat_fips_4601"] = gdf.geometry.y
 
         trip_results = trip_results.merge(
             gdf[
@@ -334,7 +327,7 @@ def locate_trip_parcels(
                 inplace=True,
             )
 
-            df_temp = df_temp.append(_df)
+            df_temp = pd.concat([df_temp, _df])
         # Join df_temp to final field for each trip type
         df_temp.set_index("trip_id", inplace=True)
         final_df = final_df.merge(

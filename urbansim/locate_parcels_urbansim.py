@@ -60,7 +60,14 @@ def locate_parcels_urbansim(config):
 
     # Load parcel data with residential unit data
     parcel_df = pd.read_csv(config["parcel_file_dir"])
-    parcel_df.rename(columns={"parcel_id": "parcelid", 'xcoord_p': 'xcoord_p_new_file', 'ycoord_p': 'ycoord_p_new_file'}, inplace=True)
+    parcel_df.rename(
+        columns={
+            "parcel_id": "parcelid",
+            "xcoord_p": "xcoord_p_new_file",
+            "ycoord_p": "ycoord_p_new_file",
+        },
+        inplace=True,
+    )
     # parcel_df.drop(["xcoord_p", "ycoord_p"], inplace=True, axis=1)
 
     # Join with usual parcel data file that includes jobs and students

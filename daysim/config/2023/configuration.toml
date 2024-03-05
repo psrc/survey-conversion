@@ -113,7 +113,6 @@ person_columns = [
         "pproxy",
         "psexpfac",
         "person_id",
-        "unique_person_id"
     ]
 
 hh_columns = [
@@ -167,7 +166,6 @@ trip_columns = [
         "endacttm",
         "trip_id",
         "person_id",
-        "unique_person_id",
     ]
 
 tour_columns = [
@@ -202,7 +200,6 @@ tour_columns = [
         "fhtindx2",
         "toexpfac",
         "person_id",
-        "unique_person_id",
         "hhid_elmer",
     ]
 

@@ -7,22 +7,23 @@ elmer_person_table = "HHSurvey.v_person_2023_modeling"
 elmer_hh_table = "HHSurvey.v_household_2023_modeling"
 elmer_person_day_table = "HHSurvey.v_day_2023_modeling"
 
-input_dir = 'activitysim/inputs/2023'
+input_dir = 'activitysim_psrc/inputs/2023'
 
 # Project Output Directory
 output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format'
+output_dir_final = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format/final'
+
+asim_config_dir = 'C:/Workspace/psrc_activitysim_psrc_dev/configs_dev'
+
+# To debug, add person IDs to list; to process all pass empty list
+debug_person_id = []
 
 # Specify which components to run
 run_locate_parcels = false
-run_convert_format = true
-run_data_validation = false
-run_attach_skims = false
+run_convert_format = false
+run_clean = true
+run_infer = true
 
-debug_person_id = []
-# debug_person_id = ['1710030291']    # List of person IDs to iterate over in tour creation, empty list to process all
-# debug = true
-debug_tours = false
-write_debug_files = true
 
 hh_weight_col = 'hh_weight_2023'
 drive_to_transit_access_list = [
@@ -34,8 +35,6 @@ drive_to_transit_access_list = [
     "Got dropped off in another vehicle (or motorcycle)",
     "Uber/Lyft, taxi, or car service"
 ]
-
-
 
 # Heirarchy order for tour mode, per DaySim docs: https://www.psrc.org/sites/default/files/2015psrc-modechoiceautomodels.pdf
 # Drive to Transit > Walk to Transit > School Bus > HOV3+ > HOV2 > SOV > Bike > Walk > Other
@@ -49,6 +48,8 @@ transit_mode_list = ['WLK_FRY',
                     'WLK_LR',
                     'WLK_LOC',
                     'DRIVE_TRN']
+
+missing_school_zone = 9999999999999
 
 ################################################
 # Parcel Location (locate_parcels.py) Config
@@ -68,8 +69,8 @@ opurp_field = "origin_purpose"
 dpurp_field = "dest_purpose"
 
 # Spatial projection definitions
-lat_lng_crs = 'epsg:4326'    # Survey data expected in lat/lng format
-wa_state_plane_crs = 'epsg:2285'    # Projection of parcel and TAZ data; survey data is converted to this
+LAT_LNG_CRS = 'epsg:4326'    # Survey data expected in lat/lng format
+WA_STATE_PLANE_CRS = 'epsg:2285'    # Projection of parcel and TAZ data; survey data is converted to this
 
 # list of columns in "workplace" field that represent main work location as home
 usual_workplace_home = ['At home (telecommute or self-employed with home office)']
@@ -105,7 +106,6 @@ run_root = 'L:/RTP_2022/final_runs/sc_rtp_2018_final/soundcast'
 bike_speed = 10 # miles per hour
 walk_speed = 3 # miles per hour
 
-
 person_columns = [
         "person_id",
         "household_id",
@@ -119,9 +119,8 @@ person_columns = [
         "workplace_zone_id",
         "free_parking_at_work",
         "race_category",
-        "person_id_elmer",
+        "household_id_elmer",
         "person_weight",
-        "unique_person_id"
     ]
 tour_columns = [
     "tour_id",
@@ -136,7 +135,6 @@ tour_columns = [
     "tour_mode",
     "parent_tour_id",
     "household_id_elmer",
-    "unique_person_id"
 ]
 
 trip_columns = [
@@ -161,8 +159,6 @@ trip_columns = [
     "trip_mode",
     "trip_id_elmer",
     "trip_weight",
-    "household_id_elmer",
-    "unique_person_id"
 ]
 
 hh_columns = [
@@ -177,6 +173,14 @@ hh_columns = [
     "household_id_elmer",
     "hh_weight",
 ]
+
+# survey_tables = [
+# households = {"file_name": "survey_households.csv"},
+# persons = {"file_name": "survey_persons.csv"},
+# tours = {"file_name": "survey_tours.csv"},
+# joint_tour_participants = {"file_name": "survey_joint_tour_participants.csv"},
+# trips = {"file_name": "survey_trips.csv"}
+# ]
 
 [submode_dict]
 FRY = ['Ferry or water taxi']

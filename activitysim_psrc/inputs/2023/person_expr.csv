@@ -3,6 +3,7 @@
 2,df,:,age,df['age'].astype('int'),
 2,df,:,person_weight,1,FIXME:fill in with appropriate column when available
 3,df,:,student,df['student'].astype('int'),
+3,df,:,household_id_elmer,df['hhid_elmer'],
 5,df,(df['school_loc_lat'] > 0) & (df['student'].isin([1,2])),school_zone_id,9999999999999
 9,df,df['employment'] == 'Employed full time (35+ hours/week, paid)',ptype,1,Full time worker
 10,df,df['employment'].isin(['Employed part time (fewer than 35 hours/week, paid)', 'Self-employed']),ptype,2,Part time worker (includes part time worker and self-employed people

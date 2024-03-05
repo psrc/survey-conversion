@@ -38,11 +38,11 @@ def create(trip, error_dict, config):
         person_id_list = config["debug_person_id"]
     else:
         # Get all unique person ID values
-        person_id_list = trip["unique_person_id"].value_counts().index.values
+        person_id_list = trip["person_id"].value_counts().index.values
 
     for person_id in person_id_list:
         print(str(tour_id))
-        person_df = trip.loc[trip["unique_person_id"] == person_id]
+        person_df = trip.loc[trip["person_id"] == person_id]
 
         # Evaluate each person's travel day
         for day in person_df["day"].unique():
@@ -51,9 +51,9 @@ def create(trip, error_dict, config):
             # First O and last D of person's travel day should be home; if not, skip this trip set
             # FIXME: consider keeping other trips that conform
             if (
-                df.groupby("unique_person_id").first()["opurp"].values[0]
+                df.groupby("person_id").first()["opurp"].values[0]
                 != config["home_purp"]
-            ) or df.groupby("unique_person_id").last()["dpurp"].values[0] != config[
+            ) or df.groupby("person_id").last()["dpurp"].values[0] != config[
                 "home_purp"
             ]:
                 bad_trips += df["trip_id"].tolist()
@@ -224,7 +224,6 @@ def create(trip, error_dict, config):
                             "hhno",
                             "pno",
                             "person_id",
-                            "unique_person_id",
                         ]:
                             tour_dict[tour_id][col] = _df.iloc[0][col]
 
@@ -361,8 +360,8 @@ def create(trip, error_dict, config):
 
     tour = pd.DataFrame.from_dict(tour_dict, orient="index")
 
-    tour["unique_person_id"] = tour["hhno"].astype("int").astype("str") + tour[
-        "pno"
-    ].astype("str")
+    # tour["person_id"] = tour["hhno"].astype("int").astype("str") + tour["pno"].astype(
+    #     "str"
+    # )
 
     return tour, bad_trips

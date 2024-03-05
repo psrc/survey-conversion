@@ -25,24 +25,53 @@ from sqlalchemy.engine import URL
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-def map_to_class(df_trip, df_mapping):
+def read_tables(input_dir, tables):
+    for table, info in tables.items():
+        table = pd.read_csv(os.path.join(input_dir, info["file_name"]))
+        # coerce missing data in string columns to empty strings, not NaNs
+        for c in table.columns:
+            # read_csv converts empty string to NaN, even if all non-empty values are strings
+            if table[c].dtype == "object":
+                print("##### converting", c, table[c].dtype)
+                table[c] = table[c].fillna("").astype(str)
+        info["table"] = table
+
+    households = tables["households"].get("table")
+    persons = tables["persons"].get("table")
+    tours = tables["tours"].get("table")
+    joint_tour_participants = tables["joint_tour_participants"].get("table")
+    trips = tables["trips"].get("table")
+
+    return households, persons, tours, joint_tour_participants, trips
+
+
+def map_to_class(df, table, df_mapping, direction):
     """Create a dictionary to map between model format and this script."""
-    df_mapping = df_mapping[~df_mapping["model_variable"].isnull()]
-    df_mapping = df_mapping.set_index("model_variable")
-    map_dict = df_mapping.to_dict()["class_variable"]
+    df_mapping = df_mapping[~df_mapping["script_name"].isnull()]
+    df_mapping = df_mapping[df_mapping["table"] == table]
 
-    df_trip.rename(columns=map_dict, inplace=True)
+    if direction == "script_to_original":
+        df_mapping = df_mapping.set_index("script_name")
+        map_dict = df_mapping.to_dict()["input_name"]
+    elif direction == "original_to_script":
+        df_mapping = df_mapping.set_index("input_name")
+        map_dict = df_mapping.to_dict()["script_name"]
+    df.rename(columns=map_dict, inplace=True)
 
-    return df_trip
+    return df
 
 
 def unique_person_id(df, hhid_col, pno_col):
     """Create an unique person ID from household and person number.
     Returns str
     """
-    df["unique_person_id"] = df[hhid_col].astype("int64").astype("str") + df[
-        pno_col
-    ].astype("int64").astype("str")
+
+    if "person_id" in df.columns:
+        df.drop("person_id", axis=1, inplace=True)
+
+    df["person_id"] = df[hhid_col].astype("int64").astype("str") + df[pno_col].astype(
+        "int64"
+    ).astype("str")
 
     return df
 
@@ -71,19 +100,24 @@ def apply_filter(df, df_name, filter, logger, msg):
 def assign_tour_mode(df, config):
     """Get a list of transit modes and identify primary mode
     Primary mode is the first one from a heirarchy list found in a set of trips.
-    e.g., a tour has 3 walk trips, 1 local bus, and 1 light rail trip. 
+    e.g., a tour has 3 walk trips, 1 local bus, and 1 light rail trip.
           The heirarchy assumes light rail > bus > walk, so tour mode is light rail.
     """
 
-    assert(len(df[~df['mode'].isin(config['mode_heirarchy'])]) == 0, 'missing mode not listed in mode_heirarchy')
+    assert (
+        len(df[~df["mode"].isin(config["mode_heirarchy"])]) == 0,
+        "missing mode not listed in mode_heirarchy",
+    )
 
     for mode in config["mode_heirarchy"]:
-        if mode in df['mode'].values:
+        if mode in df["mode"].values:
             return mode
+
 
 def transit_mode(df, config):
     """Determine transit submode"""
     pass
+
 
 def process_expression_file(df, expr_df, output_column_list, df_lookup=None):
     """Execute each row of calculations in an expression file.
@@ -149,7 +183,7 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
     Tour departure is always the departure time from the first trip.
     """
 
-    for col in ["hhno", "pno", "person_id", "unique_person_id"]:
+    for col in ["hhno", "pno", "person_id"]:
         tour_dict[tour_id][col] = df.iloc[0][col]
 
     tour_dict[tour_id]["day"] = day
@@ -250,7 +284,7 @@ def create_multiday_records(hh, trip, person, person_day, hhid_col, config):
         ].copy()
         _hh["travel_dow"] = day
         _hh = unique_household_id(_hh, "hhid_elmer", "travel_dow")
-        multiday_hh = multiday_hh.append(_hh)
+        multiday_hh = pd.concat([multiday_hh, _hh])
 
         _person = person.loc[
             person["hhid_elmer"].isin(
@@ -259,7 +293,7 @@ def create_multiday_records(hh, trip, person, person_day, hhid_col, config):
         ].copy()
         _person["travel_dow"] = day
         _person = unique_household_id(_person, "hhid_elmer", "travel_dow")
-        multiday_person = multiday_person.append(_person)
+        multiday_person = pd.concat([multiday_person, _person])
 
     multiday_person.drop("travel_dow", axis=1, inplace=True)
     multiday_hh.drop("travel_dow", axis=1, inplace=True)

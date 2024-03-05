@@ -19,26 +19,10 @@
 # multiple filter tiers can be applied (e.g., first find parcel with students; for parcels with high distances,
 # use a looser criteria like a parcel with service jobs, followed by parcels with household population.)
 
-import os, sys
+import os
 import pandas as pd
-import geopandas as gpd
-from scipy.spatial import cKDTree
-from pysal.lib.weights.distance import get_points_array
-from shapely.geometry import LineString
-from pyproj import Proj, transform
-import pyproj
-import numpy as np
-from operator import itemgetter
-import urllib
-import pyodbc
-import sqlalchemy
-from sqlalchemy.engine import URL
-from pymssql import connect
-from shapely import wkt
-import logging
 from daysim import logcontroller
 import datetime
-import toml
 from modules import geolocate, util
 
 pd.options.mode.chained_assignment = None  # default='warn'
