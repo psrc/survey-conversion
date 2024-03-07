@@ -15,9 +15,9 @@ pd.options.mode.chained_assignment = None  # default='warn'
 def create(tour, person, trip, config):
     pday = pd.DataFrame()
 
-    for person_rec in person["unique_person_id"].unique():
+    for person_rec in person["person_id"].unique():
         # get this person's tours
-        _tour = tour[tour["unique_person_id"] == person_rec]
+        _tour = tour[tour["person_id"] == person_rec]
 
         if len(_tour) > 0:
             # Loop through each day
@@ -27,11 +27,10 @@ def create(tour, person, trip, config):
                 # prec_id = str(person_rec) + str(day)
                 pday.loc[person_rec, "hhno"] = day_tour["hhno"].iloc[0]
                 pday.loc[person_rec, "pno"] = day_tour["pno"].iloc[0]
-                pday.loc[person_rec, "person_id"] = day_tour["person_id"].iloc[0]
-                pday.loc[person_rec, "unique_person_id"] = person_rec
+                pday.loc[person_rec, "person_id"] = person_rec
                 pday.loc[person_rec, "day"] = day
                 pday.loc[person_rec, "pdexpfac"] = person[
-                    person["unique_person_id"] == person_rec
+                    person["person_id"] == person_rec
                 ].iloc[0]["psexpfac"]
 
                 # Begin/End at home-
@@ -39,7 +38,7 @@ def create(tour, person, trip, config):
                 pday.loc[person_rec, "beghom"] = 0
                 pday.loc[person_rec, "endhom"] = 0
                 _trip = trip[
-                    (trip["unique_person_id"] == person_rec) & (trip["day"] == day)
+                    (trip["person_id"] == person_rec) & (trip["day"] == day)
                 ]
                 if _trip.iloc[0]["opurp"] == 0:
                     pday.loc[person_rec, "beghom"] = 1

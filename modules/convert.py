@@ -67,7 +67,7 @@ def unique_person_id(df, hhid_col, pno_col):
     """
 
     if "person_id" in df.columns:
-        df.drop("person_id", axis=1, inplace=True)
+        df.rename(columns={'person_id': 'person_id_original'}, inplace=True)
 
     df["person_id"] = df[hhid_col].astype("int64").astype("str") + df[pno_col].astype(
         "int64"
@@ -119,10 +119,10 @@ def transit_mode(df, config):
     pass
 
 
-def process_expression_file(df, expr_df, output_column_list, df_lookup=None):
+def process_expression_file(df, expr_df, df_lookup=None):
     """Execute each row of calculations in an expression file.
     Apply mapping from CSV files
-    Fill empty columns in output_column_list with -1."""
+    """
 
     # Apply direct mapping from lookup CSV
     if df_lookup is not None:
@@ -153,16 +153,6 @@ def process_expression_file(df, expr_df, output_column_list, df_lookup=None):
 
         exec(expr)
 
-    if output_column_list is not None:
-        # Add empty columns to fill in later with skims
-        for col in output_column_list:
-            if col not in df.columns:
-                df[col] = -1
-            else:
-                df[col] = df[col].fillna(-1)
-
-        df = df[output_column_list]
-
     return df
 
 
@@ -182,6 +172,8 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
     household and person data that is always available on the first trip record.
     Tour departure is always the departure time from the first trip.
     """
+
+    tour_dict[tour_id]["error"] = str(list(df['error_flag'].unique()))
 
     for col in ["hhno", "pno", "person_id"]:
         tour_dict[tour_id][col] = df.iloc[0][col]
@@ -227,7 +219,7 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
 def update_trip_data(trip, df, tour_id):
     """
     trip: dataframe of trips to be updated
-    df: dataframe of selected tt
+    df: dataframe of tour components
     """
 
     primary_index = get_primary_index(df)

@@ -206,11 +206,6 @@ def build_tour_file(trip, person, config, logger):
     # Build tour file; return df of tours and list of trips part of incomplete tours
     tour, bad_trips = tours.create(trip, error_dict, config)
 
-    # After tour file is created, apply expression file for tours
-    # expr_df = pd.read_csv(os.path.join(config["input_dir"], "tour_expr.csv"))
-
-    # tour = convert.process_expression_file(tour, expr_df, config["tour_columns"])
-
     # Assign weight tour_weight as hhexpfac (getting it from person_weight, which is the same as hhexpfac)
     tour = tour.merge(
         person[["person_id", "person_weight", "household_id_elmer"]],
@@ -227,12 +222,24 @@ def build_tour_file(trip, person, config, logger):
         os.path.join(config["output_dir"], "bad_trips.csv")
     )
 
+    # Calculate tour category
     tour.loc[tour["parent"] > 0, "tour_category"] = "atwork"
     tour.loc[tour["tour_category"] != "atwork", "tour_category"] = "non_mandatory"
     tour.loc[
         (tour["pdpurp"].isin(["work", "school"])) & (tour["tour_category"] != "atwork"),
         "tour_category",
     ] = "mandatory"
+
+    # stop_frequency- does not include primary stop
+    tour["outbound_stops"] = tour["tripsh1"] - 1
+    tour["inbound_stops"] = tour["tripsh2"] - 1
+    tour["stop_frequency"] = (
+        tour["outbound_stops"].astype("int").astype("str")
+        + "out"
+        + "_"
+        + tour["inbound_stops"].astype("int").astype("str")
+        + "in"
+    )
 
     return tour, trip, error_dict
 
@@ -274,123 +281,6 @@ def process_household_day(person_day_original_df, hh, config):
     household_day["hdexpfac"] = household_day["hdexpfac"].fillna(-1)
 
     return household_day
-
-
-def process_person_day(tour, trip, config, logger):
-    # In order to estimate, we need to enforce the mandatory tour totals
-    # these can only be: ['work_and_school', 'school1', 'work1', 'school2', 'work2']
-    # If someone has 2 work trips and 1 school trips, must decide a heirarchy of
-    # which of those tours to delete
-
-    # FIXME: how do we handle people with too many mandatory tours?
-    # Do we completely ignore all of this person’s tours, select the first tours,
-    # or use some other logic to identify the primary set of tours and combinations?
-
-    person_day = tour.groupby("person_id").agg(["unique"])["loc_tour_id"]
-
-    person_day["flag"] = 0
-
-    # Flag any trips that have 3 or more work or school tours
-
-    # Flag 1: person days that have 2 work and 2 school tours
-    filter = person_day["unique"].apply(lambda x: "work2" in x and "school2" in x)
-    person_day.loc[filter, "flag"] = 1
-    # Resolve by: dropping all work2 and school2 tours (?) FIXME...
-    tour = tour[
-        ~(
-            (tour["person_id"].isin(person_day[person_day["flag"] == 1].index))
-            & tour["tour_id"].isin(["work2", "school2"])
-        )
-    ]
-
-    # Flag 2: 2 work tours and 1 school tour
-    filter = person_day["unique"].apply(lambda x: "work2" in x and "school1" in x)
-    person_day.loc[filter, "flag"] = 2
-    # Resolve by: dropping all work2 tours  (?) FIXME...
-    tour = tour[
-        ~(
-            (tour["person_id"].isin(person_day[person_day["flag"] == 2].index))
-            & (tour["tour_id"] == "work2")
-        )
-    ]
-
-    # Flag 3: 2 school tours and 1 work tour
-    filter = person_day["unique"].apply(lambda x: "work1" in x and "school2" in x)
-    person_day.loc[filter, "flag"] = 3
-    # Resolve by: dropping all school2 tours (?) FIXME...
-    tour = tour[
-        ~(
-            (tour["person_id"].isin(person_day[person_day["flag"] == 3].index))
-            & (tour["tour_id"] == "school2")
-        )
-    ]
-
-    # Report number of tours affected
-    # FIXME: write out a log file
-    print(str(person_day.groupby("flag").count()))
-
-    # stop_frequency- does not include primary stop
-    tour["outbound_stops"] = tour["tripsh1"] - 1
-    tour["inbound_stops"] = tour["tripsh2"] - 1
-    tour["stop_frequency"] = (
-        tour["outbound_stops"].astype("int").astype("str")
-        + "out"
-        + "_"
-        + tour["inbound_stops"].astype("int").astype("str")
-        + "in"
-    )
-
-    # DATA FILTER:
-    # Filter out tours with too many stops on their tours
-    df = tour[(tour["tripsh1"] > 4) | (tour["tripsh2"] > 4)]
-    # df.to_csv(os.path.join(output_dir,'temp','too_many_stops.csv'))
-    logger.info(f"Dropped {len(df)} tours for too many stops")
-    tour = tour[~((tour["tripsh1"] > 4) | (tour["tripsh2"] > 4))]
-
-    # Defualt of 4, determine based on config files
-    MAX_TRIPS_PER_LEG = cid.determine_max_trips_per_leg()
-
-    # DATA FILTER:
-    # select trips that only exist in tours - is this necessary or can we use the trip file directly?
-
-    # canonical_trip_num: 1st trip out = 1, 2nd trip out = 2, 1st in = 5, etc.
-    # Keep the original trip ID for later use
-
-    canonical_trip_num = (~trip.outbound * MAX_TRIPS_PER_LEG) + trip.trip_num
-    trip["trip_id"] = trip["tour"] * (2 * MAX_TRIPS_PER_LEG) + canonical_trip_num
-
-    # DATA FILTER:
-    # Some of these IDs are duplicated and it's not clear why - seems to be an issue with the canonical_trip_num definition
-    # FIXME: what do we do about this? Fix canonical_trip_num? drop duplicates?
-    # NOTE: this might be due to long person IDs, which are shortened at the end of the script. Considering changing Person IDs at top
-    duplicated_person = trip[trip["trip_id"].duplicated()]["person_id"].unique()
-    logger.info(
-        f"Dropped {len(duplicated_person)} persons: duplicate IDs from canonical trip num definition"
-    )
-    trip = trip[~trip["person_id"].isin(duplicated_person)]
-    trip.set_index("trip_id", inplace=True, drop=False, verify_integrity=True)
-
-    # Make sure all trips in a tour have an outbound and inbound component
-    trips_per_tour = trip.groupby("tour")["person_id"].value_counts()
-    missing_trip_persons = (
-        trips_per_tour[trips_per_tour == 1]
-        .index.get_level_values("person_id")
-        .to_list()
-    )
-    logger.info(
-        f"Dropped {len(missing_trip_persons)} persons: missing an outbound or inbound trip leg"
-    )
-
-    # req_cols = ['trip_id','person_id','trip_num','household_id','outbound','purpose','destination','origin','depart','trip_mode','tour_id']
-    # trip['trip_mode'] = trip['mode']
-
-    # Write temporary versions of these files
-    # trip.to_csv(os.path.join(output_dir,'survey_trips_raw.csv'), index=False)
-    # trip.to_csv(os.path.join(configoutput_dir,'survey_trips.csv'), index=False)
-    # tour.to_csv(os.path.join(output_dir,'survey_tours.csv'), index=False)
-
-    return tour, trip
-
 
 def build_joint_tours(tour, trip, person, config, logger):
     expr_df = pd.read_csv(os.path.join(config["input_dir"], "joint_tour_expr.csv"))
@@ -708,12 +598,6 @@ def convert_format(config):
     )
     for index, row in error_dict_df.iterrows():
         logger.info(f"Dropped {row.errors} tours: " + index)
-
-    # person day
-    tour, trip = process_person_day(tour, trip, config, logger)
-
-    # FIXME!!
-    # Joint participants table needed
 
     # FIXME!!
     # Excercise trips are coded as -88, make sure those are excluded (?)

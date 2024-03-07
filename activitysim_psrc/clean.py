@@ -35,6 +35,99 @@ survey_tables = {
     "trips": {"file_name": "survey_trips.csv"},
 }
 
+def process_person_day(tour, trip, config, logger):
+    # In order to estimate, we need to enforce the mandatory tour totals
+    # these can only be: ['work_and_school', 'school1', 'work1', 'school2', 'work2']
+    # If someone has 2 work trips and 1 school trips, must decide a heirarchy of
+    # which of those tours to delete
+
+    # FIXME: how do we handle people with too many mandatory tours?
+    # Do we completely ignore all of this person’s tours, select the first tours,
+    # or use some other logic to identify the primary set of tours and combinations?
+
+    person_day = tour.groupby("person_id").agg(["unique"])["loc_tour_id"]
+
+    person_day["flag"] = 0
+
+    # Flag any trips that have 3 or more work or school tours
+
+    # Flag 1: person days that have 2 work and 2 school tours
+    filter = person_day["unique"].apply(lambda x: "work2" in x and "school2" in x)
+    person_day.loc[filter, "flag"] = 1
+    # Resolve by: dropping all work2 and school2 tours (?) FIXME...
+    tour = tour[
+        ~(
+            (tour["person_id"].isin(person_day[person_day["flag"] == 1].index))
+            & tour["tour_id"].isin(["work2", "school2"])
+        )
+    ]
+
+    # Flag 2: 2 work tours and 1 school tour
+    filter = person_day["unique"].apply(lambda x: "work2" in x and "school1" in x)
+    person_day.loc[filter, "flag"] = 2
+    # Resolve by: dropping all work2 tours  (?) FIXME...
+    tour = tour[
+        ~(
+            (tour["person_id"].isin(person_day[person_day["flag"] == 2].index))
+            & (tour["tour_id"] == "work2")
+        )
+    ]
+
+    # Flag 3: 2 school tours and 1 work tour
+    filter = person_day["unique"].apply(lambda x: "work1" in x and "school2" in x)
+    person_day.loc[filter, "flag"] = 3
+    # Resolve by: dropping all school2 tours (?) FIXME...
+    tour = tour[
+        ~(
+            (tour["person_id"].isin(person_day[person_day["flag"] == 3].index))
+            & (tour["tour_id"] == "school2")
+        )
+    ]
+
+    # Report number of tours affected
+    # FIXME: write out a log file
+    print(str(person_day.groupby("flag").count()))
+
+    # DATA FILTER:
+    # Default of 4, determine based on config files
+    MAX_TRIPS_PER_LEG = cid.determine_max_trips_per_leg()
+    # Filter out tours with too many stops on their tours
+    df = tour[(tour["tripsh1"] > MAX_TRIPS_PER_LEG) | (tour["tripsh2"] > MAX_TRIPS_PER_LEG)]
+    # df.to_csv(os.path.join(output_dir,'temp','too_many_stops.csv'))
+    logger.info(f"Dropped {len(df)} tours for too many stops")
+    tour = tour[~((tour["tripsh1"] > MAX_TRIPS_PER_LEG) | (tour["tripsh2"] > MAX_TRIPS_PER_LEG))]
+
+    # DATA FILTER:
+    # select trips that only exist in tours - is this necessary or can we use the trip file directly?
+
+    # canonical_trip_num: 1st trip out = 1, 2nd trip out = 2, 1st in = 5, etc.
+    # Keep the original trip ID for later use
+    canonical_trip_num = (~trip.outbound * MAX_TRIPS_PER_LEG) + trip.trip_num
+    trip["trip_id"] = trip["tour"] * (2 * MAX_TRIPS_PER_LEG) + canonical_trip_num
+
+    # DATA FILTER:
+    # Some of these IDs are duplicated and it's not clear why - seems to be an issue with the canonical_trip_num definition
+    # FIXME: what do we do about this? Fix canonical_trip_num? drop duplicates?
+    # NOTE: this might be due to long person IDs, which are shortened at the end of the script. Considering changing Person IDs at top
+    duplicated_person = trip[trip["trip_id"].duplicated()]["person_id"].unique()
+    logger.info(
+        f"Dropped {len(duplicated_person)} persons: duplicate IDs from canonical trip num definition"
+    )
+    trip = trip[~trip["person_id"].isin(duplicated_person)]
+    trip.set_index("trip_id", inplace=True, drop=False, verify_integrity=True)
+
+    # Make sure all trips in a tour have an outbound and inbound component
+    trips_per_tour = trip.groupby("tour")["person_id"].value_counts()
+    missing_trip_persons = (
+        trips_per_tour[trips_per_tour == 1]
+        .index.get_level_values("person_id")
+        .to_list()
+    )
+    logger.info(
+        f"Dropped {len(missing_trip_persons)} persons: missing an outbound or inbound trip leg"
+    )
+
+    return tour, trip
 
 def clean(config):
     # Start log file
@@ -45,6 +138,9 @@ def clean(config):
     households, person, tour, joint_tour_participants, trip = convert.read_tables(
         config["output_dir"], survey_tables
     )
+
+    # person day
+    tour, trip = process_person_day(tour, trip, config, logger)
 
     # Map to standard columns
     df_mapping = pd.read_csv(os.path.join(config["input_dir"], "mapping.csv"))

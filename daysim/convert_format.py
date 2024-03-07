@@ -61,7 +61,7 @@ def process_household_file(hh, person, df_lookup, config, logger):
 
     # Apply expression file input
     hh = convert.process_expression_file(
-        hh, expr_df, None, df_lookup[df_lookup["table"] == "household"]
+        hh, expr_df, df_lookup[df_lookup["table"] == "household"]
     )
 
     # Workers in Household from Person File (hhwkrs)
@@ -138,9 +138,9 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
         "missing departure/arrival time",
     )
 
-    # Start and end time
-    df["arrtm"] = df["arrival_time_hour"] * 60 + df["arrival_time_minute"]
-    df["deptm"] = df["depart_time_hour"] * 60 + df["depart_time_minute"]
+    # Start and end time (in minutes after midnight)
+    df["arrtm"] = (df["arrival_time_hour"] * 60) + df["arrival_time_minute"]
+    df["deptm"] = (df["depart_time_hour"] * 60) + df["depart_time_minute"]
 
     # Calculate start of next trip (ENDACTTM: trip destination activity end time)
     df["endacttm"] = df["duration_minutes"] + df["arrtm"]
@@ -182,17 +182,17 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
             # Note that we also need to include KnR and TNC?
 
     df = convert.process_expression_file(
-        df, expr_df, config["trip_columns"], df_lookup[df_lookup["table"] == "trip"]
+        df, expr_df, df_lookup[df_lookup["table"] == "trip"]
     )
 
     # Filter out trips that started before 0 minutes after midnight
-    df = convert.apply_filter(
-        df,
-        "trips",
-        df["deptm"] >= 0,
-        logger,
-        "trips started before 0 minutes after midnight",
-    )
+    # df = convert.apply_filter(
+    #     df,
+    #     "trips",
+    #     df["deptm"] >= 0,
+    #     logger,
+    #     "trips started before 0 minutes after midnight",
+    # )
 
     df = convert.apply_filter(
         df,
@@ -202,51 +202,42 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
         "no or null weight",
     )
 
-    for col in ["opurp", "dpurp"]:
-        df = convert.apply_filter(
-            df, "trips", (df[col] >= 0), logger, "missing or unusable " + col
-        )
+    # for col in ["opurp", "dpurp"]:
+    #     df = convert.apply_filter(
+    #         df, "trips", (df[col] >= 0), logger, "missing or unusable " + col
+    #     )
 
-    # if arrtm/deptm > 24*60, subtract that value to normalize to a single day
-    for colname in ["arrtm", "deptm"]:
-        for i in range(2, int(np.ceil(df[colname] / (24 * 60)).max()) + 1):
-            filter = (df[colname] > (24 * 60)) & (df[colname] < (24 * 60) * i)
-            df.loc[filter, colname] = df.loc[filter, colname] - 24 * 60 * (i - 1)
+    # FIXME: this should happen as a catch later; if arrtm/deptm > 24*60, flag it
 
-    df = convert.apply_filter(
-        df,
-        "trips",
-        ~(
-            (df["otaz"] == df["dtaz"])
-            & (df["opurp"] == df["dpurp"])
-            & (df["opurp"] == 1)
-        ),
-        logger,
-        "intrazonal work-related trips",
-    )
+    # # if arrtm/deptm > 24*60, subtract that value to normalize to a single day
+    # for colname in ["arrtm", "deptm"]:
+    #     for i in range(2, int(np.ceil(df[colname] / (24 * 60)).max()) + 1):
+    #         filter = (df[colname] > (24 * 60)) & (df[colname] < (24 * 60) * i)
+    #         df.loc[filter, colname] = df.loc[filter, colname] - 24 * 60 * (i - 1)
 
-    # Filter null trips
-    for col in ["mode", "opurp", "dpurp", "otaz", "dtaz"]:
-        df = convert.apply_filter(
-            df, "trips", -df[col].isnull(), logger, col + " is null"
-        )
+    # df = convert.apply_filter(
+    #     df,
+    #     "trips",
+    #     ~(
+    #         (df["otaz"] == df["dtaz"])
+    #         & (df["opurp"] == df["dpurp"])
+    #         & (df["opurp"] == 1)
+    #     ),
+    #     logger,
+    #     "intrazonal work-related trips",
+    # )
+
+    # # Filter null trips
+    # for col in ["mode", "opurp", "dpurp", "otaz", "dtaz"]:
+    #     df = convert.apply_filter(
+    #         df, "trips", -df[col].isnull(), logger, col + " is null"
+    #     )
 
     return df
 
 
 def build_tour_file(trip, person, config, logger):
-    """Generate tours from Daysim-formatted trip records by iterating through person-days."""
-
-    # Keep track of error types
-    error_dict = {
-        "first O and last D are not home": 0,
-        "different number of tour starts and ends at home": 0,
-        "dpurp of previous trip does not match opurp of next trip": 0,
-        "activity type of previous trip does not match next trip": 0,
-        "different number of tour starts/ends at home": 0,
-        "no trips in set": 0,
-        "no purposes provided except change mode": 0,
-    }
+    """Generate tours from Daysim-formatted trip records by iterating through person-days."""    
 
     trip = convert.apply_filter(
         trip,
@@ -264,32 +255,27 @@ def build_tour_file(trip, person, config, logger):
         "trips missing purpose",
     )
 
-    # Reset the index
-    trip = trip.reset_index()
-
     # Build tour file; return df of tours and list of trips part of incomplete tours
-    tour, bad_trips = tours.create(trip, error_dict, config)
+    tour, trip = tours.create(trip, config)
 
     # After tour file is created, apply expression file for tours
     expr_df = pd.read_csv(os.path.join(config["input_dir"], "tour_expr.csv"))
 
-    tour = convert.process_expression_file(tour, expr_df, config["tour_columns"])
+    tour = convert.process_expression_file(tour, expr_df)
 
     # Assign weight toexpfac as hhexpfac (getting it from psexpfac, which is the same as hhexpfac)
     tour = tour.merge(person[["person_id", "psexpfac"]], on="person_id", how="left")
     tour.rename(columns={"psexpfac": "toexpfac"}, inplace=True)
 
-    # remove the trips that weren't included in the tour file
-    _filter = -trip["trip_id"].isin(bad_trips)
-    logger.info(f"Dropped {len(trip[~_filter])} total trips due to tour issues ")
-    trip = trip[_filter]
-    pd.DataFrame(bad_trips).T.to_csv(
-        os.path.join(config["output_dir"], "bad_trips.csv")
-    )
+    # # remove the trips that weren't included in the tour file
+    # _filter = -trip["trip_id"].isin(bad_trips)
+    # logger.info(f"Dropped {len(trip[~_filter])} total trips due to tour issues ")
+    # trip = trip[_filter]
+    # pd.DataFrame(bad_trips).T.to_csv(
+    #     os.path.join(config["output_dir"], "bad_trips.csv")
+    # )
 
-    trip = trip[config["trip_columns"]]
-
-    return tour, trip, error_dict
+    return tour, trip
 
 
 def process_household_day(person_day_original_df, hh, config):
@@ -302,12 +288,13 @@ def process_household_day(person_day_original_df, hh, config):
         .reset_index()[["household_id", "travel_dow"]]
     )
 
-    household_day.rename(
-        columns={"household_id": "hhno", "travel_dow": "day"}, inplace=True
-    )
+    # household_day.rename(
+    #     columns={"household_id": "hhno", "travel_dow": "day"}, inplace=True
+    # )
 
     # add day of week lookup
-    household_day["dow"] = household_day["day"]
+    household_day["dow"] = household_day["travel_dow"].copy()
+    household_day["day"] = household_day["travel_dow"].copy()
 
     # Set number of joint tours to 0 for this version of Daysim
     for col in ["jttours", "phtours", "fhtours"]:
@@ -317,19 +304,16 @@ def process_household_day(person_day_original_df, hh, config):
     household_day["id"] = range(1, len(household_day) + 1)
 
     # Add expansion factor
-    # FIXME: no weights yet, replace with the weights column when available
-    hh[config["hh_weight_col"]] = 1
     household_day = household_day.merge(
-        hh[["household_id", config["hh_weight_col"]]],
-        left_on="hhno",
-        right_on="household_id",
+        hh[["hhno", "hhexpfac"]],
+        left_on="household_id",
+        right_on="hhno",
         how="left",
     )
-    household_day.rename(columns={config["hh_weight_col"]: "hdexpfac"}, inplace=True)
+    household_day.rename(columns={'hhexpfac': "hdexpfac"}, inplace=True)
     household_day["hdexpfac"] = household_day["hdexpfac"].fillna(-1)
 
     return household_day
-
 
 def process_person_day(
     tour, person, trip, hh, person_day_original_df, household_day, config
@@ -424,12 +408,22 @@ def process_person_day(
 
     return pday
 
-
 def convert_format(config):
     # Start log file
     logger = logcontroller.setup_custom_logger("convert_format_logger.txt", config)
     logger.info("--------------------convert_format.py STARTING--------------------")
     start_time = datetime.datetime.now()
+
+    # Load geolocated survey data
+    trip_original_df = pd.read_csv(
+        os.path.join(config["output_dir"], "geolocated_trip.csv")
+    )
+    hh_original_df = pd.read_csv(
+        os.path.join(config["output_dir"], "geolocated_hh.csv")
+    )
+    person_original_df = pd.read_csv(
+        os.path.join(config["output_dir"], "geolocated_person.csv")
+    )
 
     # Load expression and variable recoding files
     df_lookup = pd.read_csv(os.path.join(config["input_dir"], "data_lookup.csv"))
@@ -454,21 +448,10 @@ def convert_format(config):
         inplace=True,
     )
 
-    # Load geolocated survey data
-    trip_original_df = pd.read_csv(
-        os.path.join(config["output_dir"], "geolocated_trip.csv")
-    )
-    hh_original_df = pd.read_csv(
-        os.path.join(config["output_dir"], "geolocated_hh.csv")
-    )
-    person_original_df = pd.read_csv(
-        os.path.join(config["output_dir"], "geolocated_person.csv")
-    )
-
-    # !! FIXME: have Chris Peak include this field for trips
     # Get day of week from day ID
+    trip_original_df.rename(columns={'travel_dow': 'travel_dow_label'}, inplace=True)
     trip_original_df = trip_original_df.merge(
-        person_day_original_df[["day_id", "travel_dow", "travel_dow_label"]],
+        person_day_original_df[["day_id", "travel_dow"]],
         how="left",
         on="day_id",
     )
@@ -508,7 +491,6 @@ def convert_format(config):
     person = convert.process_expression_file(
         person_original_df,
         person_expr_df,
-        config["person_columns"],
         df_lookup[df_lookup["table"] == "person"],
     )
 
@@ -520,7 +502,7 @@ def convert_format(config):
     # Paid parking data is not available from Elmer; calculate from workplace location
     parcel_df = pd.read_csv(
         config["parcel_file_dir"],
-        delim_whitespace=True,
+        sep='\s+',
         usecols=["parcelid", "parkhr_p"],
     )
     person = person.merge(parcel_df, left_on="pwpcl", right_on="parcelid", how="left")
@@ -530,27 +512,20 @@ def convert_format(config):
     # Note that the 2023 survey does not include data about employer-paid benefits
     # We may have to estimate using older data...
 
-    # reconcile new multi-day IDs with the Elmer person day table
 
     # Make sure trips are properly ordered, where deptm is increasing for each person's travel day
+    # Note that we also have some trips that continue into the following day
+    # The "day" column stays the same but the depart/arrive date may change. 
     trip["person_id_int"] = trip["person_id"].astype("int64")
-    trip = trip.sort_values(["person_id_int", "day", "deptm"])
+    trip = trip.sort_values(["person_id_int", "day", "depart_date", "deptm"])
     trip = trip.reset_index()
 
     # Create tour file and update the trip file with tour info
-    tour, trip, error_dict = build_tour_file(trip, person, config, logger)
-    # tour = convert.person_id(tour, 'hhno', 'pno')
+    tour, trip = build_tour_file(trip, person, config, logger)
 
-    # !!!FIXME! we are assigning weights = 1 here, replace with the weights column from original hh file when available
     household_day = process_household_day(
-        person_day_original_df, hh_original_df, config
+        person_day_original_df, hh, config
     )
-
-    error_dict_df = pd.DataFrame(
-        error_dict.values(), index=error_dict.keys(), columns=["errors"]
-    )
-    for index, row in error_dict_df.iterrows():
-        logger.info(f"Dropped {row.errors} tours: " + index)
 
     # person day
     person_day = process_person_day(

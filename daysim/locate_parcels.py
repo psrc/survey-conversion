@@ -12,18 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script assigns parcel IDs to survey fields, including current/past work and home location,
-# school location, and trip origin and destination.
-# Locations are assigned by finding nearest parcel that meets criteria (e.g., work location must have workers at parcel)
-# In some cases (school location), if parcels are over a threshold distance from original xy values,
-# multiple filter tiers can be applied (e.g., first find parcel with students; for parcels with high distances,
-# use a looser criteria like a parcel with service jobs, followed by parcels with household population.)
 
 import os, sys
 import pandas as pd
 import geopandas as gpd
 from scipy.spatial import cKDTree
-from pysal.lib.weights.distance import get_points_array
 from shapely.geometry import LineString
 from pyproj import Proj, transform
 import pyproj

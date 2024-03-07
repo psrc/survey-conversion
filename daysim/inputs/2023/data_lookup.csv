@@ -88,7 +88,7 @@ person,student,"Part-time student, ONLY online classes",0,pstyp
 person,student,"Full-time student, currently attending some or all classes in-person",1,pstyp
 person,student,"Full-time student, ONLY online classes",0,pstyp
 person,student,Missing Response,0,pstyp
-trip,origin_purpose,Not imputable,-99,opurp
+trip,origin_purpose,Not imputable,7,opurp
 trip,origin_purpose,Went home,0,opurp
 trip,origin_purpose,"Went to school/daycare (e.g., daycare, K-12, college)",2,opurp
 trip,origin_purpose,"Dropped off/picked up someone (e.g., son at a friend's house, spouse at bus stop)",3,opurp
@@ -113,7 +113,7 @@ trip,origin_purpose,Drop someone off,3,opurp
 trip,origin_purpose,"Accompany someone only (e.g., go along for the ride)",3,opurp
 trip,origin_purpose,BOTH pick up AND drop off,3,opurp
 trip,origin_purpose,Went to restaurant to eat/get take-out,6,opurp
-trip,origin_purpose,"Went to exercise (e.g., gym, walk, jog, bike ride)",-88,opurp
+trip,origin_purpose,"Went to exercise (e.g., gym, walk, jog, bike ride)",7,opurp
 trip,origin_purpose,"Attended social event (e.g., visit with friends, family, co-workers)",7,opurp
 trip,origin_purpose,"Attended recreational event (e.g., movies, sporting event)",7,opurp
 trip,origin_purpose,Went to religious/community/volunteer activity,7,opurp
@@ -125,8 +125,8 @@ trip,origin_purpose,Other social/leisure,7,opurp
 trip,origin_purpose,Other reason,7,opurp
 trip,origin_purpose,"Went to another residence (e.g., someone else's home, second home)",7,opurp
 trip,origin_purpose,"Went to temporary lodging (e.g., hotel, vacation rental)",7,opurp
-trip,origin_purpose,Missing Response,-99,opurp
-trip,dest_purpose,Not imputable,-99,dpurp
+trip,origin_purpose,Missing Response,7,opurp
+trip,dest_purpose,Not imputable,7,dpurp
 trip,dest_purpose,Went home,0,dpurp
 trip,dest_purpose,"Went to work, work-related, volunteer-related",1,dpurp
 trip,dest_purpose,Attended school/class,2,dpurp
@@ -150,13 +150,13 @@ trip,dest_purpose,Got gas,5,dpurp
 trip,dest_purpose,"Other shopping (e.g., mall, pet store)",5,dpurp
 trip,dest_purpose,"Personal business (e.g., bank, post office)",4,dpurp
 trip,dest_purpose,"Medical appointment (e.g., doctor, dentist)",4,dpurp
-trip,dest_purpose,"Other activity only (e.g., attend meeting, pick-up or drop-off item)",4,dpurp
+trip,dest_purpose,"Other activity only (e.g., attend meeting, pick-up or drop-off item)",1,dpurp
 trip,dest_purpose,Pick someone up,3,dpurp
 trip,dest_purpose,Drop someone off,3,dpurp
 trip,dest_purpose,"Accompany someone only (e.g., go along for the ride)",3,dpurp
 trip,dest_purpose,BOTH pick up AND drop off,3,dpurp
 trip,dest_purpose,Went to restaurant to eat/get take-out,6,dpurp
-trip,dest_purpose,"Exercise or recreation (e.g., gym, jog, bike, walk dog)",-88,dpurp
+trip,dest_purpose,"Exercise or recreation (e.g., gym, jog, bike, walk dog)",7,dpurp
 trip,dest_purpose,"Social event (e.g., visit friends, family, co-workers)",7,dpurp
 trip,dest_purpose,"Recreational event (e.g., movies, sporting event)",7,dpurp
 trip,dest_purpose,Religious/civic/volunteer activity,7,dpurp
@@ -166,6 +166,8 @@ trip,dest_purpose,"Changed or transferred mode (e.g., change from ferry to bus)"
 trip,dest_purpose,Other appointment/errands,4,dpurp
 trip,dest_purpose,Other social/leisure,7,dpurp
 trip,dest_purpose,Other reason,7,dpurp
+trip,dest_purpose,"Went to another residence (e.g., someone else's home, second home)",7,dpurp
+trip,dest_purpose,"Went to temporary lodging (e.g., hotel, vacation rental)",7,dpurp
 trip,driver,Driver,1,dorp
 trip,driver,Passenger,2,dorp
 trip,driver,Both (switched drivers during trip),3,dorp

@@ -47,9 +47,7 @@ household,vehicle_count,4 vehicles,4,auto_ownership
 household,vehicle_count,5 vehicles,5,auto_ownership
 household,vehicle_count,6 vehicles,6,auto_ownership
 household,vehicle_count,7 vehicles,7,auto_ownership
-household,vehicle_count,8 vehicles,8,auto_ownership
-household,vehicle_count,9 vehicles,9,auto_ownership
-household,vehicle_count,10 or more vehicles,10,auto_ownership
+household,vehicle_count,8 or more vehicles,8,auto_ownership
 person,age,Under 5 years old,2,age
 person,age,5-11 years,8,age
 person,age,12-15 years,14,age

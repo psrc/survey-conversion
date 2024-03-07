@@ -20,7 +20,7 @@ run_attach_skims = true
 
 debug = false
 debug_person_id = []
-# debug_person_id = ['1710030291']    # List of person IDs to iterate over in tour creation, empty list to process all
+# debug_person_id = ['2309359141']   # List of person IDs to iterate over in tour creation, empty list to process all
 
 hh_weight_col = 'hh_weight_2023'
 walk_to_transit_mode = 6
@@ -113,6 +113,7 @@ person_columns = [
         "pproxy",
         "psexpfac",
         "person_id",
+        "person_id_original"
     ]
 
 hh_columns = [
@@ -166,6 +167,7 @@ trip_columns = [
         "endacttm",
         "trip_id",
         "person_id",
+        "person_id_original"
     ]
 
 tour_columns = [
@@ -201,6 +203,7 @@ tour_columns = [
         "toexpfac",
         "person_id",
         "hhid_elmer",
+        "person_id_original"
     ]
 
 [pwtyp_map]

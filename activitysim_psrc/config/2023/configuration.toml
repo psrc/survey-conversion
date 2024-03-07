@@ -13,6 +13,7 @@ input_dir = 'activitysim_psrc/inputs/2023'
 output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format'
 output_dir_final = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format/final'
 
+# Config files used for infer.py
 asim_config_dir = 'C:/Workspace/psrc_activitysim_psrc_dev/configs_dev'
 
 # To debug, add person IDs to list; to process all pass empty list
@@ -24,8 +25,6 @@ run_convert_format = false
 run_clean = true
 run_infer = true
 
-
-hh_weight_col = 'hh_weight_2023'
 drive_to_transit_access_list = [
     "Drove and parked a car (e.g., a vehicle in my household)",
     "Drove and parked a carshare vehicle (e.g., ZipCar, Car2Go)",
