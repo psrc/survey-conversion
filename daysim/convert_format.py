@@ -202,37 +202,6 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
         "no or null weight",
     )
 
-    # for col in ["opurp", "dpurp"]:
-    #     df = convert.apply_filter(
-    #         df, "trips", (df[col] >= 0), logger, "missing or unusable " + col
-    #     )
-
-    # FIXME: this should happen as a catch later; if arrtm/deptm > 24*60, flag it
-
-    # # if arrtm/deptm > 24*60, subtract that value to normalize to a single day
-    # for colname in ["arrtm", "deptm"]:
-    #     for i in range(2, int(np.ceil(df[colname] / (24 * 60)).max()) + 1):
-    #         filter = (df[colname] > (24 * 60)) & (df[colname] < (24 * 60) * i)
-    #         df.loc[filter, colname] = df.loc[filter, colname] - 24 * 60 * (i - 1)
-
-    # df = convert.apply_filter(
-    #     df,
-    #     "trips",
-    #     ~(
-    #         (df["otaz"] == df["dtaz"])
-    #         & (df["opurp"] == df["dpurp"])
-    #         & (df["opurp"] == 1)
-    #     ),
-    #     logger,
-    #     "intrazonal work-related trips",
-    # )
-
-    # # Filter null trips
-    # for col in ["mode", "opurp", "dpurp", "otaz", "dtaz"]:
-    #     df = convert.apply_filter(
-    #         df, "trips", -df[col].isnull(), logger, col + " is null"
-    #     )
-
     return df
 
 
@@ -266,14 +235,6 @@ def build_tour_file(trip, person, config, logger):
     # Assign weight toexpfac as hhexpfac (getting it from psexpfac, which is the same as hhexpfac)
     tour = tour.merge(person[["person_id", "psexpfac"]], on="person_id", how="left")
     tour.rename(columns={"psexpfac": "toexpfac"}, inplace=True)
-
-    # # remove the trips that weren't included in the tour file
-    # _filter = -trip["trip_id"].isin(bad_trips)
-    # logger.info(f"Dropped {len(trip[~_filter])} total trips due to tour issues ")
-    # trip = trip[_filter]
-    # pd.DataFrame(bad_trips).T.to_csv(
-    #     os.path.join(config["output_dir"], "bad_trips.csv")
-    # )
 
     return tour, trip
 
@@ -357,10 +318,13 @@ def process_person_day(
     )
 
     # Add work at home from Person Day Elmer file
+    for col in ['hhno','pno','day']:
+        pday[col] = pday[col].astype('int64')
     pday = pday.merge(
         person_day_original_df[["household_id", "pernum", "travel_dow", "wkathome"]],
         left_on=["hhno", "pno", "day"],
         right_on=["household_id", "pernum", "travel_dow"],
+        # on=['hhno','pno','day'],
         how="inner",
     )
 
@@ -434,7 +398,9 @@ def convert_format(config):
     hh_expr_df = pd.read_csv(os.path.join(config["input_dir"], "hh_expr.csv"))
 
     # Load Person Day data from Elmer
-    person_day_original_df = util.load_elmer_table(config["elmer_person_day_table"])
+    person_day_original_df = util.load_elmer_table(config["elmer_person_day_table"],
+                                                    sql="SELECT * FROM "+config["elmer_person_day_table"]+\
+                                                  " WHERE survey_year in "+str(config['survey_year']))
     # Join travel day value
     _df = df_lookup[df_lookup["elmer_name"] == "travel_dow"]
     person_day_original_df = person_day_original_df.merge(
@@ -447,11 +413,14 @@ def convert_format(config):
         columns={"travel_dow": "travel_dow_label", "model_value": "travel_dow"},
         inplace=True,
     )
-
-    # Get day of week from day ID
-    trip_original_df.rename(columns={'travel_dow': 'travel_dow_label'}, inplace=True)
+    
+    # Get day of week from day ID and drop it on trips since it's missing in some years
+    trip_original_df.drop('travel_dow', axis=1, inplace=True)
+    # if trip_original_df['travel_dow'].isnull().all():
+        
+    # trip_original_df.rename(columns={'travel_dow': 'travel_dow_label'}, inplace=True)
     trip_original_df = trip_original_df.merge(
-        person_day_original_df[["day_id", "travel_dow"]],
+        person_day_original_df[["day_id", "travel_dow", "travel_dow_label"]],
         how="left",
         on="day_id",
     )
@@ -486,6 +455,11 @@ def convert_format(config):
         person_day_original_df = person_day_original_df[
             person_day_original_df["household_id"].isin(person_original_df.household_id)
         ]
+
+    # Join household parcel and TAZ to person records
+    person_original_df = person_original_df.merge(hh_original_df[['household_id','home_parcel','home_taz']], 
+                                                  on='household_id',
+                                                  how='left')
 
     # Recode person, household, and trip data
     person = convert.process_expression_file(
@@ -540,6 +514,8 @@ def convert_format(config):
     person_day["day"] = 1
 
     trip[["travdist", "travcost", "travtime"]] = "-1.00"
+
+    person['puwmode'] = -1
 
     for df_name, df in {
         "_person": person,

@@ -13,16 +13,20 @@
 12,df,(df['age'].isin(['16-17 years'])) & (df['pptyp'] == -1),pptyp,6,Assume anyone 16-17 is a student if they have missing school data
 13,df,df['employment'].isin(["Employed full time (35+ hours/week, paid)"]),pwtyp,1,Full time worker
 14,df,df['employment'].isin(["Employed part time (fewer than 35 hours/week, paid)"]),pwtyp,2,Part time worker
+15,df,df['pptyp'] == 1,pwtyp,1,full time worker
+15,df,df['pptyp'] == 2,pwtyp,2,part time worker
 15,df,~df['pwtyp'].isin([1,2]),pwtyp,0,Non-worker
 16,df,:,ptpass,0,Default of no transit pass availability
 17,df,(df['transit_pass'] == "Yes"),ptpass,1,
 18,df,:,ppaidprk,0,FIXME: must get this from trip info since its removed from survey
-27,df,:,hhno,df['household_id'].astype('int'),
-28,df,:,pno,df['person_id'].astype('str').apply(lambda x: x[-2:]).astype('int'),"Extract from df ID field which appends the person number to the household on the last 2 columns"
-29,df,:,psexpfac,1,update when weights are available
+27,df,:,hhno,df['household_id'].astype('int64'),
+28,df,:,pno,df['pernum'].astype('int64'),
+29,df,:,psexpfac,df['person_weight'],
 30,df,:,pwtaz,df['work_taz'],
-34,df,:,pstaz,df['school_loc_taz'],
 35,df,:,pwpcl,df['work_parcel'],
+35,df,(df['workplace']=="At home (telecommute or self-employed with home office)")&(df['work_parcel']==-1),pwpcl,df['home_parcel'],
+35,df,(df['workplace']=="At home (telecommute or self-employed with home office)")&(df['work_parcel']==-1),pwtaz,df['home_taz'],
+34,df,:,pstaz,df['school_loc_taz'],
 36,df,:,pspcl,df['school_loc_parcel'],
 37,df,:,pdiary,0,
 38,df,:,pproxy,0,

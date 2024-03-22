@@ -147,7 +147,6 @@ trip_columns = [
     "outbound",
     "purpose",
     "opurp",
-    "dpurp",
     "origin",
     "destination",
     "oadtyp",
@@ -156,7 +155,6 @@ trip_columns = [
     "deptm",
     "arrtm",
     "trip_mode",
-    "trip_id_elmer",
     "trip_weight",
 ]
 
@@ -169,7 +167,6 @@ hh_columns = [
     "auto_ownership",
     "num_workers",
     "hh_race_category",
-    "household_id_elmer",
     "hh_weight",
 ]
 

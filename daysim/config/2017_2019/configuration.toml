@@ -2,10 +2,12 @@
 # General Configuration Settings
 ########################################
 
-elmer_trip_table = "HHSurvey.v_trip_2023_modeling"
-elmer_person_table = "HHSurvey.v_person_2023_modeling"
-elmer_hh_table = "HHSurvey.v_household_2023_modeling"
-elmer_person_day_table = "HHSurvey.v_day_2023_modeling"
+survey_year = "(2017, 2019)"
+
+elmer_trip_table = "HHSurvey.v_trip_multiyear_modeling"
+elmer_person_table = "HHSurvey.v_person_multiyear_modeling"
+elmer_hh_table = "HHSurvey.v_household_multiyear_modeling"
+elmer_person_day_table = "HHSurvey.v_day_multiyear_modeling"
 
 input_dir = 'daysim/inputs/2017_2019'
 
@@ -13,16 +15,25 @@ input_dir = 'daysim/inputs/2017_2019'
 output_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/test'
 
 # Specify which components to run
-run_locate_parcels = false
+run_locate_parcels = true
 run_convert_format = true
+run_clean = true
 run_data_validation = true
 run_attach_skims = true
 
+debug = false
 debug_person_id = []
-# debug_person_id = ['1710030291']    # List of person IDs to iterate over in tour creation, empty list to process all
-# debug = true
-debug_tours = false
-write_debug_files = true
+# debug_person_id = ['19101794011']   # List of person IDs to iterate over in tour creation, empty list to process all
+
+hh_weight_col = 'hh_weight_2023'
+walk_to_transit_mode = 6
+drive_to_transit_mode = 7
+drive_to_transit_access_list = [
+    "Drove and parked my own household's vehicle (or motorcycle)",
+    "Drove and parked another vehicle (or motorcycle)",
+    "Got dropped off in my own household's vehicle (or motorcycle)",
+    "Got dropped off in another vehicle (or motorcycle)"
+]
 
 ################################################
 # Parcel Location (locate_parcels.py) Config
@@ -38,18 +49,17 @@ survey_input_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/elmer'
 parcel_file_dir = 'R:/e2projects_two/SoundCast/Inputs/dev/landuse/2018/rtp_2018/parcels_urbansim.txt'
 parcel_maz_file_dir = 'R:/e2projects_two/activitysim/conversion/geographic_crosswalks/parcel_taz_block_lookup.csv'
 
-opurp_field = "origin_purpose"
-dpurp_field = "dest_purpose"
+opurp_field = "origin_purpose_cat"
+dpurp_field = "dest_purpose_cat"
 
 # Spatial projection definitions
-lat_lng_crs = 'epsg:4326'    # Survey data expected in lat/lng format
-wa_state_plane_crs = 'epsg:2285'    # Projection of parcel and TAZ data; survey data is converted to this
+LAT_LNG_CRS = 'epsg:4326'    # Survey data expected in lat/lng format
+WA_STATE_PLANE_CRS = 'epsg:2285'    # Projection of parcel and TAZ data; survey data is converted to this
 
 # list of columns in "workplace" field that represent main work location as home
 usual_workplace_home = ['At home (telecommute or self-employed with home office)']
 
 # distance in feet for max allowable distance between collected XY data and acceptable land use
-hh_max_dist = 2640    # half mile for distance near parcel with households
 school_max_dist = 5280     # mile for distance near parcel with students
 
 ################################################
@@ -63,9 +73,17 @@ run_root = 'L:/RTP_2022/final_runs/sc_rtp_2018_final/soundcast'
 bike_speed = 10 # miles per hour
 walk_speed = 3 # miles per hour
 
-# Heirarchy order for tour mode, per DaySim docs: https://www.psrc.org/sites/default/files/2015psrc-modechoiceautomodels.pdf
+hhid = 'hhno'
+pno = 'pno'
+home_purp = 0
+change_mode_purp = 10
+origin = 'otaz'
+dest = 'dtaz'
+
+# Heirarchy order for tour mode, per DaySim docs: 
+# https://www.psrc.org/sites/default/files/2015psrc-modechoiceautomodels.pdf
 # Drive to Transit > Walk to Transit > School Bus > HOV3+ > HOV2 > SOV > Bike > Walk > Other
-mode_heirarchy = [6,8,9,5,4,3,2,1,10]
+mode_heirarchy = [7,6,8,9,5,4,3,2,1,10]
 
 transit_mode_list = ['Ferry or water taxi',
                     'Commuter rail (Sounder, Amtrak)',
@@ -98,6 +116,7 @@ person_columns = [
         "pproxy",
         "psexpfac",
         "person_id",
+        "person_id_original"
     ]
 
 hh_columns = [
@@ -151,6 +170,7 @@ trip_columns = [
         "endacttm",
         "trip_id",
         "person_id",
+        "person_id_original"
     ]
 
 tour_columns = [
@@ -185,8 +205,8 @@ tour_columns = [
         "fhtindx2",
         "toexpfac",
         "person_id",
-        "unique_person_id",
-        "household_id_elmer",
+        "hhid_elmer",
+        "person_id_original"
     ]
 
 [pwtyp_map]

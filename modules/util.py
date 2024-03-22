@@ -8,14 +8,17 @@ import pyodbc
 import toml
 
 
-def load_elmer_table(table_name):
+def load_elmer_table(table_name, sql=None):
     conn_string = "DRIVER={ODBC Driver 17 for SQL Server}; SERVER=AWS-PROD-SQL\Sockeye; DATABASE=Elmer; trusted_connection=yes"
     sql_conn = pyodbc.connect(conn_string)
     params = urllib.parse.quote_plus(conn_string)
     engine = sqlalchemy.create_engine("mssql+pyodbc:///?odbc_connect=%s" % params)
 
+    if sql is None:
+        sql = "SELECT * FROM " + table_name
+
     df = pd.read_sql(
-        sql="SELECT * FROM " + table_name,
+        sql=sql,
         con=engine,
     )
 

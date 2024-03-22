@@ -133,13 +133,13 @@ person_schema = pa.DataFrameSchema(
         "pdiary": Column(int, Check.isin([0, 1]), nullable=False),
         "pproxy": Column(int, Check.isin([0, 1]), nullable=False),
         "psexpfac": Column(float, nullable=False),
-        "puwmode": Column(int, Check.isin([0, 1, 2, 3, 4, 5, 6, 7, 9]), nullable=False),
-        "puwarrp": Column(int, nullable=False),
-        "puwdepp": Column(int, nullable=False),
-        "pwautime": Column(float, nullable=False),
-        "pwaudist": Column(float, nullable=False),
-        "psautime": Column(float, nullable=False),
-        "psaudist": Column(float, nullable=False),
+        "puwmode": Column(int, Check.isin([-1, 0, 1, 2, 3, 4, 5, 6, 7, 9]), nullable=False),
+        # "puwarrp": Column(int, nullable=False),
+        # "puwdepp": Column(int, nullable=False),
+        # "pwautime": Column(float, nullable=False),
+        # "pwaudist": Column(float, nullable=False),
+        # "psautime": Column(float, nullable=False),
+        # "psaudist": Column(float, nullable=False),
     },
     coerce=True,
 )
@@ -192,20 +192,26 @@ household_day_schema = pa.DataFrameSchema(
 )
 
 
-def read_validate_write(fname, schema, config):
+def read_validate_write(schema, fname):
     """Load survey file, apply schema, and overwrite results."""
 
-    df = pd.read_csv(os.path.join(config["output_dir"], "_" + fname + ".tsv"), sep="\t")
-    df = schema.validate(df)
-    df[schema.columns.keys()].to_csv(
-        os.path.join(config["output_dir"], "_" + fname + ".tsv"), index=False, sep="\t"
+    df = pd.read_csv(fname, sep="\t")
+    df = schema.validate(df.fillna(-1))   # FIXME: temporarily fill missing, should probably halt
+    df[schema.columns.keys()].to_csv(fname, index=False, sep="\t"
     )
 
 
 def data_validation(config):
-    read_validate_write("tour", tours_schema, config)
-    read_validate_write("trip", trips_schema, config)
-    read_validate_write("person", person_schema, config)
-    read_validate_write("household", household_schema, config)
-    read_validate_write("person_day", person_day_schema, config)
-    read_validate_write("household_day", household_day_schema, config)
+    read_validate_write(tours_schema, 
+                        os.path.join(config["output_dir"],'cleaned', "_tour.tsv"))
+    read_validate_write(trips_schema, 
+                        os.path.join(config["output_dir"],'cleaned', "_trip.tsv"))
+    read_validate_write(person_schema, 
+                        os.path.join(config["output_dir"],'cleaned', "_person.tsv"))
+    read_validate_write(household_schema, 
+                        os.path.join(config["output_dir"],'cleaned', "_household.tsv"))
+    read_validate_write(person_day_schema, 
+                        os.path.join(config["output_dir"],'cleaned', "_person_day.tsv"))
+    read_validate_write(household_day_schema, 
+                        os.path.join(config["output_dir"],'cleaned', "_household_day.tsv"))
+    

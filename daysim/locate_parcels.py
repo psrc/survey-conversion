@@ -43,9 +43,15 @@ def locate_parcels(config):
     start_time = datetime.datetime.now()
 
     if config["use_elmer"]:
-        trip_original = util.load_elmer_table(config["elmer_trip_table"])
-        person_original = util.load_elmer_table(config["elmer_person_table"])
-        hh_original = util.load_elmer_table(config["elmer_hh_table"])
+        trip_original = util.load_elmer_table(config["elmer_trip_table"], 
+                                              sql="SELECT * FROM "+config["elmer_trip_table"]+\
+                                                  " WHERE survey_year in "+str(config['survey_year']))
+        hh_original = util.load_elmer_table(config["elmer_hh_table"], 
+                                              sql="SELECT * FROM "+config["elmer_hh_table"]+\
+                                                  " WHERE survey_year in "+str(config['survey_year']))
+        person_original = util.load_elmer_table(config["elmer_person_table"], 
+                                              sql="SELECT * FROM "+config["elmer_person_table"]+\
+                                                  " WHERE survey_year in "+str(config['survey_year']))
     else:
         trip_original = pd.read_csv(
             os.path.join(config["survey_input_dir"], "trip.csv")
@@ -55,7 +61,15 @@ def locate_parcels(config):
         )
         hh_original = pd.read_csv(os.path.join(config["survey_input_dir"], "hh.csv"))
 
+    # if "trip_id" not in trip_original.columns:
+    #     trip_original['trip_id'] = range(1,len(trip_original)+1)
     trip_original.set_index("trip_id", inplace=True)
+
+    # Shorten the home lat/lng field names
+    # FIXME: change this in Elmer directly
+    hh_original.rename(columns={'final_home_lat': 'home_lat',
+                                  'final_home_lng': 'home_lng'}, inplace=True)
+
 
     # Load parcel data
     parcel_df = pd.read_csv(config["parcel_file_dir"], delim_whitespace=True)
@@ -82,7 +96,6 @@ def locate_parcels(config):
     )
 
     # Write to file
-    hh_new.rename(columns={"hhid": "household_id"}, inplace=True)
     hh_new.to_csv(os.path.join(config["output_dir"], "geolocated_hh.csv"), index=False)
 
     ###################################################
@@ -115,10 +128,7 @@ def locate_parcels(config):
         {
             "var_name": "work",
             "parcel_filter": parcel_df["emptot_p"] > 0,
-            "person_filter": (-person["work_lng"].isnull())
-            & (  # workplace is at a consistent location
-                person["workplace"] == "Usually the same location (outside home)"
-            ),
+            "person_filter": (-person["work_lng"].isnull()),
         },
         {
             # Student
@@ -136,12 +146,12 @@ def locate_parcels(config):
         person, parcel_df, filter_dict_list, config
     )
 
-    # For people that work from home, assign work parcel as household parcel
-    # Join this person file back to original person file to get workplace
-    for geog in ["parcel", "taz", "maz"]:
-        person.loc[
-            person["workplace"].isin(config["usual_workplace_home"]), "work_" + geog
-        ] = person["home_" + geog]
+    # # For people that work from home, assign work parcel as household parcel
+    # # Join this person file back to original person file to get workplace
+    # for geog in ["parcel", "taz", "maz"]:
+    #     person.loc[
+    #         person["workplace"].isin(config["usual_workplace_home"]), "work_" + geog
+    #     ] = person["home_" + geog]
 
     person_loc_fields = [
         "school_loc_parcel",
@@ -175,8 +185,8 @@ def locate_parcels(config):
 
     df_lookup = pd.read_csv(os.path.join(config["input_dir"], "data_lookup.csv"))
     df_lookup = df_lookup[df_lookup["table"] == "trip"]
-    df_lookup_o = df_lookup[df_lookup["elmer_name"] == "origin_purpose"]
-    df_lookup_d = df_lookup[df_lookup["elmer_name"] == "dest_purpose"]
+    df_lookup_o = df_lookup[df_lookup["elmer_name"] == config['opurp_field']]
+    df_lookup_d = df_lookup[df_lookup["elmer_name"] == config['dpurp_field']]
 
     # filter out some odd results with lng > 0 and lat < 0
     for trip_end in ["origin", "dest"]:
@@ -279,12 +289,12 @@ def locate_parcels(config):
             "parcel_filter": -parcel_df.isnull(),
             "o_trip_filter": trip_results[config["opurp_field"]].isin(
                 df_lookup_o.loc[
-                    df_lookup_o["model_value"].isin([3, 7, 10, -88, -99]), "elmer_value"
+                    df_lookup_o["model_value"].isin([3, 7, 10]), "elmer_value"
                 ]
             ),
             "d_trip_filter": trip_results[config["dpurp_field"]].isin(
                 df_lookup_d.loc[
-                    df_lookup_d["model_value"].isin([3, 7, 10, -88, -99]), "elmer_value"
+                    df_lookup_d["model_value"].isin([3, 7, 10]), "elmer_value"
                 ]
             ),
         },
@@ -317,6 +327,7 @@ def locate_parcels(config):
         how="left",
     )
     trip_original_updated["otaz"].fillna(-1, inplace=True)
+    trip_original_updated["dtaz"].fillna(-1, inplace=True)
 
     trip_original_updated["trip_id"] = trip_original_updated.index
 

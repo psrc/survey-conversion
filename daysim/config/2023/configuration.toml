@@ -1,22 +1,26 @@
 ########################################
 # General Configuration Settings
 ########################################
+survey_year = "(2023)"   # parens because we can pass in a set of years
 
-elmer_trip_table = "HHSurvey.v_trip_2023_modeling"
-elmer_person_table = "HHSurvey.v_person_2023_modeling"
-elmer_hh_table = "HHSurvey.v_household_2023_modeling"
-elmer_person_day_table = "HHSurvey.v_day_2023_modeling"
+elmer_trip_table = "HHSurvey.v_trip_multiyear_modeling"
+elmer_person_table = "HHSurvey.v_person_multiyear_modeling"
+elmer_hh_table = "HHSurvey.v_household_multiyear_modeling"
+elmer_person_day_table = "HHSurvey.v_day_multiyear_modeling"
 
 input_dir = 'daysim/inputs/2023'
 
 # Project Output Directory
 output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
+output_dir_clean = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format/cleaned'
 
 # Specify which components to run
-run_locate_parcels = true
-run_convert_format = true
+run_locate_parcels = false
+run_convert_format = false
+run_clean = true
 run_data_validation = true
 run_attach_skims = true
+run_unclone = true
 
 debug = false
 debug_person_id = []
@@ -46,8 +50,8 @@ survey_input_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/elmer'
 parcel_file_dir = 'R:/e2projects_two/SoundCast/Inputs/dev/landuse/2018/rtp_2018/parcels_urbansim.txt'
 parcel_maz_file_dir = 'R:/e2projects_two/activitysim/conversion/geographic_crosswalks/parcel_taz_block_lookup.csv'
 
-opurp_field = "origin_purpose"
-dpurp_field = "dest_purpose"
+opurp_field = "origin_purpose_cat"
+dpurp_field = "dest_purpose_cat"
 
 # Spatial projection definitions
 LAT_LNG_CRS = 'epsg:4326'    # Survey data expected in lat/lng format
@@ -117,6 +121,7 @@ person_columns = [
     ]
 
 hh_columns = [
+        "hhid_elmer",
         "hhno",
         "hhsize",
         "hhvehs",

@@ -55,7 +55,7 @@ def process_household_file(hh, person, df_lookup, config, logger):
 
     # Apply expression file input
     hh = convert.process_expression_file(
-        hh, expr_df, config["hh_columns"], df_lookup[df_lookup["table"] == "household"]
+        hh, expr_df, df_lookup[df_lookup["table"] == "household"]
     )
 
     # Remove households without parcels
@@ -126,49 +126,44 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     df.loc[df["access_mode"] == "DRIVE", "trip_mode"] = config["TRANSIT_DRIVE_MODE"]
 
     df = convert.process_expression_file(
-        df, expr_df, config["trip_columns"], df_lookup[df_lookup["table"] == "trip"]
+        df, expr_df, df_lookup[df_lookup["table"] == "trip"]
     )
 
-    # Filter out trips that started before 0 minutes after midnight
-    df = convert.apply_filter(
-        df,
-        "trips",
-        df["depart"] >= 0,
-        logger,
-        "trips started before 0 minutes after midnight",
-    )
+    # # Filter out trips that started before 0 minutes after midnight
+    # df = convert.apply_filter(
+    #     df,
+    #     "trips",
+    #     df["depart"] >= 0,
+    #     logger,
+    #     "trips started before 0 minutes after midnight",
+    # )
 
-    df = convert.apply_filter(
-        df,
-        "trips",
-        (-df["trip_weight"].isnull()) & (df["trip_weight"] > 0),
-        logger,
-        "no or null weight",
-    )
+    # df = convert.apply_filter(
+    #     df,
+    #     "trips",
+    #     (-df["trip_weight"].isnull()) & (df["trip_weight"] > 0),
+    #     logger,
+    #     "no or null weight",
+    # )
 
-    for col in ["origin", "destination", "depart"]:
-        df = convert.apply_filter(
-            df, "trips", (df[col] >= 0), logger, "missing or unusable " + col
-        )
+    # # if arrtm/deptm > 24*60, subtract that
+    # df = convert.apply_filter(
+    #     df,
+    #     "trips",
+    #     ~(
+    #         (df["origin"] == df["destination"])
+    #         & (df["opurp"] == df["dpurp"])
+    #         & (df["opurp"] == 1)
+    #     ),
+    #     logger,
+    #     "intrazonal work-related trips",
+    # )
 
-    # if arrtm/deptm > 24*60, subtract that
-    df = convert.apply_filter(
-        df,
-        "trips",
-        ~(
-            (df["origin"] == df["destination"])
-            & (df["opurp"] == df["dpurp"])
-            & (df["opurp"] == 1)
-        ),
-        logger,
-        "intrazonal work-related trips",
-    )
-
-    # Filter null trips
-    for col in ["trip_mode", "opurp", "dpurp", "origin", "destination"]:
-        df = convert.apply_filter(
-            df, "trips", -df[col].isnull(), logger, col + " is null"
-        )
+    # # Filter null trips
+    # for col in ["trip_mode", "opurp", "dpurp", "origin", "destination"]:
+    #     df = convert.apply_filter(
+    #         df, "trips", -df[col].isnull(), logger, col + " is null"
+    #     )
 
     return df
 
@@ -176,24 +171,18 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
 def build_tour_file(trip, person, config, logger):
     """Generate tours from Daysim-formatted trip records by iterating through person-days."""
 
-    # Keep track of error types
-    error_dict = {
-        "first O and last D are not home": 0,
-        "different number of tour starts and ends at home": 0,
-        "dpurp of previous trip does not match opurp of next trip": 0,
-        "activity type of previous trip does not match next trip": 0,
-        "different number of tour starts/ends at home": 0,
-        "no trips in set": 0,
-        "no purposes provided except change mode": 0,
-    }
-
+    # Only filter on data necessary to build tours at the most basic level
+    # We want to keep as much trip data as possible, even if it's missing data
+    # Tour creation depends on purposes so these must be available
+    # FIXME: add a flag rather than remove completely!
     trip = convert.apply_filter(
         trip,
         "trips",
-        -((trip["opurp"] == trip["dpurp"]) & (trip["opurp"] == "Home")),
+        -((trip["opurp"] == trip["dpurp"]) & (trip["opurp"] == config['home_purp'])),
         logger,
         "trips have same origin/destination of home",
     )
+
 
     # Reset the index
     trip = trip.reset_index()
@@ -204,7 +193,7 @@ def build_tour_file(trip, person, config, logger):
     trip = convert.map_to_class(trip, "trip", df_mapping, "original_to_script")
 
     # Build tour file; return df of tours and list of trips part of incomplete tours
-    tour, bad_trips = tours.create(trip, error_dict, config)
+    tour, trip = tours.create(trip, config)
 
     # Assign weight tour_weight as hhexpfac (getting it from person_weight, which is the same as hhexpfac)
     tour = tour.merge(
@@ -214,13 +203,13 @@ def build_tour_file(trip, person, config, logger):
     )
     tour.rename(columns={"person_weight": "tour_weight"}, inplace=True)
 
-    # remove the trips that weren't included in the tour file
-    _filter = -trip["trip_id"].isin(bad_trips)
-    logger.info(f"Dropped {len(trip[~_filter])} total trips due to tour issues ")
-    trip = trip[_filter]
-    pd.DataFrame(bad_trips).T.to_csv(
-        os.path.join(config["output_dir"], "bad_trips.csv")
-    )
+    # # remove the trips that weren't included in the tour file
+    # _filter = -trip["trip_id"].isin(bad_trips)
+    # logger.info(f"Dropped {len(trip[~_filter])} total trips due to tour issues ")
+    # trip = trip[_filter]
+    # pd.DataFrame(bad_trips).T.to_csv(
+    #     os.path.join(config["output_dir"], "bad_trips.csv")
+    # )
 
     # Calculate tour category
     tour.loc[tour["parent"] > 0, "tour_category"] = "atwork"
@@ -241,7 +230,7 @@ def build_tour_file(trip, person, config, logger):
         + "in"
     )
 
-    return tour, trip, error_dict
+    return tour, trip
 
 
 def process_household_day(person_day_original_df, hh, config):
@@ -288,9 +277,9 @@ def build_joint_tours(tour, trip, person, config, logger):
     tour = convert.process_expression_file(tour, expr_df, None)
 
     # After we've set begin and end hours, make sure all tour ends are after beginings
-    _filter = tour["end"] >= tour["start"]
-    logger.info(f"Dropped {len(tour[~_filter])} tours: tour end < tour start time")
-    tour = tour[_filter]
+    # _filter = tour["end"] >= tour["start"]
+    # logger.info(f"Dropped {len(tour[~_filter])} tours: tour end < tour start time")
+    # tour = tour[_filter]
 
     tour["tour_type"] = tour["pdpurp"].copy()
 
@@ -322,7 +311,8 @@ def build_joint_tours(tour, trip, person, config, logger):
 
     # Keep track of the records we removed
     # tour[~filter].to_csv(os.path.join(output_dir,'temp','tours_removed_non_canoncial.csv'))
-    tour = tour[filter]
+    # FIXME: flag and remove later
+    # tour.loc[tour[filter],'error_str'] = 'non canoncial tour'
 
     # At-work tour purposes are slightly different
     # eat, business, maint
@@ -344,7 +334,7 @@ def build_joint_tours(tour, trip, person, config, logger):
     # tour = tour.merge(person[['person_id','PNUM']], on='person_id', how='left')
 
     # Identify joint tours from tour df
-    df = tour.groupby(["totaz", "tdtaz", "start", "end", "hhno"]).count()
+    df = tour.groupby(["tomaz", "tdmaz", "start", "end", "hhno"]).count()
     df = df.reset_index()
 
     # Each of these tours occur more than once in the data (assuming more than 1 person is on this same tour in the survey)
@@ -356,8 +346,8 @@ def build_joint_tours(tour, trip, person, config, logger):
             # print(row.tour_id)
             filter = (
                 (tour.day == row.day)
-                & (tour.totaz == row.totaz)
-                & (tour.tdtaz == row.tdtaz)
+                & (tour.tomaz == row.tomaz)
+                & (tour.tdmaz == row.tdmaz)
                 & (tour.start == row.start)
                 & (tour.end == row.end)
                 & (tour.hhno == row.hhno)
@@ -431,15 +421,15 @@ def build_joint_tours(tour, trip, person, config, logger):
     # joint_tours.to_csv(os.path.join(output_dir, 'survey_joint_tour_participants.csv'), index=False)
 
     ## Filter to remove any joint work mandatory trips
-    # FIXME: do not remove all trips, just those of the additional person and modify to be non-joint
-    tour = tour[
-        ~(
-            (tour["tour_type"].isin(["school", "work", "escort"]))
-            & (tour["tour_category"] == "joint")
-        )
-    ]
+    # # FIXME: do not remove all trips, just those of the additional person and modify to be non-joint
+    # tour = tour[
+    #     ~(
+    #         (tour["tour_type"].isin(["school", "work", "escort"]))
+    #         & (tour["tour_category"] == "joint")
+    #     )
+    # ]
 
-    # These must be added to trip after tour info is available
+    # These trip fields must be updated after tour info is available
     trip["outbound"] = False
     trip.loc[trip["half"] == 1, "outbound"] = True
 
@@ -568,14 +558,10 @@ def convert_format(config):
         config,
     )
 
-    # FIXME: it's hard to tie the original household/person ID back after reseting indexes and creating multiple days
-    # Make sure an original hh_id flows through with the files
-
     # Recode person, household, and trip data
     person = convert.process_expression_file(
         person,
         person_expr_df,
-        config["person_columns"],
         df_lookup[df_lookup["table"] == "person"],
     )
 
@@ -584,23 +570,14 @@ def convert_format(config):
 
     # Make sure trips are properly ordered, where deptm is increasing for each person's travel day
     trip["person_id_int"] = trip["person_id"].astype("int64")
-    trip = trip.sort_values(["person_id_int", "day", "depart"])
+    trip = trip.sort_values(["person_id_int", "day", "depart_date", "deptm"])
     trip = trip.reset_index()
 
     # Create tour file and update the trip file with tour info
-    tour, trip, error_dict = build_tour_file(trip, person, config, logger)
+    tour, trip = build_tour_file(trip, person, config, logger)
 
     #
     joint_tour, trip, tour = build_joint_tours(tour, trip, person, config, logger)
-
-    error_dict_df = pd.DataFrame(
-        error_dict.values(), index=error_dict.keys(), columns=["errors"]
-    )
-    for index, row in error_dict_df.iterrows():
-        logger.info(f"Dropped {row.errors} tours: " + index)
-
-    # FIXME!!
-    # Excercise trips are coded as -88, make sure those are excluded (?)
 
     # Set all travel days to 1
     trip["day"] = 1
@@ -609,6 +586,13 @@ def convert_format(config):
     # Activitysim significant clean up at this point
 
     trip[["travdist", "travcost", "travtime"]] = "-1.00"
+
+    # Write version of households file that does not contain duplicated households
+    hh_trimmed = hh.drop('household_id', axis=1).drop_duplicates()
+    hh_trimmed.to_csv(
+            os.path.join(config["output_dir"], "survey_households_unduplicated.csv"),
+            index=False,
+        )
 
     for df_name, df in {
         "survey_persons.csv": person,

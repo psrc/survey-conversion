@@ -26,5 +26,3 @@
 29,df,:,travtime,-1,Set skim values to -1 until they're updated in the next script
 30,df,:,travdist,-1,Set skim values to -1 until they're updated in the next script
 31,df,:,depart,df["depart_time_hour"].astype('int'),
-31,df,:,origin,df["omaz"].fillna(-1).astype('int'),
-31,df,:,destination,df["dmaz"].fillna(-1).astype('int'),

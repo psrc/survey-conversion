@@ -184,8 +184,9 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
     # First trip row contains departure time and origin info
     tour_dict[tour_id]["tlvorig"] = df.iloc[0]["deptm"]
     tour_dict[tour_id]["totaz"] = df.iloc[0]["otaz"]
-    if "opcl" in df.columns:
-        tour_dict[tour_id]["topcl"] = df.iloc[0]["opcl"]
+    for col in ['opcl','omaz']:
+        if col in df.columns:
+            tour_dict[tour_id]["t"+col] = df.iloc[0][col]
     tour_dict[tour_id]["toadtyp"] = df.iloc[0]["oadtyp"]
 
     # Last trip row contains return info
@@ -197,9 +198,9 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
 
     tour_dict[tour_id]["pdpurp"] = df.loc[primary_index]["dpurp"]
     tour_dict[tour_id]["tlvdest"] = df.loc[primary_index]["deptm"]
-    tour_dict[tour_id]["tdtaz"] = df.loc[primary_index]["dtaz"]
-    if "dpcl" in df.columns:
-        tour_dict[tour_id]["tdpcl"] = df.loc[primary_index]["dpcl"]
+    for col in ['dpcl','dmaz','dtaz']:
+        if col in df.columns:
+            tour_dict[tour_id]["t"+col] = df.loc[primary_index][col]
     tour_dict[tour_id]["tdadtyp"] = df.loc[primary_index]["dadtyp"]
     tour_dict[tour_id]["tardest"] = df.iloc[-1]["arrtm"]
     tour_dict[tour_id]["tripsh1"] = len(df.loc[0:primary_index])

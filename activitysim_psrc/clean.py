@@ -108,7 +108,6 @@ def process_person_day(tour, trip, config, logger):
     # DATA FILTER:
     # Some of these IDs are duplicated and it's not clear why - seems to be an issue with the canonical_trip_num definition
     # FIXME: what do we do about this? Fix canonical_trip_num? drop duplicates?
-    # NOTE: this might be due to long person IDs, which are shortened at the end of the script. Considering changing Person IDs at top
     duplicated_person = trip[trip["trip_id"].duplicated()]["person_id"].unique()
     logger.info(
         f"Dropped {len(duplicated_person)} persons: duplicate IDs from canonical trip num definition"
@@ -139,14 +138,14 @@ def clean(config):
         config["output_dir"], survey_tables
     )
 
+    # Update tour flags: Any tour with trip issues should also be removed (?)
+
     # person day
     tour, trip = process_person_day(tour, trip, config, logger)
 
     # Map to standard columns
     df_mapping = pd.read_csv(os.path.join(config["input_dir"], "mapping.csv"))
 
-    # FIXME: there are some weird things happening in the col mapping
-    # like 2 tour_id cols, need to check that we aren't duplicating in the function
     tour.drop("tour_id", inplace=True, axis=1)
     tour = convert.map_to_class(tour, "tour", df_mapping, "script_to_original")
     trip = convert.map_to_class(trip, "trip", df_mapping, "script_to_original")
@@ -155,22 +154,23 @@ def clean(config):
         joint_tour_participants, "joint_tour", df_mapping, "script_to_original"
     )
 
+
+    # Filter trip data
+    for col in ["origin", "destination"]:
+        # Missing omaz/dmaz
+        trip.loc[trip[col] <= 0, 'error_flag'] = 10
+        trip.loc[trip[col] <= 0, 'error_flag'] = 10
+
+
+    filter = ((trip["opurp"] == trip["purpose"]) & (trip["opurp"] == "Home")),
+    trip.loc[trip[col] <= 0, 'error_flag'] = 11 # trips have same origin/destination of home
+
+    # Do we need to drop these trips/tours?
+
     # Drop any duplicate tour IDs
     _filter = tour["tour_id"].duplicated()
     logger.info(f"Dropped {len(tour[_filter])} tours: duplicate tour ID")
     tour = tour[~_filter]
-
-    # Make some prescribed changes
-    # These are errors noted during estimation that must be changed manually
-    # FIXME: pass these in as inputs somehow
-    # tour.loc[(tour['origin'] == 38677) & (tour['destination'] == 20072)
-    #          & (tour['tour_mode'] == 'WALK_LOC'),'tour_mode'] = 'WALK_FRY'
-    # tour.loc[(tour['origin'] == 22883) & (tour['destination'] == 38711)
-    #          & (tour['tour_mode'] == 'WALK_LOC'),'tour_mode'] = 'WALK_FRY'
-    # tour.loc[(tour['origin'] == 37112) & (tour['destination'] == 12648)
-    #             & (tour['tour_mode'] == 'WALK_LOC'),'tour_mode'] = 'WALK_FRY'
-    # tour.loc[(tour['origin'] == 40711) & (tour['destination'] == 22228)
-    #          & (tour['tour_mode'] == 'WALK_LOC'),'tour_mode'] = 'WALK_FRY'
 
     #########################################
     # at work tours
@@ -390,7 +390,7 @@ def clean(config):
 
     # Make sure sequence of departure times is sequential to apply trip_num; remove if not
     # This comes from trips that extend past midnight;
-    # FIXME: is there a way to accomodate these trips/tours or should they be dropped outright?
+    # FIXME: this should go until 3 am
     drop_tours = []
     for tour_id in tour["tour_id"]:
         df = trip[trip["tour_id"] == tour_id]["depart"]
@@ -438,66 +438,6 @@ def clean(config):
         (person["ptype"].isin([4])) & person["person_id"].isin(work_tours["person_id"]),
         "ptype",
     ] = 2
-
-    # Activitysim assumes all work and school trips are to a perons's primary work/school locations
-    # In the first steps here we move usual school/work locations to zones with jobs/students so the location choice model can be estimated
-    # If a trip's reported location is within a reasonable distance of the usual location, change the trip destination to the usual location
-
-    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    # cut for now
-    # should be handled upstream in parcel location
-
-    # # Calculate centroid distances for MAZs
-    # maz_shp = gpd.read_file(r'R:\e2projects_two\activitysim\maz\maz_blk10_shp.shp')
-    # tour = tour.merge(person[['person_id','workplace_zone_id','school_zone_id']], on='person_id', how='left')
-    # df = tour[tour['tour_type'] == 'work'][['destination','tour_id','workplace_zone_id']]
-
-    # df1 = df.merge(maz_shp, left_on='destination', right_on='maz_id', how='left').set_index('tour_id')
-    # df2 = df.merge(maz_shp, left_on='workplace_zone_id', right_on='maz_id', how='left').set_index('tour_id')
-    # dist_df = gpd.GeoSeries(df1.geometry).distance(gpd.GeoSeries(df2.geometry))
-
-    # # For differences of a mile or less, assign trip & tour desination to match usual work location
-    # # Otherwise, remove these trips and tours
-    # change_destination = dist_df[dist_df <= 5280].index
-    # drop_tours = dist_df[dist_df > 5280].index
-    # tour.index = tour['tour_id']
-    # tour.loc[change_destination,'destination'] = tour['workplace_zone_id']
-    # tour = tour.reset_index(drop=True)
-
-    # tour = tour[~tour['tour_id'].isin(drop_tours)]
-
-    # # Edit trips
-    # for tour_id in change_destination:
-    #     # change last outbound destination
-    #     df = trip.loc[(trip['tour_id'] == tour_id) & (trip['outbound'] == True)].iloc[-1]
-    #     trip.loc[trip['trip_id'] == df['trip_id'], 'destination'] = tour.loc[tour['tour_id'] == tour_id,'destination'].values[0]
-    #     # change first inbound origin
-    #     df = trip.loc[(trip['tour_id'] == tour_id) & (trip['outbound'] == False)].iloc[0]
-    #     trip.loc[trip['trip_id'] == df['trip_id'], 'origin'] = tour.loc[tour['tour_id'] == tour_id,'destination'].values[0]
-
-    # # Adjust trip & tour destinations for school travel
-    # df = tour[tour['tour_type'] == 'school'][['destination','school_zone_id','tour_id']]
-    # df1 = df.merge(maz_shp, left_on='destination', right_on='maz_id', how='left').set_index('tour_id')
-    # df2 = df.merge(maz_shp, left_on='school_zone_id', right_on='maz_id', how='left').set_index('tour_id')
-    # dist_df = gpd.GeoSeries(df1.geometry).distance(gpd.GeoSeries(df2.geometry))
-    # change_destination = dist_df[dist_df <= 5280].index
-    # drop_tours = dist_df[dist_df > 5280].index
-    # tour.index = tour['tour_id']
-    # tour.loc[change_destination,'destination'] = tour['school_zone_id']
-    # tour = tour.reset_index(drop=True)
-
-    # tour = tour[~tour['tour_id'].isin(drop_tours)]
-
-    # # Edit trips
-    # for tour_id in change_destination:
-    #     # change last outbound destination
-    #     df = trip.loc[(trip['tour_id'] == tour_id) & (trip['outbound'] == True)].iloc[-1]
-    #     trip.loc[trip['trip_id'] == df['trip_id'], 'destination'] = tour.loc[tour['tour_id'] == tour_id,'destination'].values[0]
-    #     # change first inbound origin
-    #     df = trip.loc[(trip['tour_id'] == tour_id) & (trip['outbound'] == False)].iloc[0]
-    #     trip.loc[trip['trip_id'] == df['trip_id'], 'origin'] = tour.loc[tour['tour_id'] == tour_id,'destination'].values[0]
-
-    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     # Make sure trip origins and destinations are sequential
     # Since we had to remove certain trips this can affect the tour

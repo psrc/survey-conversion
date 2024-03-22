@@ -1,7 +1,4 @@
-from daysim import locate_parcels
-from daysim import convert_format
-from daysim import attach_skims
-from daysim import data_validation
+from daysim import locate_parcels, convert_format, clean, attach_skims, data_validation, unclone
 import os
 import toml
 
@@ -14,13 +11,16 @@ if daysim_config["run_locate_parcels"]:
 if daysim_config["run_convert_format"]:
     convert_format.convert_format(daysim_config)
 
+if daysim_config["run_clean"]:
+    clean.clean(daysim_config)
+
 if daysim_config["run_data_validation"]:
     data_validation.data_validation(daysim_config)
 
 if daysim_config["run_attach_skims"]:
     attach_skims.attach_skims(daysim_config)
 
-if daysim_config["run_data_validation"]:
-    data_validation.data_validation(daysim_config)
+if daysim_config["run_unclone"]:
+   unclone.unclone(daysim_config)
 
 print("done")

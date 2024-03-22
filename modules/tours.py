@@ -81,13 +81,15 @@ def build(df, tour_dict, tour_id, trip, day, config):
 
         if len(_df) == 0:
             _df, trip = flag_issue(_df, trip, "no trips in set")
+            continue
 
-        # If no other trip purposes besides home and change mode, flag
+        # If no other trip purposes besides home and change mode, flag and skip
         if (
             _df.loc[_df["dpurp"] != config["home_purp"], "dpurp"].unique()[0]
             == config["change_mode_purp"]
         ):
             _df, trip = flag_issue(_df, trip, "no purposes provided except change mode")
+            continue
 
         # Calculate duration at location between each trip
         # (difference between arrival at a destination and start of next trip)
@@ -191,9 +193,9 @@ def build(df, tour_dict, tour_id, trip, day, config):
                 tour_dict[tour_id]["day"] = day
                 # First trip row contains departure time and origin info
                 tour_dict[tour_id]["tlvorig"] = df.iloc[0]["deptm"]
-                tour_dict[tour_id]["totaz"] = df.iloc[0]["otaz"]
-                if "opcl" in df.columns:
-                    tour_dict[tour_id]["topcl"] = df.iloc[0]["opcl"]
+                for col in ['opcl','omaz','otaz']:
+                    if col in df.columns:
+                        tour_dict[tour_id]["t"+col] = df.iloc[0][col]
                 tour_dict[tour_id]["toadtyp"] = df.iloc[0]["oadtyp"]
 
                 # Last trip row contains return info
@@ -212,13 +214,11 @@ def build(df, tour_dict, tour_id, trip, day, config):
                 ]
                 # If there were subtours, this is a work tour
                 tour_dict[tour_id]["pdpurp"] = 1
-                tour_dict[tour_id]["tdtaz"] = _df.loc[main_tour_start_index][
-                    "dtaz"
-                ]
-                if "dpcl" in df.columns:
-                    tour_dict[tour_id]["tdpcl"] = _df.loc[
-                        main_tour_start_index
-                    ]["dpcl"]
+                for col in ['dpcl','dmaz','dtaz']:
+                    if col in df.columns:
+                        tour_dict[tour_id]["t"+col] = _df.loc[main_tour_start_index][
+                            col
+                        ]
                 tour_dict[tour_id]["tdadtyp"] = _df.loc[main_tour_start_index][
                     "dadtyp"
                 ]

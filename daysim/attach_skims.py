@@ -130,15 +130,15 @@ def write_skims(df, skim_dict, otaz_field, dtaz_field, skim_output_file, config)
 
     # Replace all bike and walk cost skims with 0
     df.loc[df["skimid"].isin(["bike", "walk"]), "c"] = 0
-    df.to_csv(
-        os.path.join(config["output_dir"], "skims_attached", "after_bike_edits.csv"),
-        index=False,
-    )
+    # df.to_csv(
+    #     os.path.join(config["output_dir"], "skims_attached", "after_bike_edits.csv"),
+    #     index=False,
+    # )
 
     # write results to a csv
     try:
         df.to_csv(
-            os.path.join(config["output_dir"], "skims_attached", skim_output_file),
+            os.path.join(config["output_dir"], "cleaned", "skims_attached", skim_output_file),
             index=False,
         )
     except:
@@ -218,7 +218,7 @@ def fetch_skim(
             )
         else:
             tempdf["skim_id"] = tempdf["mode code"]
-        final_df = final_df.append(tempdf)
+        final_df = pd.concat([final_df,tempdf])
         print("number of " + mode + "trips: " + str(len(final_df)))
     df = final_df
     del final_df
@@ -264,15 +264,15 @@ def process_person_skims(tour, person, hh, config):
     work_tours["puwdepp"] = work_tours["tlvdest"]
 
     # some people make multiple work tours; select only the tours with greatest distance
-    primary_work_tour = work_tours.groupby("unique_id")[
+    primary_work_tour = work_tours.groupby("unique_id")[[
         "tlvdest", "unique_tour_id"
-    ].max()
+    ]].max()
     work_tours = work_tours[
         work_tours.unique_tour_id.isin(primary_work_tour["unique_tour_id"].values)
     ]
 
     # drop the original Work Mode field
-    person.drop(["puwmode", "puwarrp", "puwdepp"], axis=1, inplace=True)
+    person.drop(["puwmode"], axis=1, inplace=True)
 
     person = pd.merge(
         person,
@@ -288,13 +288,14 @@ def process_person_skims(tour, person, hh, config):
     # Get school tour info
     # pusarrp and pusdepp are non-daysim variables, meaning usual arrival and departure time from school
     school_tours = tour_per[tour_per["pdpurp"] == 2]
+    school_tours["pusmode"] = school_tours["tmodetp"]
     school_tours["pusarrp"] = school_tours["tardest"]
     school_tours["pusdepp"] = school_tours["tlvdest"]
 
     # Select a primary school trip, based on longest distance
-    primary_school_tour = school_tours.groupby("unique_id")[
+    primary_school_tour = school_tours.groupby("unique_id")[[
         "tlvdest", "unique_tour_id"
-    ].max()
+    ]].max()
     school_tours = school_tours[
         school_tours["unique_tour_id"].isin(
             primary_school_tour["unique_tour_id"].values
@@ -303,7 +304,7 @@ def process_person_skims(tour, person, hh, config):
 
     person = pd.merge(
         person,
-        school_tours[["hhno", "pno", "pusarrp", "pusdepp"]],
+        school_tours[["hhno", "pno", "pusmode", "pusarrp", "pusdepp"]],
         on=["hhno", "pno"],
         how="left",
     )
@@ -319,12 +320,12 @@ def process_person_skims(tour, person, hh, config):
     person.loc[person["hhincome"] > 0, "hhincome"] = min_income
 
     # Convert fields to int
-    for field in ["pusarrp", "pusdepp", "puwarrp", "puwdepp"]:
-        person[field] = person[field].astype("int")
+    # for field in ["pusarrp", "pusdepp", "puwarrp", "puwdepp"]:
+    #     person[field] = person[field].astype("int")
 
     # Write results to CSV for new derived fields
     person.to_csv(
-        os.path.join(config["output_dir"], "skims_attached", "person_skim_output.csv"),
+        os.path.join(config["output_dir"], "cleaned", "skims_attached", "person_skim_output.csv"),
         index=False,
     )
 
@@ -338,22 +339,22 @@ def update_records(trip, tour, person, config):
 
     # Load skim data
     trip_skim = pd.read_csv(
-        os.path.join(config["output_dir"], "skims_attached", "trip_skim_output.csv")
+        os.path.join(config["output_dir"], "cleaned", "skims_attached",  "trip_skim_output.csv")
     )
     tour_skim = pd.read_csv(
-        os.path.join(config["output_dir"], "skims_attached", "tour_skim_output.csv")
+        os.path.join(config["output_dir"], "cleaned", "skims_attached", "tour_skim_output.csv")
     )
     person_skim = pd.read_csv(
-        os.path.join(config["output_dir"], "skims_attached", "person_skim_output.csv")
+        os.path.join(config["output_dir"], "cleaned", "skims_attached", "person_skim_output.csv")
     )
     work_skim = pd.read_csv(
         os.path.join(
-            config["output_dir"], "skims_attached", "work_travel_skim_output.csv"
+            config["output_dir"], "cleaned", "skims_attached", "work_travel_skim_output.csv"
         )
     )
     school_skim = pd.read_csv(
         os.path.join(
-            config["output_dir"], "skims_attached", "school_travel_skim_output.csv"
+            config["output_dir"], "cleaned", "skims_attached", "school_travel_skim_output.csv"
         )
     )
 
@@ -365,7 +366,7 @@ def update_records(trip, tour, person, config):
 
     trip_cols = {"travtime": "t", "travcost": "c", "travdist": "d"}
     tour_cols = {"tautotime": "t", "tautocost": "c", "tautodist": "d"}
-    person_cols = {"puwmode": "puwmode", "puwarrp": "puwarrp", "puwdepp": "puwdepp"}
+    person_cols = {"puwmode": "puwmode"}
     work_cols = {"pwautime": "t", "pwaudist": "d"}
     school_cols = {"psautime": "t", "psaudist": "d"}
 
@@ -373,8 +374,8 @@ def update_records(trip, tour, person, config):
     trip.drop(trip_cols.keys(), axis=1, inplace=True)
     tour.drop(tour_cols.keys(), axis=1, inplace=True)
     person.drop(person_cols.keys(), axis=1, inplace=True)
-    person.drop(work_cols.keys(), axis=1, inplace=True)
-    person.drop(school_cols.keys(), axis=1, inplace=True)
+    # person.drop(work_cols.keys(), axis=1, inplace=True)
+    # person.drop(school_cols.keys(), axis=1, inplace=True)
 
     # Join skim file to original
     df = pd.merge(trip, trip_skim[["id", "c", "d", "t"]], on="id", how="left")
@@ -391,7 +392,7 @@ def update_records(trip, tour, person, config):
 
     # export results
     df.to_csv(
-        os.path.join(config["output_dir"], "skims_attached", "_trip.tsv"),
+        os.path.join(config["output_dir"], "cleaned", "skims_attached", "_trip.tsv"),
         index=False,
         sep="\t",
     )
@@ -410,7 +411,7 @@ def update_records(trip, tour, person, config):
 
     # export results
     df.to_csv(
-        os.path.join(config["output_dir"], "skims_attached", "_tour.tsv"),
+        os.path.join(config["output_dir"], "cleaned", "skims_attached", "_tour.tsv"),
         index=False,
         sep="\t",
     )
@@ -445,7 +446,7 @@ def update_records(trip, tour, person, config):
 
     # export results
     df.to_csv(
-        os.path.join(config["output_dir"], "skims_attached", "_person.tsv"),
+        os.path.join(config["output_dir"],"cleaned", "skims_attached", "_person.tsv"),
         index=False,
         sep="\t",
     )
@@ -462,9 +463,9 @@ def dat_to_h5(file_list, config):
     }
 
     # Create H5 container (overwrite if exists)
-    if os.path.isfile(os.path.join(config["output_dir"], "survey.h5")):
-        os.remove(os.path.join(config["output_dir"], "survey.h5"))
-    f = h5py.File(os.path.join(config["output_dir"], "survey.h5"), "w")
+    if os.path.isfile(os.path.join(config["output_dir"],"cleaned","skims_attached", "survey.h5")):
+        os.remove(os.path.join(config["output_dir"],"cleaned","skims_attached","survey.h5"))
+    f = h5py.File(os.path.join(config["output_dir"],"cleaned","skims_attached","survey.h5"), "w")
 
     # Process all csv files in this directory
     for fname in file_list:
@@ -529,14 +530,15 @@ def attach_skims(config):
     start_time = datetime.datetime.now()
 
     # Create new output directory for survey records with skims attached, if needed
-    if not os.path.exists(os.path.join(config["output_dir"], "skims_attached")):
-        os.makedirs(os.path.join(config["output_dir"], "skims_attached"))
+    if not os.path.exists(os.path.join(config["output_dir"],'cleaned', "skims_attached")):
+        os.makedirs(os.path.join(config["output_dir"],'cleaned', "skims_attached"))
 
     # Load daysim-converted data produced from daysim_conversion.py
-    trip = pd.read_csv(os.path.join(config["output_dir"], "_trip.tsv"), sep="\t")
-    tour = pd.read_csv(os.path.join(config["output_dir"], "_tour.tsv"), sep="\t")
-    hh = pd.read_csv(os.path.join(config["output_dir"], "_household.tsv"), sep="\t")
-    person = pd.read_csv(os.path.join(config["output_dir"], "_person.tsv"), sep="\t")
+    input_dir = os.path.join(config["output_dir"], 'cleaned')
+    trip = pd.read_csv(os.path.join(input_dir, "_trip.tsv"), sep="\t")
+    tour = pd.read_csv(os.path.join(input_dir, "_tour.tsv"), sep="\t")
+    hh = pd.read_csv(os.path.join(input_dir, "_household.tsv"), sep="\t")
+    person = pd.read_csv(os.path.join(input_dir, "_person.tsv"), sep="\t")
 
     # Drop any rows with -1 expansion factor
     _filter = person["psexpfac"] >= 0
@@ -604,7 +606,7 @@ def attach_skims(config):
         "school_travel",
         person_modified,
         time_field="pusarrp",
-        mode_field="puwmode",
+        mode_field="pusmode",
         otaz_field="hhtaz",
         dtaz_field="pstaz",
         config=config,
@@ -612,7 +614,7 @@ def attach_skims(config):
     )
 
     # Reload original person file and attach skim results
-    person = pd.read_csv(os.path.join(config["output_dir"], "_person.tsv"), sep="\t")
+    person = pd.read_csv(os.path.join(config["output_dir"], "cleaned", "_person.tsv"), sep="\t")
     person["id"] = person["hhno"].astype("str") + person["pno"].astype("str")
 
     # Update records
@@ -624,17 +626,17 @@ def attach_skims(config):
     # Copy non-updated files to the same output directory for consistency
     for file in write_list:
         df = pd.read_csv(
-            os.path.join(config["output_dir"], "_" + file + ".tsv"), sep="\t"
+            os.path.join(config["output_dir"], "cleaned", "_" + file + ".tsv"), sep="\t"
         )
         df.to_csv(
-            os.path.join(config["output_dir"], "skims_attached", "_" + file + ".tsv"),
+            os.path.join(config["output_dir"], "cleaned", "skims_attached", "_" + file + ".tsv"),
             sep="\t",
             index=False,
         )
 
     dat_to_h5(
         [
-            os.path.join(config["output_dir"], "skims_attached", "_" + file + ".tsv")
+            os.path.join(config["output_dir"], "cleaned", "skims_attached", "_" + file + ".tsv")
             for file in write_list
         ],
         config,
