@@ -25,6 +25,8 @@ def clean(config):
     # Select only trips that match tours
     trip = trip[trip['tour'] >= 0]
 
+    # Update trip mode to combined all access modes
+    trip.loc[trip['mode'] == 7, 'mode'] = 6
 
     # Make sure person day, trip, and tours match this slimmed down set of persons
 
@@ -40,3 +42,5 @@ def clean(config):
     tour.to_csv(os.path.join(cleaned_output_dir, "_tour.tsv"),sep="\t", index=False)
     hh.to_csv(os.path.join(cleaned_output_dir, "_household.tsv"),sep="\t", index=False)
     person.to_csv(os.path.join(cleaned_output_dir, "_person.tsv"),sep="\t", index=False)
+    person_day.to_csv(os.path.join(cleaned_output_dir, "_person_day.tsv"),sep="\t", index=False)
+    hh_day.to_csv(os.path.join(cleaned_output_dir, "_household_day.tsv"),sep="\t", index=False)

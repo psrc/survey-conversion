@@ -497,6 +497,8 @@ def convert_format(config):
     # Create tour file and update the trip file with tour info
     tour, trip = build_tour_file(trip, person, config, logger)
 
+    # Trip
+
     household_day = process_household_day(
         person_day_original_df, hh, config
     )

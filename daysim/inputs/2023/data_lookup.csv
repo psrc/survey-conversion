@@ -123,6 +123,24 @@ trip,travelers_total,2 travelers,2,travelers
 trip,travelers_total,3 travelers,3,travelers
 trip,travelers_total,4 travelers,4,travelers
 trip,travelers_total,5+ travelers,5,travelers
+trip,mode_acc,Missing: Technical error,1,transit_access_mode
+trip,mode_acc,Walked or jogged,1,transit_access_mode
+trip,mode_acc,Bicycle or e-bicycle,1,transit_access_mode
+trip,mode_acc,"Drove and parked a car (e.g., a vehicle in my household)",3,transit_access_mode
+trip,mode_acc,"Drove and parked a carshare vehicle (e.g., ZipCar, Car2Go)",3,transit_access_mode
+trip,mode_acc,Got dropped off,3,transit_access_mode
+trip,mode_acc,"Took a taxi (e.g., Yellow Cab)",3,transit_access_mode
+trip,mode_acc,"Took ride-share/other hired car service (e.g., Lyft, Uber)",3,transit_access_mode
+trip,mode_acc,"Transferred from another bus, shuttle, or vanpool",1,transit_access_mode
+trip,mode_acc,"Scooter, moped, skateboard",1,transit_access_mode
+trip,mode_acc,Transferred from other rail,1,transit_access_mode
+trip,mode_acc,"Uber/Lyft, taxi, or car service",3,transit_access_mode
+trip,mode_acc,Drove and parked my own household's vehicle (or motorcycle),3,transit_access_mode
+trip,mode_acc,Drove and parked another vehicle (or motorcycle),3,transit_access_mode
+trip,mode_acc,Got dropped off in my own household's vehicle (or motorcycle),3,transit_access_mode
+trip,mode_acc,Got dropped off in another vehicle (or motorcycle),3,transit_access_mode
+trip,mode_acc,Other,1,transit_access_mode
+trip,mode_acc,Missing: Skip Logic,1,transit_access_mode
 day,travel_dow,Monday,1,day
 day,travel_dow,Tuesday,2,day
 day,travel_dow,Wednesday,3,day

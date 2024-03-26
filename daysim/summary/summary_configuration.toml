@@ -1,5 +1,7 @@
-survey_1_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format/skims_attached'
-survey_2_dir = 'R:/e2projects_two/2018_base_year/survey/daysim_format/revised/skims_attached'
+survey_1_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format/cleaned/skims_attached'
+# survey_1_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
+# survey_2_dir = 'R:/e2projects_two/2018_base_year/survey/daysim_format/revised/skims_attached'
+survey_2_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/test/cleaned/skims_attached'
 survey_1_name = '2023'
 survey_2_name = '2017_2019'
 

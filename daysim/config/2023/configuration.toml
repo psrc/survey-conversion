@@ -15,8 +15,8 @@ output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
 output_dir_clean = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format/cleaned'
 
 # Specify which components to run
-run_locate_parcels = false
-run_convert_format = false
+run_locate_parcels = true
+run_convert_format = true
 run_clean = true
 run_data_validation = true
 run_attach_skims = true
