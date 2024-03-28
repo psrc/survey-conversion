@@ -11,13 +11,13 @@ input_dir = 'activitysim_psrc/inputs/2023'
 
 # Project Output Directory
 output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format'
-output_dir_final = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format/final'
+# output_dir_final = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format/final'
 
 # Config files used for infer.py
 asim_config_dir = 'C:/Workspace/psrc_activitysim_psrc_dev/configs_dev'
 
 # To debug, add person IDs to list; to process all pass empty list
-debug_person_id = []
+debug_person_id = [5611]
 
 # Specify which components to run
 run_locate_parcels = false
@@ -39,13 +39,13 @@ drive_to_transit_access_list = [
 # Drive to Transit > Walk to Transit > School Bus > HOV3+ > HOV2 > SOV > Bike > Walk > Other
 transit_heirarchy = ['FRY','COM','LR','LOC']
 TRANSIT_DRIVE_MODE = 'DRIVE_TRN'
-mode_heirarchy = ["DRIVE_TRN","WLK_FRY","WLK_COM","WLK_LR","WLK_LOC","SCH_BUS","TNC",
+mode_heirarchy = ["DRIVE_TRN","WALK_FRY","WALK_COM","WALK_LR","WALK_LOC","SCHBUS","TNC",
                   "SHARED3FREE","SHARED2FREE","DRIVEALONEFREE","BIKE","WALK","Other"]
 
-transit_mode_list = ['WLK_FRY',
-                    'WLK_COM',
-                    'WLK_LR',
-                    'WLK_LOC',
+transit_mode_list = ['WALK_FRY',
+                    'WALK_COM',
+                    'WALK_LR',
+                    'WALK_LOC',
                     'DRIVE_TRN']
 
 missing_school_zone = 9999999999999
@@ -89,6 +89,7 @@ person_weight = 'person_weight_2023'
 hhid = 'household_id'
 pno = 'PNUM'
 home_purp = 'Home'
+work_purp = 'work'
 change_mode_purp = 'change_mode'
 origin = 'origin'
 dest = 'destination'

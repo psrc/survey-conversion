@@ -86,7 +86,7 @@ def process_person_day(tour, trip, config, logger):
 
     # Report number of tours affected
     # FIXME: write out a log file
-    print(str(person_day.groupby("flag").count()))
+    # print(str(person_day.groupby("flag").count()))
 
     # DATA FILTER:
     # Default of 4, determine based on config files
@@ -123,7 +123,7 @@ def process_person_day(tour, trip, config, logger):
         .to_list()
     )
     logger.info(
-        f"Dropped {len(missing_trip_persons)} persons: missing an outbound or inbound trip leg"
+        f" {len(missing_trip_persons)} persons missing an outbound or inbound trip leg"
     )
 
     return tour, trip
@@ -134,14 +134,29 @@ def clean(config):
     logger.info("--------------------convert_format.py STARTING--------------------")
     start_time = datetime.datetime.now()
 
-    households, person, tour, joint_tour_participants, trip = convert.read_tables(
-        config["output_dir"], survey_tables
-    )
+    households = pd.read_csv(os.path.join(config['output_dir'], 'survey_households.csv')) 
+    person = pd.read_csv(os.path.join(config['output_dir'], 'survey_persons.csv')) 
+    tour = pd.read_csv(os.path.join(config['output_dir'], 'survey_tours.csv')) 
+    joint_tour_participants = pd.read_csv(os.path.join(config['output_dir'], 'survey_joint_tour_participants.csv')) 
+    trip = pd.read_csv(os.path.join(config['output_dir'], 'survey_trips.csv')) 
 
-    # Update tour flags: Any tour with trip issues should also be removed (?)
+    # Create new output directory for survey records with skims attached, if needed
+    cleaned_output_dir = os.path.join(config["output_dir"], "cleaned")
+    
+    for my_path in [cleaned_output_dir]:
+        if not os.path.exists(my_path):
+            os.makedirs(my_path)
+
+    # Remove trips with tour flags
+    filter = tour['error_str'].notnull()
+    logger.info(f"Dropped {len(tour[filter])} tours: non-canonical tour type")
+    tour = tour[~filter]
 
     # person day
     tour, trip = process_person_day(tour, trip, config, logger)
+
+    # Process joint tours
+
 
     # Map to standard columns
     df_mapping = pd.read_csv(os.path.join(config["input_dir"], "mapping.csv"))
@@ -178,6 +193,7 @@ def clean(config):
 
     # People can't make more than 1 eat or maint subtour,
     # or more than 2 business subtours on at-work tours
+    # Keeping only the first and dropping the others
     atwork_tours = tour[tour["tour_category"] == "atwork"]
     atwork_tours = atwork_tours.groupby(["parent_tour_id", "tour_type"]).count()[
         ["household_id"]
@@ -315,9 +331,12 @@ def clean(config):
     _df = joint_tours.groupby("household_id").count()["tour_id"]
     too_many_jt_hh = _df[_df > 2].index
 
-    # FIXME: For now remove all households; there are 4
+    # FIXME: For now remove all households; 
     # We should figure out how to better deal with these
-    tour = tour[~tour["household_id"].isin(too_many_jt_hh)]
+    filter = tour["household_id"].isin(too_many_jt_hh)
+    logger.info(f"Dropped {len(tour[filter])} tours: too many joint tours per household")
+    tour = tour[~filter]
+
 
     # person_cols = ['person_id','household_id','age','PNUM','sex','pemploy','pstudent','ptype','school_zone_id','workplace_zone_id','free_parking_at_work', 'race_category', 'person_id_elmer', person_weight]
     # tour_cols = ['tour_id','person_id','household_id','tour_type','tour_category','destination','origin','start','end','tour_mode','parent_tour_id']
@@ -570,6 +589,13 @@ def clean(config):
     ]
     # tour = tour[tour_cols]
 
+    # Joint tours can't be for work, school, or escort purposes
+    # For now, remove these
+    # FIXME: make them non-joint?
+    filter = ((tour['tour_type'].isin(['work','school','escort']))&(tour['tour_category']=='joint'))
+    logger.info(f"Dropped {len(tour[filter])} tours: joint tour cannot be work, school, or escort")
+    tour = tour[~filter]
+
     # Set local person order in household to work with joint tour estimation
     # joint_tour_frequency.py assumes PNUM==1 should have a joint tour
     # Re-sort PNUM in person file based on joint_tour_participants file
@@ -609,6 +635,10 @@ def clean(config):
 
     tour = tour[~tour["tour_id"].duplicated()]
 
+    tour.loc[(tour['tour_category'] == 'atwork') & ~(tour['parent_tour_id'].isin(tour.tour_id)), 'drop'] = 1
+    logger.info(f"Dropped {len(tour[tour['drop'] == 1])} tours: atwork tour missing parent tour")
+    tour = tour[tour['drop']==0]
+
     # Make sure trips, tours, and joint_tour_participants align
     trip = trip[trip["tour_id"].isin(tour["tour_id"])]
     tour = tour[tour["tour_id"].isin(trip["tour_id"])]
@@ -623,20 +653,20 @@ def clean(config):
     households = households[config["hh_columns"]]
 
     joint_tour_participants.to_csv(
-        os.path.join(config["output_dir_final"], "survey_joint_tour_participants.csv"),
+        os.path.join(config["output_dir"], "cleaned","survey_joint_tour_participants.csv"),
         index=False,
     )
     tour.to_csv(
-        os.path.join(config["output_dir_final"], "survey_tours.csv"), index=False
+        os.path.join(config["output_dir"], "cleaned", "survey_tours.csv"), index=False
     )
     households.to_csv(
-        os.path.join(config["output_dir_final"], "survey_households.csv"), index=False
+        os.path.join(config["output_dir"], "cleaned", "survey_households.csv"), index=False
     )
     person.to_csv(
-        os.path.join(config["output_dir_final"], "survey_persons.csv"), index=False
+        os.path.join(config["output_dir"], "cleaned", "survey_persons.csv"), index=False
     )
     trip.to_csv(
-        os.path.join(config["output_dir_final"], "survey_trips.csv"), index=False
+        os.path.join(config["output_dir"], "cleaned", "survey_trips.csv"), index=False
     )
 
     # Conclude log

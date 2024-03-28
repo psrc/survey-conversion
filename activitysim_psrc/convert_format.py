@@ -72,7 +72,9 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     # Trips to/from work are considered "usual workplace" only if dtaz == workplace TAZ
     # must join person records to get usual work and school location
     df = df.merge(
-        person[["person_id", "PNUM", "workplace_zone_id", "school_zone_id"]],
+        person[["person_id", "PNUM", "workplace_zone_id", "school_zone_id",
+                "workplace_taz", "school_taz",
+                    'household_id_original']],
         how="left",
         on="person_id",
     )
@@ -307,12 +309,12 @@ def build_joint_tours(tour, trip, person, config, logger):
 
     # Non-numeric tour_type_id results are non-canonical and should be removed.
     # FIXME: For now just remove the offensive tours; is it okay to continue using this person's day records otherwise?
-    filter = pd.to_numeric(tour["tour_type_id"], errors="coerce").notnull()
+    filter = pd.to_numeric(tour["tour_type_id"], errors="coerce").isnull()
 
     # Keep track of the records we removed
     # tour[~filter].to_csv(os.path.join(output_dir,'temp','tours_removed_non_canoncial.csv'))
     # FIXME: flag and remove later
-    # tour.loc[tour[filter],'error_str'] = 'non canoncial tour'
+    tour.loc[filter,'error_str'] = 'non canonical tour'
 
     # At-work tour purposes are slightly different
     # eat, business, maint

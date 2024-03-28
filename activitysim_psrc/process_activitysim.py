@@ -17,8 +17,8 @@ if activitysim_config["run_clean"]:
 if activitysim_config["run_infer"]:
     infer.infer(
         activitysim_config["asim_config_dir"],
-        activitysim_config["output_dir_final"],
-        activitysim_config["output_dir_final"],
+        os.path.join(activitysim_config["output_dir"], "cleaned"),
+        os.path.join(activitysim_config["output_dir"], "cleaned"),
     )
 
 

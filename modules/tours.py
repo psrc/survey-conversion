@@ -109,7 +109,7 @@ def build(df, tour_dict, tour_id, trip, day, config):
         if (
             (len(_df) >= 4)
             & (len(_df[_df["oadtyp"] == 2]) >= 2)
-            & (len(_df[_df["opurp"] == 1]) >= 2)
+            & (len(_df[_df["opurp"] == config['work_purp']]) >= 2)
             & (len(_df[(_df["oadtyp"] == 2) & (_df["dadtyp"] > 2)]) >= 1)
         ):
             # Potential that subtours exist; test each one to see if it's usable
@@ -213,7 +213,7 @@ def build(df, tour_dict, tour_id, trip, day, config):
                     + 1
                 ]
                 # If there were subtours, this is a work tour
-                tour_dict[tour_id]["pdpurp"] = 1
+                tour_dict[tour_id]["pdpurp"] = config['work_purp']
                 for col in ['dpcl','dmaz','dtaz']:
                     if col in df.columns:
                         tour_dict[tour_id]["t"+col] = _df.loc[main_tour_start_index][

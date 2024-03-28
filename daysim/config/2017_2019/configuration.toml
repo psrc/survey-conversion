@@ -76,6 +76,7 @@ walk_speed = 3 # miles per hour
 hhid = 'hhno'
 pno = 'pno'
 home_purp = 0
+work_purp = 1
 change_mode_purp = 10
 origin = 'otaz'
 dest = 'dtaz'

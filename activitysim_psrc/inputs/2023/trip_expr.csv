@@ -9,19 +9,19 @@
 11,df,(df['travelers_total'] != '1 traveler') & (df['travelers_total'] != '2 travelers') & (df['mode_simple'] == 'Drive'),trip_mode,'SHARED3FREE',
 13,df,df['mode_simple'] == 'Walk',trip_mode,'WALK',
 14,df,df['mode_simple'] == 'Bike',trip_mode,'BIKE',
-15,df,df['mode_1'].isin(['School bus']),trip_mode,'SCH_BUS',
+15,df,df['mode_1'].isin(['School bus']),trip_mode,'SCHBUS',
 16,df,"df['mode_1'].isin(['Other hired service (Uber, Lyft, or other smartphone-app car service)','Taxi (e.g., Yellow Cab)'])",trip_mode,'TNC',
 17,df,df["trip_mode"].isnull(),trip_mode,'Other'
 18,df,:,oadtyp,4,origin type: assume other by default
 19,df,:,dadtyp,4,destination type: assume other by default
-20,df,df['opurp'] == 0,oadtyp,1,"Trips with origin/destination purpose of ""Home"" (0) have a origin/destination address type of ""Home"" (1)"
-21,df,df['dpurp'] == 0,dadtyp,1,"Trips with origin/destination purpose of ""Home"" (0) have a origin/destination address type of ""Home"" (1)"
-22,df,(df['opurp'] == 2) & (df['omaz'] == df['school_zone_id']),oadtyp,3,usual school
-23,df,(df['dpurp'] == 2) & (df['dmaz'] == df['school_zone_id']),dadtyp,3,usual school
-24,df,(df['opurp'] == 1) & (df['omaz'] == df['workplace_zone_id']),oadtyp,2,If trip is to/from TAZ of usual workplace and trip purpose is work
-25,df,(df['dpurp'] == 1) & (df['dmaz'] == df['workplace_zone_id']),dadtyp,2,If trip is to/from TAZ of usual workplace and trip purpose is work
-26,df,df['opurp'] == 10,oadtyp,6,'Change mode'
-27,df,df['dpurp'] == 10,dadtyp,6,'Change mode'
+20,df,df['opurp'] == 'Home',oadtyp,1,"Trips with origin/destination purpose of ""Home"" (0) have a origin/destination address type of ""Home"" (1)"
+21,df,df['dpurp'] == 'Home',dadtyp,1,"Trips with origin/destination purpose of ""Home"" (0) have a origin/destination address type of ""Home"" (1)"
+22,df,(df['opurp'] == 'school') & (df['otaz'] == df['school_taz']),oadtyp,3,usual school
+23,df,(df['dpurp'] == 'school') & (df['dtaz'] == df['school_taz']),dadtyp,3,usual school
+24,df,(df['opurp'] == 'work') & (df['otaz'] == df['workplace_taz']),oadtyp,2,If trip is to/from TAZ of usual workplace and trip purpose is work
+25,df,(df['dpurp'] == 'work') & (df['dtaz'] == df['workplace_taz']),dadtyp,2,If trip is to/from TAZ of usual workplace and trip purpose is work
+26,df,df['opurp'] =='change_mode',oadtyp,6,'Change mode'
+27,df,df['dpurp'] =='change_mode',dadtyp,6,'Change mode'
 28,df,:,travcost,-1,Set skim values to -1 until they're updated in the next script
 29,df,:,travtime,-1,Set skim values to -1 until they're updated in the next script
 30,df,:,travdist,-1,Set skim values to -1 until they're updated in the next script
