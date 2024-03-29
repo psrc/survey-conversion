@@ -1,0 +1,110 @@
+﻿table,elmer_name,elmer_value,model_value,model_name
+household,res_type,Single-family house (detached house),1,hrestype
+household,res_type,Townhouse (attached house),2,hrestype
+household,res_type,Building with 3 or fewer apartments/condos,2,hrestype
+household,res_type,Building with 4 or more apartments/condos,3,hrestype
+household,res_type,Mobile home/trailer,4,hrestype
+household,res_type,Dorm or institutional housing,5,hrestype
+household,res_type,"Other (including boat, RV, van, etc.)",6,hrestype
+household,res_type,Missing Response,9,hrestype
+household,rent_own,Own/paying mortgage,1,hownrent
+household,rent_own,Rent,2,hownrent
+household,rent_own,Provided by job or military,3,hownrent
+household,rent_own,Prefer not to answer,3,hownrent
+household,rent_own,Other,3,hownrent
+household,rent_own,"Provided by family, relative, or friend without payment or rent",3,hownrent
+household,rent_own,Missing Response,3,hownrent
+household,hhincome_detailed,"Under $10,000",5000,hhincome
+household,hhincome_detailed,"$10,000-$24,999",17500,hhincome
+household,hhincome_detailed,"$25,000-$34,999",30000,hhincome
+household,hhincome_detailed,"$35,000-$49,999",42500,hhincome
+household,hhincome_detailed,"$50,000-$74,999",62500,hhincome
+household,hhincome_detailed,"$75,000-$99,999",87500,hhincome
+household,hhincome_detailed,"$100,000-$149,999",125000,hhincome
+household,hhincome_detailed,"$150,000-$199,999",175000,hhincome
+household,hhincome_detailed,"$200,000-$249,999",225000,hhincome
+household,hhincome_detailed,"$250,000 or more",250000,hhincome
+household,hhincome_detailed,Prefer not to answer,-1,hhincome
+household,hhincome_detailed,Missing: Skip Logic,-1,hhincome
+household,hhsize,1 person,1,hhsize
+household,hhsize,2 people,2,hhsize
+household,hhsize,3 people,3,hhsize
+household,hhsize,4 people,4,hhsize
+household,hhsize,5 people,5,hhsize
+household,hhsize,6 people,6,hhsize
+household,hhsize,7 people,7,hhsize
+household,hhsize,8 people,8,hhsize
+household,hhsize,9 people,9,hhsize
+household,hhsize,10 people,10,hhsize
+household,hhsize,11 people,11,hhsize
+household,hhsize,12 people,12,hhsize
+household,hhsize,13 or more people,13,hhsize
+household,vehicle_count,0 (no vehicles),0,hhvehs
+household,vehicle_count,1 vehicle,1,hhvehs
+household,vehicle_count,2 vehicles,2,hhvehs
+household,vehicle_count,3 vehicles,3,hhvehs
+household,vehicle_count,4 vehicles,4,hhvehs
+household,vehicle_count,5 vehicles,5,hhvehs
+household,vehicle_count,6 vehicles,6,hhvehs
+household,vehicle_count,7 vehicles,7,hhvehs
+household,vehicle_count,8 vehicles,8,hhvehs
+household,vehicle_count,9 vehicles,9,hhvehs
+household,vehicle_count,10 or more vehicles,10,hhvehs
+person,age,Under 5 years old,2,pagey
+person,age,5-11 years,8,pagey
+person,age,12-15 years,14,pagey
+person,age,16-17 years,17,pagey
+person,age,18-24 years,21,pagey
+person,age,25-34 years,30,pagey
+person,age,35-44 years,40,pagey
+person,age,45-54 years,50,pagey
+person,age,55-64 years,60,pagey
+person,age,65-74 years,70,pagey
+person,age,75-84 years,80,pagey
+person,age,85 or years older,85,pagey
+person,gender,Male,1,pgend
+person,gender,Female,2,pgend
+person,gender,Another,9,pgend
+person,gender,Missing Response,9,pgend
+person,gender,Prefer not to answer,9,pgend
+person,student,"No, not a student",0,pstyp
+person,student,Part-time student,2,pstyp
+person,student,Full-time student,1,pstyp
+trip,origin_purpose_cat,Home,0,opurp
+trip,origin_purpose_cat,Work,1,opurp
+trip,origin_purpose_cat,Work-related,1,opurp
+trip,origin_purpose_cat,School,2,opurp
+trip,origin_purpose_cat,Escort,3,opurp
+trip,origin_purpose_cat,Errand/Other,4,opurp
+trip,origin_purpose_cat,Shop,5,opurp
+trip,origin_purpose_cat,Meal,6,opurp
+trip,origin_purpose_cat,Social/Recreation,7,opurp
+trip,origin_purpose_cat,Change mode,10,opurp
+trip,origin_purpose_cat,Missing: Non-response,7,opurp
+trip,dest_purpose_cat,Home,0,dpurp
+trip,dest_purpose_cat,Work,1,dpurp
+trip,dest_purpose_cat,Work-related,1,dpurp
+trip,dest_purpose_cat,School,2,dpurp
+trip,dest_purpose_cat,Escort,3,dpurp
+trip,dest_purpose_cat,Errand/Other,4,dpurp
+trip,dest_purpose_cat,Shop,5,dpurp
+trip,dest_purpose_cat,Meal,6,dpurp
+trip,dest_purpose_cat,Social/Recreation,7,dpurp
+trip,dest_purpose_cat,Change mode,10,dpurp
+trip,dest_purpose_cat,Missing: Non-response,7,dpurp
+trip,driver,Driver,1,dorp
+trip,driver,Passenger,2,dorp
+trip,driver,Both (switched drivers during trip),3,dorp
+trip,driver,Missing: Skip Logic,3,dorp
+trip,travelers_total,1 traveler,1,travelers
+trip,travelers_total,2 travelers,2,travelers
+trip,travelers_total,3 travelers,3,travelers
+trip,travelers_total,4 travelers,4,travelers
+trip,travelers_total,5+ travelers,5,travelers
+day,travel_dow,Monday,1,day
+day,travel_dow,Tuesday,2,day
+day,travel_dow,Wednesday,3,day
+day,travel_dow,Thursday,4,day
+day,travel_dow,Friday,5,day
+day,travel_dow,Saturday,6,day
+day,travel_dow,Sunday,7,day
