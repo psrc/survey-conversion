@@ -503,7 +503,9 @@ def convert_format(config):
     hh_expr_df = pd.read_csv(os.path.join(config["input_dir"], "hh_expr.csv"))
 
     # Load Person Day data from Elmer
-    person_day_original_df = util.load_elmer_table(config["elmer_person_day_table"])
+    person_day_original_df = util.load_elmer_table(config["elmer_person_day_table"],
+                                                    sql="SELECT * FROM "+config["elmer_person_day_table"]+\
+                                                  " WHERE survey_year in "+str(config['survey_year']))
     _df = df_lookup[df_lookup["elmer_name"] == "travel_dow"]
     person_day_original_df = person_day_original_df.merge(
         _df[["elmer_value", "model_value"]],

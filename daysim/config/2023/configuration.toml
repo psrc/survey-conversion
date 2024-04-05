@@ -15,10 +15,10 @@ output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
 output_dir_clean = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format/cleaned'
 
 # Specify which components to run
-run_locate_parcels = true
-run_convert_format = true
-run_clean = true
-run_data_validation = true
+run_locate_parcels = false
+run_convert_format = false
+run_clean = false
+run_data_validation = false
 run_attach_skims = true
 run_unclone = true
 
@@ -68,7 +68,7 @@ school_max_dist = 5280     # mile for distance near parcel with students
 ################################################
 # Specify soundcast root directory to obtain skim values
 # NOTE: network location are very slow now, recommend using local runs
-run_root = 'L:/RTP_2022/final_runs/sc_rtp_2018_final/soundcast'
+run_root = '//modelstation4/c$/workspace/sc_2023/soundcast'
 
 # Assumed travel speeds of walk and bike modes (generated from distance skims)
 bike_speed = 10 # miles per hour

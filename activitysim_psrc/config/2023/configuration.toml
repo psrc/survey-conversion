@@ -1,11 +1,12 @@
 ########################################
 # General Configuration Settings
 ########################################
+survey_year = "(2023)"   # parens because we can pass in a set of years
 
-elmer_trip_table = "HHSurvey.v_trip_2023_modeling"
-elmer_person_table = "HHSurvey.v_person_2023_modeling"
-elmer_hh_table = "HHSurvey.v_household_2023_modeling"
-elmer_person_day_table = "HHSurvey.v_day_2023_modeling"
+elmer_trip_table = "HHSurvey.v_trip_multiyear_modeling"
+elmer_person_table = "HHSurvey.v_person_multiyear_modeling"
+elmer_hh_table = "HHSurvey.v_household_multiyear_modeling"
+elmer_person_day_table = "HHSurvey.v_day_multiyear_modeling"
 
 input_dir = 'activitysim_psrc/inputs/2023'
 
@@ -14,16 +15,19 @@ output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format'
 # output_dir_final = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format/final'
 
 # Config files used for infer.py
-asim_config_dir = 'C:/Workspace/psrc_activitysim_psrc_dev/configs_dev'
+asim_config_dir = 'C:/Workspace/psrc_activitysim/configs_dev'
 
 # To debug, add person IDs to list; to process all pass empty list
-debug_person_id = [5611]
+# debug_person_id = [5611]
+debug_person_id = []
 
 # Specify which components to run
 run_locate_parcels = false
 run_convert_format = false
-run_clean = true
-run_infer = true
+run_clean = false
+run_data_validation = false
+run_infer = false
+run_unclone = true
 
 drive_to_transit_access_list = [
     "Drove and parked a car (e.g., a vehicle in my household)",
@@ -100,7 +104,8 @@ dest = 'destination'
 ################################################
 # Specify soundcast root directory to obtain skim values
 # NOTE: network location are very slow now, recommend using local runs
-run_root = 'L:/RTP_2022/final_runs/sc_rtp_2018_final/soundcast'
+# run_root = 'L:/RTP_2022/final_runs/sc_rtp_2018_final/soundcast'
+run_root = '//modelstation4/c$/workspace/sc_2023/soundcast'
 
 # Assumed travel speeds of walk and bike modes (generated from distance skims)
 bike_speed = 10 # miles per hour

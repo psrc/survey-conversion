@@ -34,9 +34,15 @@ def locate_parcels(config):
     start_time = datetime.datetime.now()
 
     if config["use_elmer"]:
-        trip_original = util.load_elmer_table(config["elmer_trip_table"])
-        person_original = util.load_elmer_table(config["elmer_person_table"])
-        hh_original = util.load_elmer_table(config["elmer_hh_table"])
+        trip_original = util.load_elmer_table(config["elmer_trip_table"], 
+                                              sql="SELECT * FROM "+config["elmer_trip_table"]+\
+                                                  " WHERE survey_year in "+str(config['survey_year']))
+        hh_original = util.load_elmer_table(config["elmer_hh_table"], 
+                                              sql="SELECT * FROM "+config["elmer_hh_table"]+\
+                                                  " WHERE survey_year in "+str(config['survey_year']))
+        person_original = util.load_elmer_table(config["elmer_person_table"], 
+                                              sql="SELECT * FROM "+config["elmer_person_table"]+\
+                                                  " WHERE survey_year in "+str(config['survey_year']))
     else:
         trip_original = pd.read_csv(
             os.path.join(config["survey_input_dir"], "trip.csv")
@@ -73,7 +79,6 @@ def locate_parcels(config):
     )
 
     # Write to file
-    hh_new.rename(columns={"hhid": "household_id"}, inplace=True)
     hh_new.to_csv(os.path.join(config["output_dir"], "geolocated_hh.csv"), index=False)
 
     ###################################################

@@ -1,6 +1,6 @@
 ﻿index,table,filter,result_col,result_value,description
 1,df,:,household_id,df['household_id'],
-2,df,:,trip_weight,1,FIXME:fill in with appropriate column when available
+2,df,:,trip_weight,df['trip_weight'],FIXME:fill in with appropriate column when available
 3,df,:,tsvid,range(len(df)),original trip_id is too long for daysim so reset values; We can export the mapping between tsvid and trip_id in the script
 4,df,:,day,df['travel_dow'],day of week in integer format joined from person day file
 7,df,:,dorp,1,
