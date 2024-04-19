@@ -255,6 +255,8 @@ def create_multiday_records(hh, trip, person, person_day, hhid_col, config):
     """Treat different travel days as unique person/household records.
     Modify household ID as original ID concatenated with travel day.
     Replicate household and person records to match these "new" person/households.
+
+    Calculate a person-day weight based on person weight and number of completed survey days.
     """
 
     hh["hhid_elmer"] = hh[hhid_col].copy()

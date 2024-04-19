@@ -324,7 +324,6 @@ def process_person_day(
         person_day_original_df[["household_id", "pernum", "travel_dow", "wkathome"]],
         left_on=["hhno", "pno", "day"],
         right_on=["household_id", "pernum", "travel_dow"],
-        # on=['hhno','pno','day'],
         how="inner",
     )
 
@@ -353,8 +352,9 @@ def process_person_day(
             no_travel_df["person_id"] == person_rec
         ]["person_id"].values[0]
         pday.loc[person_rec, "person_id"] = person_rec
-        # these will all be replaced after this step so set to 1
-        pday.loc[person_rec, "day"] = 1
+        pday.loc[person_rec, "day"] = no_travel_df[
+            no_travel_df["person_id"] == person_rec
+        ]["travel_dow"].values[0]
         pday.loc[person_rec, "beghom"] = 1
         pday.loc[person_rec, "endhom"] = 1
         pday.loc[person_rec, "wkathome"] = no_travel_df[
@@ -363,6 +363,9 @@ def process_person_day(
         pday.loc[person_rec, "pdexpfac"] = person[person["person_id"] == person_rec][
             "psexpfac"
         ].values[0]
+        pday.loc[person_rec, "travel_dow"] = no_travel_df[
+            no_travel_df["person_id"] == person_rec
+        ]["travel_dow"].values[0]
 
     # Join household day ID to person Day
     pday = pday.merge(
@@ -508,12 +511,6 @@ def convert_format(config):
         tour, person, trip, hh, person_day_original_df, household_day, config
     )
 
-    # Set all travel days to 1
-    trip["day"] = 1
-    tour["day"] = 1
-    household_day["day"] = 1
-    household_day["dow"] = 1
-    person_day["day"] = 1
 
     trip[["travdist", "travcost", "travtime"]] = "-1.00"
 

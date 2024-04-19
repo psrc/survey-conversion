@@ -134,6 +134,7 @@ person_schema = pa.DataFrameSchema(
         "pproxy": Column(int, Check.isin([0, 1]), nullable=False),
         "psexpfac": Column(float, nullable=False),
         "puwmode": Column(int, Check.isin([-1, 0, 1, 2, 3, 4, 5, 6, 7, 9]), nullable=False),
+        "worker_type": Column(str, Check.isin(['commuter','wfh','telecommuter','-1']), nullable=False),
         # "puwarrp": Column(int, nullable=False),
         # "puwdepp": Column(int, nullable=False),
         # "pwautime": Column(float, nullable=False),

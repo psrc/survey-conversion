@@ -50,6 +50,17 @@ household,vehicle_count,7 vehicles,7,hhvehs
 household,vehicle_count,8 vehicles,8,hhvehs
 household,vehicle_count,9 vehicles,9,hhvehs
 household,vehicle_count,10 or more vehicles,10,hhvehs
+person,work_mode,Walk (or jog/wheelchair),1,puwmode
+person,work_mode,Household vehicle (or motorcycle),3,puwmode
+person,work_mode,"Other vehicle (e.g., friend's car, rental, carshare, work car)",3,puwmode
+person,work_mode,"Bus, shuttle, or vanpool (public transit, private service, or shuttles for older adults and people with disabilities)",6,puwmode
+person,work_mode,Bicycle or e-bicycle,2,puwmode
+person,work_mode,Other,0,puwmode
+person,work_mode,"Rail (e.g., train, subway)",6,puwmode
+person,work_mode,"Uber/Lyft, taxi, or car service",9,puwmode
+person,work_mode,"Scooter, moped, skateboard",0,puwmode
+person,work_mode,Ferry or water taxi,6,puwmode
+person,work_mode,Missing Response,0,puwmode
 person,age,Under 5 years old,2,pagey
 person,age,5-11 years,8,pagey
 person,age,12-15 years,14,pagey
@@ -81,6 +92,8 @@ trip,origin_purpose_cat,Meal,6,opurp
 trip,origin_purpose_cat,Social/Recreation,7,opurp
 trip,origin_purpose_cat,Change mode,10,opurp
 trip,origin_purpose_cat,Missing: Non-response,7,opurp
+trip,origin_purpose_cat,Overnight,7,opurp
+trip,origin_purpose_cat,Other,7,opurp
 trip,dest_purpose_cat,Home,0,dpurp
 trip,dest_purpose_cat,Work,1,dpurp
 trip,dest_purpose_cat,Work-related,1,dpurp
@@ -92,6 +105,8 @@ trip,dest_purpose_cat,Meal,6,dpurp
 trip,dest_purpose_cat,Social/Recreation,7,dpurp
 trip,dest_purpose_cat,Change mode,10,dpurp
 trip,dest_purpose_cat,Missing: Non-response,7,dpurp
+trip,dest_purpose_cat,Overnight,7,dpurp
+trip,dest_purpose_cat,Other,7,dpurp
 trip,driver,Driver,1,dorp
 trip,driver,Passenger,2,dorp
 trip,driver,Both (switched drivers during trip),3,dorp
@@ -101,6 +116,24 @@ trip,travelers_total,2 travelers,2,travelers
 trip,travelers_total,3 travelers,3,travelers
 trip,travelers_total,4 travelers,4,travelers
 trip,travelers_total,5+ travelers,5,travelers
+trip,mode_acc,Missing: Technical error,1,transit_access_mode
+trip,mode_acc,Walked or jogged,1,transit_access_mode
+trip,mode_acc,Bicycle or e-bicycle,1,transit_access_mode
+trip,mode_acc,"Drove and parked a car (e.g., a vehicle in my household)",3,transit_access_mode
+trip,mode_acc,"Drove and parked a carshare vehicle (e.g., ZipCar, Car2Go)",3,transit_access_mode
+trip,mode_acc,Got dropped off,3,transit_access_mode
+trip,mode_acc,"Took a taxi (e.g., Yellow Cab)",3,transit_access_mode
+trip,mode_acc,"Took ride-share/other hired car service (e.g., Lyft, Uber)",3,transit_access_mode
+trip,mode_acc,"Transferred from another bus, shuttle, or vanpool",1,transit_access_mode
+trip,mode_acc,"Scooter, moped, skateboard",1,transit_access_mode
+trip,mode_acc,Transferred from other rail,1,transit_access_mode
+trip,mode_acc,"Uber/Lyft, taxi, or car service",3,transit_access_mode
+trip,mode_acc,Drove and parked my own household's vehicle (or motorcycle),3,transit_access_mode
+trip,mode_acc,Drove and parked another vehicle (or motorcycle),3,transit_access_mode
+trip,mode_acc,Got dropped off in my own household's vehicle (or motorcycle),3,transit_access_mode
+trip,mode_acc,Got dropped off in another vehicle (or motorcycle),3,transit_access_mode
+trip,mode_acc,Other,1,transit_access_mode
+trip,mode_acc,Missing: Skip Logic,1,transit_access_mode
 day,travel_dow,Monday,1,day
 day,travel_dow,Tuesday,2,day
 day,travel_dow,Wednesday,3,day
