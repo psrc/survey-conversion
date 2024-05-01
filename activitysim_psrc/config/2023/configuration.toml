@@ -22,11 +22,11 @@ asim_config_dir = 'C:/Workspace/psrc_activitysim/configs_dev'
 debug_person_id = []
 
 # Specify which components to run
-run_locate_parcels = false
-run_convert_format = false
-run_clean = false
-run_data_validation = false
-run_infer = false
+run_locate_parcels = true
+run_convert_format = true
+run_clean = true
+run_data_validation = true
+run_infer = true
 run_unclone = true
 
 drive_to_transit_access_list = [

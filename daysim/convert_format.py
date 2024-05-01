@@ -125,9 +125,9 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     df = convert.apply_filter(
         df,
         "trips",
-        df["travel_dow_label"].isin(["Monday", "Tuesday", "Wednesday", "Thursday"]),
+        df["travel_dow_label"].isin(config['day_range']),
         logger,
-        "trip taken on Friday, Saturday, or Sunday",
+        "trip taken outside of range of specified in day_range",
     )
 
     df = convert.apply_filter(
@@ -330,7 +330,7 @@ def process_person_day(
     no_travel_df = person_day_original_df[
         (person_day_original_df["num_trips"] == 0)
         & person_day_original_df["travel_dow_label"].isin(
-            ["Monday", "Tuesday", "Wednesday", "Thursday"]
+            config['day_range']
         )
     ]
     no_travel_df = no_travel_df[no_travel_df["person_id"].isin(person["person_id"])]
