@@ -1,4 +1,10 @@
 ﻿index,table ,filter,result_col,result_value,description
+1,df,(df['student']=="No, not a student"),pstyp,0,not a student
+2,df,(df['student']=="Part-time student, currently attending some or all classes in-person"),pstyp,2,part time student
+3,df,(df['student']=="Full-time student, currently attending some or all classes in-person"),pstyp,1,full time student
+4,df,(df['student']=="Part-time student, ONLY online classes"),pstyp,0,not a student
+5,df,(df['student']=="Full-time student, ONLY online classes"),pstyp,0,not a student
+6,df,df['pstyp'].isnull(),pstyp,0,default to not a student if not already filled
 13,df,df['employment'].isin(["Employed full time (35+ hours/week, paid)"]),pwtyp,1,Full time worker
 14,df,df['employment'].isin(["Employed part time (fewer than 35 hours/week, paid)"]),pwtyp,2,Part time worker
 14,df,df['employment'].isin(["Self-employed"]),pwtyp,2,Part time worker

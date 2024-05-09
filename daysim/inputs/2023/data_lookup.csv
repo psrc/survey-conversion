@@ -80,14 +80,13 @@ person,gender,Non-Binary,9,pgend
 person,gender,Another,9,pgend
 person,gender,Missing Response,9,pgend
 person,gender,Prefer not to answer,9,pgend
-person,student,"No, not a student",0,pstyp
-person,student,Part-time student,2,pstyp
-person,student,Full-time student,1,pstyp
-person,student,"Part-time student, currently attending some or all classes in-person",2,pstyp
-person,student,"Part-time student, ONLY online classes",0,pstyp
-person,student,"Full-time student, currently attending some or all classes in-person",1,pstyp
-person,student,"Full-time student, ONLY online classes",0,pstyp
-person,student,Missing Response,0,pstyp
+person,schooltype,Daycare,1,pstyp
+person,schooltype,Preschool,1,pstyp
+person,schooltype,K-12 public school,1,pstyp
+person,schooltype,K-12 private school,1,pstyp
+person,schooltype,"Elementary school (public, private, charter)",1,pstyp
+person,schooltype,"Middle school (public, private, charter)",1,pstyp
+person,schooltype,"High school (public, private, charter)",1,pstyp
 trip,origin_purpose_cat,Home,0,opurp
 trip,origin_purpose_cat,Work,1,opurp
 trip,origin_purpose_cat,Work-related,1,opurp

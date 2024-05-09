@@ -196,6 +196,8 @@ def fetch_skim(
         config["tod_dict"][hours.astype("str")[i]] for i in range(len(hours))
     ]
 
+
+
     # Look up mode keyword unless using standard mode value (e.g.)
     df[mode_field] = df[mode_field].fillna(-99)
     modes = np.asarray(df[mode_field].astype("int").astype("str"))
@@ -260,7 +262,7 @@ def process_person_skims(tour, person, hh, config):
 
     # Fill fields for usual work mode and times
     work_tours["puwmode"] = work_tours["tmodetp"]
-    work_tours["puwarrp"] = work_tours["tardest"]
+    work_tours["puwarrp"] = work_tours["tlvorig"]
     work_tours["puwdepp"] = work_tours["tlvdest"]
 
     # some people make multiple work tours; select only the tours with greatest distance
@@ -284,6 +286,12 @@ def process_person_skims(tour, person, hh, config):
     # Fill NA for this field with -1
     for field in ["puwmode", "puwarrp", "puwdepp"]:
         person[field].fillna(-1, inplace=True)
+
+    # For commuters and telecommuters that don't have tours in the data, use median for depart times
+    for col in ['puwarrp','puwdepp']:
+        median_val = person.loc[person['worker_type'].isin(['telecommuter','commuter']),col].median().astype('int')
+        person.loc[person['worker_type'].isin(['telecommuter','commuter'])&(person[col]==-1),col] = median_val
+
 
     # Get school tour info
     # pusarrp and pusdepp are non-daysim variables, meaning usual arrival and departure time from school
@@ -314,6 +322,12 @@ def process_person_skims(tour, person, hh, config):
 
     # Attach hhincome and TAZ info
     person = pd.merge(person, hh[["hhno", "hhincome", "hhtaz"]], on="hhno", how="left")
+    
+    # For students that don't have tours in the data, use median for depart times
+    for col in ['pusarrp','pusdepp']:
+        median_val = person.loc[person['pstyp'].isin([1,2]),col].median().astype('int')
+        person.loc[person['pstyp'].isin([1,2])&(person[col]==-1),col] = median_val
+
 
     # Fill -1 income (college students) with lowest income category
     min_income = person[person["hhincome"] > 0]["hhincome"].min()
@@ -567,6 +581,18 @@ def attach_skims(config):
     # Extract person-level results from trip file
     person_modified = process_person_skims(tour, person, hh, config)
 
+    # Attach person-level work skims based on home to work auto trips
+    fetch_skim(
+        "work_travel",
+        person_modified,
+        time_field="puwarrp",
+        mode_field="puwmode",
+        otaz_field="hhtaz",
+        dtaz_field="pwtaz",
+        config=config,
+        use_mode="3",
+    )
+
     # Fetch trip skims based on trip departure time
     fetch_skim(
         "trip",
@@ -589,17 +615,17 @@ def attach_skims(config):
         config=config,
     )
 
-    # Attach person-level work skims based on home to work auto trips
-    fetch_skim(
-        "work_travel",
-        person_modified,
-        time_field="puwarrp",
-        mode_field="puwmode",
-        otaz_field="hhtaz",
-        dtaz_field="pwtaz",
-        config=config,
-        use_mode="3",
-    )
+    # # Attach person-level work skims based on home to work auto trips
+    # fetch_skim(
+    #     "work_travel",
+    #     person_modified,
+    #     time_field="puwarrp",
+    #     mode_field="puwmode",
+    #     otaz_field="hhtaz",
+    #     dtaz_field="pwtaz",
+    #     config=config,
+    #     use_mode="3",
+    # )
 
     # Attach person-level school skims based on home to school auto trips
     fetch_skim(
