@@ -8,14 +8,15 @@ elmer_person_table = "HHSurvey.v_person_multiyear_modeling"
 elmer_hh_table = "HHSurvey.v_household_multiyear_modeling"
 elmer_person_day_table = "HHSurvey.v_day_multiyear_modeling"
 
-input_dir = 'activitysim_psrc/inputs/2023'
+input_dir = "E:/asim_testing/survey-conversion/activitysim_psrc/inputs/2023"
 
 # Project Output Directory
 output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format'
 # output_dir_final = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format/final'
 
 # Config files used for infer.py
-asim_config_dir = 'C:/Workspace/psrc_activitysim/configs_dev'
+asim_state_wd = 'E:/asim_testing/psrc_activitysim'
+asim_config_dir = 'E:/asim_testing/psrc_activitysim/configs_dev'
 
 # To debug, add person IDs to list; to process all pass empty list
 # debug_person_id = [5611]
@@ -124,8 +125,11 @@ person_columns = [
         "workplace_zone_id",
         "free_parking_at_work",
         "race_category",
-        "household_id_elmer",
+        "household_id_original",
+        "person_id_elmer_original",
         "person_weight",
+        "telecommute_frequency",
+        "work_from_home",
     ]
 tour_columns = [
     "tour_id",
@@ -174,6 +178,7 @@ hh_columns = [
     "num_workers",
     "hh_race_category",
     "hh_weight",
+    "household_id_original",
 ]
 
 # survey_tables = [

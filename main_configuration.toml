@@ -5,5 +5,5 @@
 # Specific which configuration file to use for each data product (Daysim/Activitysim/Urbansim)
 # daysim_configuration = 'daysim\config\2017_2019\configuration.toml'
 daysim_configuration = 'daysim\config\2023\configuration.toml'
-activitysim_configuration = 'activitysim_psrc\config\2023\configuration.toml'
+activitysim_configuration = "activitysim_psrc/config/2023/configuration.toml"
 urbansim_configuration = 'urbansim\config\2023\configuration.toml'
