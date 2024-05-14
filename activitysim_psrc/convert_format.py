@@ -26,8 +26,11 @@ from daysim import logcontroller
 from modules import util, convert, tours, days
 
 # from activitysim_psrc import infer
+from activitysim.core import workflow
 from activitysim.abm.models.util import canonical_ids as cid
-
+from activitysim import cli as client
+import sys
+import argparse
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
@@ -273,7 +276,7 @@ def process_household_day(person_day_original_df, hh, config):
 
     return household_day
 
-def build_joint_tours(tour, trip, person, config, logger):
+def build_joint_tours(tour, trip, person, config, logger, state):
     expr_df = pd.read_csv(os.path.join(config["input_dir"], "joint_tour_expr.csv"))
 
     tour = convert.process_expression_file(tour, expr_df, None)
@@ -297,8 +300,18 @@ def build_joint_tours(tour, trip, person, config, logger):
     tour = tour.sort_values(
         ["person_id", "day", "tour_category", "tour_type", "tlvorig"]
     )
+    # need to create an instance of ActivitySim state:
+    # sys.argv.append('--working_dir')
+    # sys.argv.append(config['asim_config_dir'])
+    # parser = argparse.ArgumentParser()
+    # client.run.add_run_args(parser)
+    # args = parser.parse_args()
+    # state = workflow.State()
+    # state.logging.config_logger(basic=True)
+    # state = client.run.handle_standard_args(state, args)  # possibly update injectables
 
-    possible_tours = cid.canonical_tours()
+
+    possible_tours = cid.canonical_tours(state)
     possible_tours_count = len(possible_tours)
     tour_num_col = "tour_type_num"
     tour["tour_type_id"] = tour.tour_type + tour["tour_type_num"].map(str)
@@ -442,9 +455,9 @@ def build_joint_tours(tour, trip, person, config, logger):
 
 def update_ids(df, df_person):
     df = df.merge(
-        df_person[["household_id", "person_id", "person_id_original"]],
+        df_person[["household_id", "person_id", "person_id_elmer_original"]],
         left_on="person_id",
-        right_on="person_id_original",
+        right_on="person_id_elmer_original",
         how="left",
     )
     for col in ["person", "household"]:
@@ -458,7 +471,7 @@ def update_ids(df, df_person):
 def reset_ids(person, person_day, households, trip, config):
     # activitysim checks specifically for int32 types; however, converting 64-bit int to 32 can create data issues if IDs are too long
     # Create a new mapping for person ID and household ID
-    person["person_id_original"] = person["person_id"].copy()
+    person["person_id_elmer_original"] = person["person_id"].copy()
     person["person_id"] = range(1, len(person) + 1)
 
     households["household_id_original"] = households["household_id"].copy()
@@ -467,7 +480,7 @@ def reset_ids(person, person_day, households, trip, config):
 
     # Merge new household ID to person records
     person = person.merge(
-        households[["household_id", "household_id_original"]],
+        households[["household_id", "household_id_original", "home_parcel", "home_maz", "home_taz"]],
         left_on="household_id",
         right_on="household_id_original",
         how="left",
@@ -482,13 +495,13 @@ def reset_ids(person, person_day, households, trip, config):
     trip = update_ids(trip, person)
 
     person[
-        ["person_id", "person_id_original", "household_id", "household_id_original"]
+        ["person_id", "person_id_elmer_original", "household_id", "household_id_original"]
     ].to_csv(os.path.join(config["output_dir"], "person_and_household_id_mapping.csv"))
 
     return person, person_day, households, trip
 
 
-def convert_format(config):
+def convert_format(config, state):
     # Start log file
     logger = logcontroller.setup_custom_logger("convert_format_logger.txt", config)
     logger.info("--------------------convert_format.py STARTING--------------------")
@@ -581,7 +594,7 @@ def convert_format(config):
     tour, trip = build_tour_file(trip, person, config, logger)
 
     #
-    joint_tour, trip, tour = build_joint_tours(tour, trip, person, config, logger)
+    joint_tour, trip, tour = build_joint_tours(tour, trip, person, config, logger, state)
 
     # Set all travel days to 1
     trip["day"] = 1

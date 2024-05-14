@@ -111,6 +111,7 @@ household_schema = pa.DataFrameSchema(
         "hhparcel": Column(int, nullable=False),
         "hhexpfac": Column(float, nullable=False),
         "samptype": Column(int, nullable=False),
+        "household_id_original": Column(int, nullable=False),
     },
     coerce=True,
 )
@@ -128,8 +129,11 @@ person_schema = pa.DataFrameSchema(
         "school_zone_id": Column(int, nullable=False),
         "workplace_zone_id": Column(int, nullable=False),
         "free_parking_at_work": Column(int, nullable=False),
-        "household_id_elmer": Column(int, nullable=False),
+        "household_id_original": Column(int, nullable=False),
+        "person_id_elmer_original": Column(int, nullable=False),
         "person_weight": Column(float, nullable=False),
+        "telecommute_frequency": Column(str, nullable=False),
+        "work_from_home": Column(int, nullable=False),
     },
     coerce=True,
 )
@@ -164,6 +168,8 @@ person_day_schema = pa.DataFrameSchema(
         "mestops": Column(int, nullable=False),
         "wkathome": Column(int, nullable=False),
         "pdexpfac": Column(float, nullable=False),
+        "household_id_original": Column(int, nullable=False),
+        "person_id_elmer_original": Column(int, nullable=False),
     },
     coerce=True,
 )

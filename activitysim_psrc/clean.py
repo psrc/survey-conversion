@@ -23,9 +23,13 @@ import sqlalchemy
 from sqlalchemy.engine import URL
 import logging
 from daysim import logcontroller
-from activitysim.abm.models.util import canonical_ids as cid
 from activitysim_psrc import infer
 from modules import convert
+from activitysim.core import workflow
+from activitysim.abm.models.util import canonical_ids as cid
+from activitysim import cli as client
+import sys
+import argparse
 
 survey_tables = {
     "households": {"file_name": "survey_households.csv"},
@@ -35,7 +39,7 @@ survey_tables = {
     "trips": {"file_name": "survey_trips.csv"},
 }
 
-def process_person_day(tour, trip, config, logger):
+def process_person_day(tour, trip, config, logger, state):
     # In order to estimate, we need to enforce the mandatory tour totals
     # these can only be: ['work_and_school', 'school1', 'work1', 'school2', 'work2']
     # If someone has 2 work trips and 1 school trips, must decide a heirarchy of
@@ -90,7 +94,18 @@ def process_person_day(tour, trip, config, logger):
 
     # DATA FILTER:
     # Default of 4, determine based on config files
-    MAX_TRIPS_PER_LEG = cid.determine_max_trips_per_leg()
+    # sys.argv.append('--working_dir')
+    # sys.argv.append(config['asim_config_dir'])
+    # parser = argparse.ArgumentParser()
+    # client.run.add_run_args(parser)
+    # args = parser.parse_args()
+    # state = workflow.State()
+    # state.logging.config_logger(basic=True)
+    # state = client.run.handle_standard_args(state, args)  # possibly update injectables
+
+
+    possible_tours = cid.canonical_tours(state)
+    MAX_TRIPS_PER_LEG = cid.determine_max_trips_per_leg(state)
     # Filter out tours with too many stops on their tours
     df = tour[(tour["tripsh1"] > MAX_TRIPS_PER_LEG) | (tour["tripsh2"] > MAX_TRIPS_PER_LEG)]
     # df.to_csv(os.path.join(output_dir,'temp','too_many_stops.csv'))
@@ -128,7 +143,7 @@ def process_person_day(tour, trip, config, logger):
 
     return tour, trip
 
-def clean(config):
+def clean(config, state):
     # Start log file
     logger = logcontroller.setup_custom_logger("convert_format_logger.txt", config)
     logger.info("--------------------convert_format.py STARTING--------------------")
@@ -153,13 +168,13 @@ def clean(config):
     tour = tour[~filter]
 
     # person day
-    tour, trip = process_person_day(tour, trip, config, logger)
+    tour, trip = process_person_day(tour, trip, config, logger, state)
 
     # Process joint tours
 
 
     # Map to standard columns
-    df_mapping = pd.read_csv(os.path.join(config["input_dir"], "mapping.csv"))
+    df_mapping = pd.read_csv(os.path.join(os.getcwd(), config["input_dir"], "mapping.csv"))
 
     tour.drop("tour_id", inplace=True, axis=1)
     tour = convert.map_to_class(tour, "tour", df_mapping, "script_to_original")
