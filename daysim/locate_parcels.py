@@ -135,9 +135,9 @@ def locate_parcels(config):
             "var_name": "school_loc",
             "parcel_filter": (parcel_df["total_students"] > 0),
             "person_filter": (-person["school_loc_lat"].isnull())
-            & (-(person["home_lat"] == person["school_loc_lat"]))
-            & (  # Exclude home-school students
-                -(person["home_lng"] == person["school_loc_lng"])
+            # Exclude home-school students
+            & -((person["home_lat"] == person["school_loc_lat"])
+            & (person["home_lng"] == person["school_loc_lng"])
             ),
         },
     ]
