@@ -15,7 +15,8 @@ def unclone(config):
     jt_participants = pd.read_csv(os.path.join(config["output_dir"],'cleaned', "override_joint_tour_participants.csv"))
 
     # Remove duplicate households and person for household- and person-level model estimation 
-    hh_uncloned = hh[~hh[hh.columns.drop('household_id')].duplicated()]
+    #hh_uncloned = hh[~hh[hh.columns.drop('household_id')].duplicated()]
+    hh_uncloned = hh.groupby('household_id_original', as_index=False).first()
     hh_uncloned.to_csv(os.path.join(uncloned_output_dir, "override_households.csv"), index=False)
     hh_uncloned.to_csv(os.path.join(uncloned_output_dir, "survey_households.csv"), index=False)
 

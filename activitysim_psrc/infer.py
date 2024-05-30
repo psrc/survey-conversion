@@ -466,6 +466,11 @@ def patch_tour_ids(persons, tours, joint_tour_participants, CONSTANTS, state):
         patched_joint_tour_participants[ASIM_TOUR_ID] * cid.MAX_PARTICIPANT_PNUM
     ) + participant_pnum
 
+    # Stefan Coe: make survey_participant_id = participant_id,then sort
+    patched_joint_tour_participants[SURVEY_PARTICIPANT_ID] = patched_joint_tour_participants[ASIM_PARTICIPANT_ID]
+    patched_joint_tour_participants.sort_values(SURVEY_PARTICIPANT_ID, inplace=True)
+    
+
     #####################
     # non_mandatory tours
     #####################
@@ -556,6 +561,7 @@ def patch_tour_ids(persons, tours, joint_tour_participants, CONSTANTS, state):
 
     assert ASIM_TOUR_ID in patched_tours
     assert ASIM_PARENT_TOUR_ID in patched_tours
+    
 
     return patched_tours, patched_joint_tour_participants
 

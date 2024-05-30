@@ -39,6 +39,30 @@ survey_tables = {
     "trips": {"file_name": "survey_trips.csv"},
 }
 
+def remove_hh_with_missing_work_location(household, person, tours, trips, joint_tour_participants, logger):
+    remove_persons = person[(person['pemploy'].isin([1,2])) & (person['workplace_zone_id']==-1)].person_id
+    remove_hh = person[person['person_id'].isin(remove_persons)].household_id.unique()
+    
+    person = person[~person['person_id'].isin(remove_persons)]
+    household = household[~household['household_id'].isin(remove_hh)]
+    
+    logger.info(
+        f"Dropped {len(remove_hh)} households: missing work locations"
+    )
+
+    trips = trips[~trips['household_id'].isin(remove_hh)]
+    tours = tours[~tours['household_id'].isin(remove_hh)]
+
+    joint_tour_participants = joint_tour_participants[~joint_tour_participants['household_id'].isin(remove_hh)]
+
+    return household, person, tours, trips, joint_tour_participants
+
+def recode_missing_school_location_to_home(household, person, tour, trip):
+    df = person.merge(household[['household_id', 'home_zone_id']], how ='left', on='household_id')
+    df['school_zone_id'] = np.where((df.pstudent<3) & (df.school_zone_id == -1), df.home_zone_id, df.school_zone_id)
+    
+    return df[person.columns]
+
 def process_person_day(tour, trip, config, logger, state):
     # In order to estimate, we need to enforce the mandatory tour totals
     # these can only be: ['work_and_school', 'school1', 'work1', 'school2', 'work2']
@@ -262,6 +286,11 @@ def clean(config, state):
     )
     tour = tour[tour["drop"] == 0]
 
+    # at work trips should have a purpose of at-work    
+    at_work_tours_ids = at_work = tour[tour['tour_category']=='atwork'].tour_id
+    trip.loc[trip["tour_id"].isin(at_work_tours_ids), "purpose",] = 'atwork' 
+
+
     ###############################
     # School and workplace cleaning
     ###############################
@@ -296,11 +325,14 @@ def clean(config, state):
     person["workplace_zone_id"] = person["workplace_zone_id"].replace(0, -1)
     person = person.merge(work_tours, how="left", left_on="person_id", right_index=True)
     person.rename(columns={"destination": "work_dest"}, inplace=True)
+    # where they have a work destination, but no usual workplace_zone, set to usual workplace_zone
     person.loc[
         (~person["work_dest"].isnull()) & (person["workplace_zone_id"] == -1),
         "workplace_zone_id",
     ] = person["work_dest"]
     person.drop("work_dest", axis=1, inplace=True)
+
+
 
     # If a person makes a school tour, make sure their pstudent and ptype is correct
     # Addressed bug in mandatory tour frequency model
@@ -319,6 +351,7 @@ def clean(config, state):
     ] = 2  # college student
 
     # People coded as non-workers making work tours
+    # Stefan- seems like this should check for age 18+
     work_tours = tour[tour.tour_type == "work"]
     person.loc[
         person["person_id"].isin(work_tours["person_id"]) & (person["pemploy"] == 3),
@@ -327,10 +360,74 @@ def clean(config, state):
 
     # Some young children are coded as having work tours (likely going with parent)
     # Remove any work tours for someone coded as ptype 8
-    tour = tour.merge(person[["person_id", "ptype"]], on="person_id", how="left")
+    tour = tour.merge(person[["person_id", "ptype", "work_from_home"]], on="person_id", how="left")
     filter = (tour["tour_type"] == "work") & (tour["ptype"] == 8)
     logger.info(f"Dropped {len(tour[filter])} tours: ptype 8 making work tours")
     tour = tour[~filter]
+
+    # Work at home workers cannot make work tours, change to other maintenance:
+
+    filter = (tour["tour_type"] == "work") & (tour["work_from_home"] == 1)
+    remove_tour_ids = tour[filter].tour_id
+    tour = tour[~filter]
+    trip = trip[~trip.tour_id.isin(remove_tour_ids)]
+
+    # filter_tour_ids = tour.loc[filter].tour_id
+    # tour.loc[filter, "tour_type"] = 'othmaint'
+    # tour.loc[filter, "pdpurp"] = 'othmaint'
+    # tour.loc[filter, "tour_category"] = 'non_mandatory'
+    # assert tour[filter].tour_type.unique()[0] == 'othmaint'
+    # assert len(tour[filter].tour_type.unique()) == 1
+    # assert tour[filter].tour_category.unique()[0] == 'non_mandatory'
+    # assert len(tour[filter].tour_category.unique()) == 1
+
+    # # now Trips
+    # trip.loc[trip['tour_id'].isin(filter_tour_ids) & (trip.opurp=='work'), 'opurp'] = 'othmaint'
+    # trip.loc[trip['tour_id'].isin(filter_tour_ids) & (trip.purpose=='work'), 'purpose'] = 'othmaint'
+
+    # # work tours/trips must go to usual workplace location, change to other maintenance
+    # # first need to remove sub tours/trips that do not originate from usual workplace location.
+    at_work = tour[tour['tour_category']=='atwork']
+    at_work = at_work.merge(person[['person_id', 'workplace_zone_id']], on='person_id', how='left') 
+    filter_tour_ids = at_work[at_work['origin'] != at_work['workplace_zone_id']].tour_id
+    # # remove from tours, trips
+    tour = tour[~tour.tour_id.isin(filter_tour_ids)]
+    trip = trip[~trip.tour_id.isin(filter_tour_ids)]
+    
+    # # now recode tours and trips taht do not to to usual workplace location:
+    tour = tour.merge(person[['person_id', 'workplace_zone_id', 'school_zone_id']], on='person_id', how='left') 
+    filter = (tour.pdpurp=='work') & (tour.destination != tour.workplace_zone_id)
+    filter_tour_ids = tour.loc[filter].tour_id
+    tour = tour[~tour.tour_id.isin(filter_tour_ids)]
+    trip = trip[~trip.tour_id.isin(filter_tour_ids)]
+    # tour.loc[filter, "tour_type"] = 'othmaint'
+    # tour.loc[filter, "pdpurp"] = 'othmaint'
+    # tour.loc[filter, "tour_category"] = 'non_mandatory'
+    # # now Trips
+    # trip.loc[trip['tour_id'].isin(filter_tour_ids) & (trip.opurp=='work'), 'opurp'] = 'othmaint'
+    # trip.loc[trip['tour_id'].isin(filter_tour_ids) & (trip.purpose=='work'), 'purpose'] = 'othmaint'
+    
+    # school tours/trips must go to usual school location, change to other maintenance
+    #tour = tour.merge(person[['person_id', 'workplace_zone_id']], on='person_id', how='left') 
+    filter = (tour.pdpurp=='school') & (tour.destination != tour.school_zone_id)
+    filter_tour_ids = tour.loc[filter].tour_id
+    tour = tour[~tour.tour_id.isin(filter_tour_ids)]
+    trip = trip[~trip.tour_id.isin(filter_tour_ids)]
+
+
+    # Work tours/trips
+    #assert tour[filter].tour_type.unique
+
+    person.loc[
+        person["person_id"].isin(school_tours["person_id"])
+        & (person["pstudent"] == 3)
+        & (person["age"] > 18),
+        "pstudent",
+    ] = 2  # college student
+
+    logger.info(f"Dropped {len(tour[filter])} tours: work at home workers making work tours")
+    tour = tour[~filter]
+
 
     # FIXME: move this to expression files ###
     # If a person has a usual workplace zone make them a part time worker (?) or remove their usual workplace location...
@@ -339,6 +436,8 @@ def clean(config, state):
         & (person["pemploy"] >= 3)
         & (person["age"] >= 16)
     ]["pemploy"] = 2
+
+    
 
     ### We cannot have more than 2 joint tours per household. If so, make sure we remove those households/tours
     ### FIXME: should we remove the households or edit the tours so they are not joint, or otherwise edit them?
@@ -543,8 +642,9 @@ def clean(config, state):
     logger.info(f"Dropped {len(tour[filter])} tours: under 16 making work tours")
     tour = tour[~filter]
 
+
     person.loc[
-        (person["person_id"].isin(person_list)) & (person["pemploy"] == 2), "ptype"
+        (person["person_id"].isin(person_list)) & (person["pemploy"] == 2) & (person['age'] > 17), "ptype"
     ] = 2
     person.loc[
         (person["person_id"].isin(person_list))
@@ -552,6 +652,8 @@ def clean(config, state):
         & (person["pstudent"] == 2),
         "ptype",
     ] = 3
+
+
 
     # For people making univ trips, they must be full-or part time worker or university student
     filter = (trip["purpose"] == "univ") & (~trip["ptype"].isin([1, 2, 3]))
@@ -666,6 +768,10 @@ def clean(config, state):
     tour = tour[config["tour_columns"]]
     trip = trip[config["trip_columns"]]
     households = households[config["hh_columns"]]
+
+    households, person, tour, trip, joint_tour_participants = remove_hh_with_missing_work_location(households, person, tour, trip, joint_tour_participants, logger)
+    person = recode_missing_school_location_to_home(households, person, tour, trip)
+
 
     joint_tour_participants.to_csv(
         os.path.join(config["output_dir"], "cleaned","survey_joint_tour_participants.csv"),

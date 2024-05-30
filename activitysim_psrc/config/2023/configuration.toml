@@ -23,7 +23,7 @@ asim_config_dir = 'E:/asim_testing/psrc_activitysim/configs_dev'
 debug_person_id = []
 
 # Specify which components to run
-run_locate_parcels = true
+run_locate_parcels = false
 run_convert_format = true
 run_clean = true
 run_data_validation = true
