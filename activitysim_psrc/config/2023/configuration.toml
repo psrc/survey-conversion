@@ -24,11 +24,12 @@ debug_person_id = []
 
 # Specify which components to run
 run_locate_parcels = false
-run_convert_format = true
+run_convert_format = false
+run_attach_skims = false
 run_clean = true
-run_data_validation = true
-run_infer = true
-run_unclone = true
+run_data_validation = false
+run_infer = false
+run_unclone = false
 
 drive_to_transit_access_list = [
     "Drove and parked a car (e.g., a vehicle in my household)",
@@ -131,6 +132,7 @@ person_columns = [
         "telecommute_frequency",
         "work_from_home",
     ]
+
 tour_columns = [
     "tour_id",
     "person_id",
@@ -258,13 +260,16 @@ LOC = ['Bus (public transit)','Other bus (rMove only)']
 
 # Create an ID to match skim naming method
 [skim_mode_dict]
-1 = 'walk'
-2 = 'bike'
-3 = 'sov'
-4 = 'hov2'
-5 = 'hov3'
-6 = 'ivtwa'	# transit in-vehicle time
-7 = 'sov'
-8 = 'sov'   # assign school bus as sov
-9 = 'sov'	# assign TNC/taxi as sov   # FIXME
-10 = 'sov'	# assign other as sov
+'WALK' = 'walk'
+'BIKE' = 'bike'
+'DRIVEALONEFREE' = 'sov'
+'SHARED2FREE' = 'hov2'
+'SHARED3FREE' = 'hov3'
+"DRIVE_TRN" = 'ivtwa'	# transit in-vehicle time
+"WALK_FRY" = 'ivtwa'	# transit in-vehicle time
+"WALK_COM" = 'ivtwa'	# transit in-vehicle time
+"WALK_LR" = 'ivtwa'	# transit in-vehicle time
+"WALK_LOC" = 'ivtwa'	# transit in-vehicle time
+'Other' = 'sov'
+'SCHBUS' = 'sov'   # assign school bus as sov
+'TNC' = 'sov'	# assign TNC/taxi as sov   # FIXME

@@ -1,6 +1,6 @@
 import os
 import toml
-from activitysim_psrc import locate_parcels, convert_format, clean, data_validation, infer, unclone
+from activitysim_psrc import locate_parcels, convert_format, attach_skims, clean, data_validation, infer, unclone
 from activitysim.core import workflow
 from activitysim.abm.models.util import canonical_ids as cid
 from activitysim import cli as client
@@ -24,6 +24,9 @@ if activitysim_config["run_locate_parcels"]:
 
 if activitysim_config["run_convert_format"]:
     convert_format.convert_format(activitysim_config, state)
+
+if activitysim_config["run_attach_skims"]:
+    attach_skims.attach_skims(activitysim_config, state)
 
 if activitysim_config["run_clean"]:
     clean.clean(activitysim_config, state)
