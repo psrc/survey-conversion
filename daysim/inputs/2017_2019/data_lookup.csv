@@ -78,9 +78,17 @@ person,gender,Female,2,pgend
 person,gender,Another,9,pgend
 person,gender,Missing Response,9,pgend
 person,gender,Prefer not to answer,9,pgend
-person,student,"No, not a student",0,pstyp
-person,student,Part-time student,2,pstyp
-person,student,Full-time student,1,pstyp
+person,gender,Boy/Man (cisgender or transgender),1,pgend
+person,gender,Girl/Woman (cisgender or transgender),2,pgend
+person,gender,Non-binary/Something else fits better,9,pgend
+person,gender,Non-Binary,9,pgend
+person,schooltype,Daycare,1,pstyp
+person,schooltype,Preschool,1,pstyp
+person,schooltype,K-12 public school,1,pstyp
+person,schooltype,K-12 private school,1,pstyp
+person,schooltype,"Elementary school (public, private, charter)",1,pstyp
+person,schooltype,"Middle school (public, private, charter)",1,pstyp
+person,schooltype,"High school (public, private, charter)",1,pstyp
 trip,origin_purpose_cat,Home,0,opurp
 trip,origin_purpose_cat,Work,1,opurp
 trip,origin_purpose_cat,Work-related,1,opurp
@@ -115,7 +123,11 @@ trip,travelers_total,1 traveler,1,travelers
 trip,travelers_total,2 travelers,2,travelers
 trip,travelers_total,3 travelers,3,travelers
 trip,travelers_total,4 travelers,4,travelers
-trip,travelers_total,5+ travelers,5,travelers
+trip,travelers_total,5 travelers,5,travelers
+trip,travelers_total,6 travelers,6,travelers
+trip,travelers_total,7 travelers,7,travelers
+trip,travelers_total,8 travelers,8,travelers
+trip,travelers_total,9 travelers,9,travelers
 trip,mode_acc,Missing: Technical error,1,transit_access_mode
 trip,mode_acc,Walked or jogged,1,transit_access_mode
 trip,mode_acc,Bicycle or e-bicycle,1,transit_access_mode

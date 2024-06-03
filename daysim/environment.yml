@@ -1,4 +1,4 @@
-name: summary
+name: survey-conversion
 channels:
   - conda-forge
   - defaults

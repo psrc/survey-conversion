@@ -44,17 +44,28 @@ def clean(config):
     person = person[person['person_id'].isin(person_day['person_id'])]
     
     # Number of valid days found by occurence of original person ID duplicates 
+    # person = person.merge(
+    #     person['person_id_original'].value_counts().reset_index(), 
+    #     on='person_id_original', 
+    #     how='left'
+    # )
+    df = person['person_id_original'].value_counts().reset_index()
+    df.rename(columns={'person_id_original': 'count', 'index': 'person_id_original'}, inplace=True)
+    # person['psexpfac'] = person['psexpfac']/person['count']
     person = person.merge(
-        person['person_id_original'].value_counts().reset_index(), 
+        df, 
         on='person_id_original', 
         how='left'
     )
+
     person['psexpfac'] = person['psexpfac']/person['count']
 
     # Re-calculate household weights in the same way
     hh = hh[hh['hhno'].isin(person_day['hhno'])]
+    df = hh['hhid_elmer'].value_counts().reset_index()
+    df.rename(columns={'hhid_elmer': 'count', 'index': 'hhid_elmer'}, inplace=True)
     hh = hh.merge(
-        hh['hhid_elmer'].value_counts().reset_index(), 
+        df, 
         on='hhid_elmer', 
         how='left'
     )

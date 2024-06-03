@@ -16,8 +16,8 @@ output_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/test'
 output_dir_clean = 'R:/e2projects_two/2023_base_year/2017_2019_survey/test/clean'
 
 # Specify which components to run
-run_locate_parcels = true
-run_convert_format = true
+run_locate_parcels = false
+run_convert_format = false
 run_clean = true
 run_data_validation = true
 run_attach_skims = true
@@ -95,124 +95,6 @@ transit_mode_list = ['Ferry or water taxi',
                     'Urban Rail (e.g., Link light rail, monorail)',
                     'Bus (public transit)',
                     'Other rail (e.g., streetcar)']
-
-person_columns = [
-        "hhno",
-        "pno",
-        "pptyp",
-        "pagey",
-        "pgend",
-        "pwtyp",
-        "pwpcl",
-        "pwtaz",
-        "pwautime",
-        "pwaudist",
-        "pstyp",
-        "pspcl",
-        "pstaz",
-        "psautime",
-        "psaudist",
-        "puwmode",
-        "puwarrp",
-        "puwdepp",
-        "ptpass",
-        "ppaidprk",
-        "pdiary",
-        "pproxy",
-        "psexpfac",
-        "person_id",
-        "person_id_original"
-    ]
-
-hh_columns = [
-        "hhno",
-        "hhsize",
-        "hhvehs",
-        "hhwkrs",
-        "hhftw",
-        "hhptw",
-        "hhret",
-        "hhoad",
-        "hhuni",
-        "hhhsc",
-        "hh515",
-        "hhcu5",
-        "hhincome",
-        "hownrent",
-        "hrestype",
-        "hhtaz",
-        "hhparcel",
-        "hhexpfac",
-        "samptype",
-    ]
-
-trip_columns = [
-        "hhno",
-        "pno",
-        "day",
-        "tour",
-        "half",
-        "tseg",
-        "tsvid",
-        "opurp",
-        "dpurp",
-        "mode",
-        "deptm",
-        "otaz",
-        "opcl",
-        "dtaz",
-        "dpcl",
-        "oadtyp",
-        "dadtyp",
-        "arrtm",
-        "trexpfac",
-        "travcost",
-        "travtime",
-        "travdist",
-        "pathtype",
-        "mode_acc",
-        "dorp",
-        "endacttm",
-        "trip_id",
-        "person_id",
-        "person_id_original"
-    ]
-
-tour_columns = [
-        "hhno",
-        "pno",
-        "day",
-        "tour",
-        "jtindex",
-        "parent",
-        "subtrs",
-        "pdpurp",
-        "tlvorig",
-        "tardest",
-        "tlvdest",
-        "tarorig",
-        "toadtyp",
-        "tdadtyp",
-        "topcl",
-        "totaz",
-        "tdpcl",
-        "tdtaz",
-        "tmodetp",
-        "tpathtp",
-        "tautotime",
-        "tautocost",
-        "tautodist",
-        "tripsh1",
-        "tripsh2",
-        "phtindx1",
-        "phtindx2",
-        "fhtindx1",
-        "fhtindx2",
-        "toexpfac",
-        "person_id",
-        "hhid_elmer",
-        "person_id_original"
-    ]
 
 [pwtyp_map]
 'hhftw' = 1
