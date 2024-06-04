@@ -581,18 +581,6 @@ def attach_skims(config):
     # Extract person-level results from trip file
     person_modified = process_person_skims(tour, person, hh, config)
 
-    # Attach person-level work skims based on home to work auto trips
-    fetch_skim(
-        "work_travel",
-        person_modified,
-        time_field="puwarrp",
-        mode_field="puwmode",
-        otaz_field="hhtaz",
-        dtaz_field="pwtaz",
-        config=config,
-        use_mode="3",
-    )
-
     # Fetch trip skims based on trip departure time
     fetch_skim(
         "trip",
@@ -616,16 +604,16 @@ def attach_skims(config):
     )
 
     # # Attach person-level work skims based on home to work auto trips
-    # fetch_skim(
-    #     "work_travel",
-    #     person_modified,
-    #     time_field="puwarrp",
-    #     mode_field="puwmode",
-    #     otaz_field="hhtaz",
-    #     dtaz_field="pwtaz",
-    #     config=config,
-    #     use_mode="3",
-    # )
+    fetch_skim(
+        "work_travel",
+        person_modified,
+        time_field="puwarrp",
+        mode_field="puwmode",
+        otaz_field="hhtaz",
+        dtaz_field="pwtaz",
+        config=config,
+        use_mode="3",
+    )
 
     # Attach person-level school skims based on home to school auto trips
     fetch_skim(

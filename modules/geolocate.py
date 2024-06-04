@@ -183,7 +183,7 @@ def locate_person_parcels(person, parcel_df, filter_dict_list, config):
     return person_results
 
 
-def locate_hh_parcels(hh, parcel_df, filter_dict_list, config):
+def locate_hh_parcels(hh, hhid_col, parcel_df, filter_dict_list, config):
     hh_results = hh.copy()
 
     # Find nearest school and workplace
@@ -233,7 +233,7 @@ def locate_hh_parcels(hh, parcel_df, filter_dict_list, config):
         )
 
         col_list = [
-            "hhid",
+            hhid_col,
             varname + "_taz",
             varname + "_maz",
             varname + "_parcel",
@@ -246,7 +246,7 @@ def locate_hh_parcels(hh, parcel_df, filter_dict_list, config):
         # Join the gdf dataframe to the person df
         hh_results = hh_results.merge(
             gdf[col_list],
-            on="hhid",
+            on=hhid_col,
             how="left",
         )
 

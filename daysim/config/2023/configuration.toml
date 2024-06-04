@@ -3,10 +3,10 @@
 ########################################
 survey_year = "(2023)"   # parens because we can pass in a set of years
 
-elmer_trip_table = "HHSurvey.v_trip_multiyear_modeling"
-elmer_person_table = "HHSurvey.v_person_multiyear_modeling"
-elmer_hh_table = "HHSurvey.v_household_multiyear_modeling"
-elmer_person_day_table = "HHSurvey.v_day_multiyear_modeling"
+elmer_trip_table = "HHSurvey.v_trips_labels"
+elmer_person_table = "HHSurvey.v_persons_labels"
+elmer_hh_table = "HHSurvey.v_households_labels"
+elmer_person_day_table = "HHSurvey.v_days_labels"
 
 input_dir = 'daysim/inputs/2023'
 

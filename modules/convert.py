@@ -197,12 +197,19 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
         primary_index = get_primary_index(df)
 
     tour_dict[tour_id]["pdpurp"] = df.loc[primary_index]["dpurp"]
-    tour_dict[tour_id]["tlvdest"] = df.loc[primary_index]["deptm"]
+    # Tour arrival time at destination to the arrival time on the primary trip
+    tour_dict[tour_id]["tardest"] = df.loc[primary_index]["arrtm"]
+    # Tour departure time from destination is the departure time of next trip directly after the primary trip
+    # Some primary trips are the final trip, so check for that and use the primary (last) trip in that case
+    if primary_index+1 in df.index:
+        tour_dict[tour_id]["tlvdest"] = df.loc[primary_index+1]["deptm"]
+    else:
+        tour_dict[tour_id]["tlvdest"] = df.loc[primary_index]["deptm"]
+    
     for col in ['dpcl','dmaz','dtaz']:
         if col in df.columns:
             tour_dict[tour_id]["t"+col] = df.loc[primary_index][col]
     tour_dict[tour_id]["tdadtyp"] = df.loc[primary_index]["dadtyp"]
-    tour_dict[tour_id]["tardest"] = df.iloc[-1]["arrtm"]
     tour_dict[tour_id]["tripsh1"] = len(df.loc[0:primary_index])
     tour_dict[tour_id]["tripsh2"] = len(df.loc[primary_index + 1 :])
     tour_dict[tour_id]["tmodetp"] = assign_tour_mode(df, config)

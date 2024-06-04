@@ -37,3 +37,9 @@
 39,df,(df['pwtyp'].isin([1,2])),worker_type,'commuter',
 40,df,(df['pwtyp'].isin([1,2]))&(df['pwpcl']==df['home_parcel']),worker_type,'wfh',
 41,df,(df['pwtyp'].isin([1,2]))&(df['telecommute_freq'].isin(['3 days a week', '4 days a week', '5 days a week', '6-7 days a week']))&(df['pwpcl']!=df['home_parcel']),worker_type,'telecommuter'
+42,df,:,'transit_pass_subsidy','none'
+43,df,df['commute_subsidy_1']=='Selected',transit_pass_subsidy,'full'
+44,df,df['commute_subsidy_2']=='Selected',transit_pass_subsidy,'partial'
+45,df,:,'parking_subsidy','none'
+46,df,df['commute_subsidy_3']=='Selected',parking_subsidy,'full'
+47,df,df['commute_subsidy_4']=='Selected',parking_subsidy,'partial'
