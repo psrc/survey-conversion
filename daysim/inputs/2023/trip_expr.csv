@@ -5,13 +5,13 @@
 8,df,:,dorp,df['dorp'].fillna(9),fill missing driver information with missing value
 4,df,:,day,df['travel_dow'],day of week in integer format joined from person day file
 8,df,:,mode,10,
-9,df,(df['travelers'] == 1) & (df['mode_simple'] == 'Drive'),mode,3,
-10,df,(df['travelers'] == 2) & (df['mode_simple'] == 'Drive'),mode,4,
-11,df,(df['travelers'].astype('int') > 2) & (df['mode_simple'] == 'Drive'),mode,5,
-12,df,df['mode_simple'] == 'Transit',mode,6,
-12,df,((df['mode_simple'] == 'Transit')&(df['transit_access_mode']==3)),mode,7,
-13,df,df['mode_simple'] == 'Walk',mode,1,
-14,df,df['mode_simple'] == 'Bike',mode,2,
+9,df,df['mode_characterization'] == 'Drive',mode,3,
+10,df,df['mode_characterization'] == 'HOV2',mode,4,
+11,df,df['mode_characterization'] == 'HOV3',mode,5,
+12,df,df['mode_characterization'] == 'Transit',mode,6,
+12,df,((df['mode_characterization'] == 'Transit')&(df['transit_access_mode']==3)),mode,7,
+13,df,df['mode_characterization'] == 'Walk',mode,1,
+14,df,df['mode_characterization'] == 'Bike/Micromobility',mode,2,
 15,df,df['mode_1'].isin(['School bus']),mode,8,
 16,df,"df['mode_1'].isin(['Other hired service (Uber, Lyft, or other smartphone-app car service)','Taxi (e.g., Yellow Cab)'])",mode,9,
 18,df,:,oadtyp,4,origin type: assume other by default

@@ -511,7 +511,6 @@ def convert_format(config):
         tour, person, trip, hh, person_day_original_df, household_day, config
     )
 
-
     trip[["travdist", "travcost", "travtime"]] = "-1.00"
 
     person['puwmode'] = -1
