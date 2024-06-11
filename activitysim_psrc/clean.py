@@ -23,9 +23,13 @@ import sqlalchemy
 from sqlalchemy.engine import URL
 import logging
 from daysim import logcontroller
-from activitysim.abm.models.util import canonical_ids as cid
 from activitysim_psrc import infer
 from modules import convert
+from activitysim.core import workflow
+from activitysim.abm.models.util import canonical_ids as cid
+from activitysim import cli as client
+import sys
+import argparse
 
 survey_tables = {
     "households": {"file_name": "survey_households.csv"},
@@ -35,7 +39,31 @@ survey_tables = {
     "trips": {"file_name": "survey_trips.csv"},
 }
 
-def process_person_day(tour, trip, config, logger):
+def remove_hh_with_missing_work_location(household, person, tours, trips, joint_tour_participants, logger):
+    remove_persons = person[(person['pemploy'].isin([1,2])) & (person['workplace_zone_id']==-1)].person_id
+    remove_hh = person[person['person_id'].isin(remove_persons)].household_id.unique()
+    
+    person = person[~person['person_id'].isin(remove_persons)]
+    household = household[~household['household_id'].isin(remove_hh)]
+    
+    logger.info(
+        f"Dropped {len(remove_hh)} households: missing work locations"
+    )
+
+    trips = trips[~trips['household_id'].isin(remove_hh)]
+    tours = tours[~tours['household_id'].isin(remove_hh)]
+
+    joint_tour_participants = joint_tour_participants[~joint_tour_participants['household_id'].isin(remove_hh)]
+
+    return household, person, tours, trips, joint_tour_participants
+
+def recode_missing_school_location_to_home(household, person, tour, trip):
+    df = person.merge(household[['household_id', 'home_zone_id']], how ='left', on='household_id')
+    df['school_zone_id'] = np.where((df.pstudent<3) & (df.school_zone_id == -1), df.home_zone_id, df.school_zone_id)
+    
+    return df[person.columns]
+
+def process_person_day(tour, trip, config, logger, state):
     # In order to estimate, we need to enforce the mandatory tour totals
     # these can only be: ['work_and_school', 'school1', 'work1', 'school2', 'work2']
     # If someone has 2 work trips and 1 school trips, must decide a heirarchy of
@@ -90,7 +118,18 @@ def process_person_day(tour, trip, config, logger):
 
     # DATA FILTER:
     # Default of 4, determine based on config files
-    MAX_TRIPS_PER_LEG = cid.determine_max_trips_per_leg()
+    # sys.argv.append('--working_dir')
+    # sys.argv.append(config['asim_config_dir'])
+    # parser = argparse.ArgumentParser()
+    # client.run.add_run_args(parser)
+    # args = parser.parse_args()
+    # state = workflow.State()
+    # state.logging.config_logger(basic=True)
+    # state = client.run.handle_standard_args(state, args)  # possibly update injectables
+
+
+    possible_tours = cid.canonical_tours(state)
+    MAX_TRIPS_PER_LEG = cid.determine_max_trips_per_leg(state)
     # Filter out tours with too many stops on their tours
     df = tour[(tour["tripsh1"] > MAX_TRIPS_PER_LEG) | (tour["tripsh2"] > MAX_TRIPS_PER_LEG)]
     # df.to_csv(os.path.join(output_dir,'temp','too_many_stops.csv'))
@@ -103,7 +142,7 @@ def process_person_day(tour, trip, config, logger):
     # canonical_trip_num: 1st trip out = 1, 2nd trip out = 2, 1st in = 5, etc.
     # Keep the original trip ID for later use
     canonical_trip_num = (~trip.outbound * MAX_TRIPS_PER_LEG) + trip.trip_num
-    trip["trip_id"] = trip["tour"] * (2 * MAX_TRIPS_PER_LEG) + canonical_trip_num
+    trip["trip_id"] = trip['tour_id'].fillna(-1).astype('int') * (2 * MAX_TRIPS_PER_LEG) + canonical_trip_num
 
     # DATA FILTER:
     # Some of these IDs are duplicated and it's not clear why - seems to be an issue with the canonical_trip_num definition
@@ -116,7 +155,7 @@ def process_person_day(tour, trip, config, logger):
     trip.set_index("trip_id", inplace=True, drop=False, verify_integrity=True)
 
     # Make sure all trips in a tour have an outbound and inbound component
-    trips_per_tour = trip.groupby("tour")["person_id"].value_counts()
+    trips_per_tour = trip.groupby("tour_id")["person_id"].value_counts()
     missing_trip_persons = (
         trips_per_tour[trips_per_tour == 1]
         .index.get_level_values("person_id")
@@ -128,68 +167,7 @@ def process_person_day(tour, trip, config, logger):
 
     return tour, trip
 
-def clean(config):
-    # Start log file
-    logger = logcontroller.setup_custom_logger("convert_format_logger.txt", config)
-    logger.info("--------------------convert_format.py STARTING--------------------")
-    start_time = datetime.datetime.now()
-
-    households = pd.read_csv(os.path.join(config['output_dir'], 'survey_households.csv')) 
-    person = pd.read_csv(os.path.join(config['output_dir'], 'survey_persons.csv')) 
-    tour = pd.read_csv(os.path.join(config['output_dir'], 'survey_tours.csv')) 
-    joint_tour_participants = pd.read_csv(os.path.join(config['output_dir'], 'survey_joint_tour_participants.csv')) 
-    trip = pd.read_csv(os.path.join(config['output_dir'], 'survey_trips.csv')) 
-
-    # Create new output directory for survey records with skims attached, if needed
-    cleaned_output_dir = os.path.join(config["output_dir"], "cleaned")
-    
-    for my_path in [cleaned_output_dir]:
-        if not os.path.exists(my_path):
-            os.makedirs(my_path)
-
-    # Remove trips with tour flags
-    filter = tour['error_str'].notnull()
-    logger.info(f"Dropped {len(tour[filter])} tours: non-canonical tour type")
-    tour = tour[~filter]
-
-    # person day
-    tour, trip = process_person_day(tour, trip, config, logger)
-
-    # Process joint tours
-
-
-    # Map to standard columns
-    df_mapping = pd.read_csv(os.path.join(config["input_dir"], "mapping.csv"))
-
-    tour.drop("tour_id", inplace=True, axis=1)
-    tour = convert.map_to_class(tour, "tour", df_mapping, "script_to_original")
-    trip = convert.map_to_class(trip, "trip", df_mapping, "script_to_original")
-    person = convert.map_to_class(person, "person", df_mapping, "script_to_original")
-    joint_tour_participants = convert.map_to_class(
-        joint_tour_participants, "joint_tour", df_mapping, "script_to_original"
-    )
-
-
-    # Filter trip data
-    for col in ["origin", "destination"]:
-        # Missing omaz/dmaz
-        trip.loc[trip[col] <= 0, 'error_flag'] = 10
-        trip.loc[trip[col] <= 0, 'error_flag'] = 10
-
-
-    filter = ((trip["opurp"] == trip["purpose"]) & (trip["opurp"] == "Home")),
-    trip.loc[trip[col] <= 0, 'error_flag'] = 11 # trips have same origin/destination of home
-
-    # Do we need to drop these trips/tours?
-
-    # Drop any duplicate tour IDs
-    _filter = tour["tour_id"].duplicated()
-    logger.info(f"Dropped {len(tour[_filter])} tours: duplicate tour ID")
-    tour = tour[~_filter]
-
-    #########################################
-    # at work tours
-    #########################################
+def process_atwork_tours(trip, tour, logger):
 
     # People can't make more than 1 eat or maint subtour,
     # or more than 2 business subtours on at-work tours
@@ -242,10 +220,213 @@ def clean(config):
                     df.sum()
                 )
 
+    # at work trips should have a purpose of at-work    
+    at_work_tours_ids = at_work = tour[tour['tour_category']=='atwork'].tour_id
+    trip.loc[trip["tour_id"].isin(at_work_tours_ids), "purpose",] = 'atwork' 
+
+    return trip, tour
+
+def calculate_weights(person, hh, trip, tour, config):
+    
+    # household_id is generated from the renumerated household ID of duplicated households, starting at 1. 
+    # The travel day is appended to the household to create a new household 
+    # e.g., (household 11 is cloned from household 1 for day 1, hh# 12 is from household 1 for day 2, etc.)
+    hh["survey_day"] = hh["household_id"].astype('str').apply(lambda x: x[-1]).astype('int')
+
+    # Drop all households and persons from days outside of the range
+    # Get a list of values for each day of the week included in this survey
+    day_range = []
+    for i in config['day_range']:
+        day_range.append(config['day_dict'][i])
+    hh = hh[hh['survey_day'].isin(day_range)]
+
+    # Select persons corresponding to these households
+    person = person[person['household_id'].isin(hh['household_id'])]
+
+    # Recalculate household weights
+    df = hh['household_id_original'].value_counts().reset_index()
+    df.rename(columns={'household_id_original': 'count', 'index': 'household_id_original'}, inplace=True)
+
+    hh = hh.merge(
+        df, 
+        on='household_id_original', 
+        how='left'
+    )
+    
+    hh['hh_weight'] = hh['hh_weight']/hh['count']
+
+    # Recalculate person weights
+    person = person.merge(hh[['household_id','count']], on='household_id', how='left')
+    person['person_weight'] = person['person_weight']/person['count']
+
+    # Recalculate tour weights as average of trip weights
+    df = trip[['tour_id','trip_weight']].groupby('tour_id').mean().reset_index()
+    df.rename(columns={'trip_weight': 'tour_weight'}, inplace=True)
+    tour.rename(columns={'tour_weight': 'original_tour_weight'}, inplace=True)
+    tour = tour.merge(df, on='tour_id', how='left')
+
+    return person, hh, trip, tour
+
+def clean(config, state):
+    # Start log file
+    logger = logcontroller.setup_custom_logger("convert_format_logger.txt", config)
+    logger.info("--------------------convert_format.py STARTING--------------------")
+    start_time = datetime.datetime.now()
+
+    households = pd.read_csv(os.path.join(config['output_dir'], 'skims_attached', 'initial', 'survey_households.csv')) 
+    person = pd.read_csv(os.path.join(config['output_dir'], 'skims_attached', 'initial', 'survey_persons.csv')) 
+    tour = pd.read_csv(os.path.join(config['output_dir'], 'skims_attached', 'initial', 'survey_tours.csv')) 
+    joint_tour_participants = pd.read_csv(os.path.join(config['output_dir'], 'skims_attached', 'initial', 'survey_joint_tour_participants.csv')) 
+    trip = pd.read_csv(os.path.join(config['output_dir'], 'skims_attached', 'initial', 'survey_trips.csv')) 
+
+    # Apply initial formatting changes so we can use fuller version with skims attached before dropping trips and tours
+    # at work tours
+
+    # Map column name 
+    df_mapping = pd.read_csv(os.path.join(os.getcwd(), config["input_dir"], "mapping.csv"))
+
+    tour.drop("tour_id", inplace=True, axis=1)
+    tour = convert.map_to_class(tour, "tour", df_mapping, "script_to_original")
+    trip = convert.map_to_class(trip, "trip", df_mapping, "script_to_original")
+    person = convert.map_to_class(person, "person", df_mapping, "script_to_original")
+    joint_tour_participants = convert.map_to_class(
+        joint_tour_participants, "joint_tour", df_mapping, "script_to_original"
+    )
+
+    trip, tour = process_atwork_tours(trip, tour, logger)
+
+    # Write these updated file to file; 
+    # recalculate other weights later, after trips and tours have been cleaned
+    person_skims, households_skims, trip_skims, tour_skims = calculate_weights(person, households, trip, tour, config)
+
+    # Write untrimmed set of trips and tours to skims attached
+    joint_tour_participants.to_csv(
+        os.path.join(config["output_dir"], "skims_attached", "survey_joint_tour_participants.csv"),
+        index=False,
+    )
+    tour_skims.to_csv(
+        os.path.join(config["output_dir"], "skims_attached", "survey_tours.csv"), index=False
+    )
+    households_skims.to_csv(
+        os.path.join(config["output_dir"], "skims_attached", "survey_households.csv"), index=False
+    )
+    person_skims.to_csv(
+        os.path.join(config["output_dir"], "skims_attached", "survey_persons.csv"), index=False
+    )
+    trip_skims.to_csv(
+        os.path.join(config["output_dir"], "skims_attached", "survey_trips.csv"), index=False
+    )
+
+    # Create new output directory for survey records with skims attached, if needed
+    cleaned_output_dir = os.path.join(config["output_dir"], "cleaned")
+    
+    for my_path in [cleaned_output_dir]:
+        if not os.path.exists(my_path):
+            os.makedirs(my_path)
+
     logger.info(
         f'Dropped {len(tour[tour["drop"] > 0])} tours: at work subtour with too many eat or maint trips'
     )
     tour = tour[tour["drop"] == 0]
+
+
+    # Remove trips with tour flags
+    filter = tour['error_str'].notnull()
+    logger.info(f"Dropped {len(tour[filter])} tours: non-canonical tour type")
+    tour = tour[~filter]
+
+    # person day
+    tour, trip = process_person_day(tour, trip, config, logger, state)
+
+    # # Map to standard columns
+    # df_mapping = pd.read_csv(os.path.join(os.getcwd(), config["input_dir"], "mapping.csv"))
+
+    # tour.drop("tour_id", inplace=True, axis=1)
+    # tour = convert.map_to_class(tour, "tour", df_mapping, "script_to_original")
+    # trip = convert.map_to_class(trip, "trip", df_mapping, "script_to_original")
+    # person = convert.map_to_class(person, "person", df_mapping, "script_to_original")
+    # joint_tour_participants = convert.map_to_class(
+    #     joint_tour_participants, "joint_tour", df_mapping, "script_to_original"
+    # )
+
+
+    # Filter trip data
+    for col in ["origin", "destination"]:
+        # Missing omaz/dmaz
+        trip.loc[trip[col] <= 0, 'error_flag'] = 10
+        trip.loc[trip[col] <= 0, 'error_flag'] = 10
+
+
+    filter = ((trip["opurp"] == trip["purpose"]) & (trip["opurp"] == "Home")),
+    trip.loc[trip[col] <= 0, 'error_flag'] = 11 # trips have same origin/destination of home
+
+    # Do we need to drop these trips/tours?
+
+    # Drop any duplicate tour IDs
+    _filter = tour["tour_id"].duplicated()
+    logger.info(f"Dropped {len(tour[_filter])} tours: duplicate tour ID")
+    tour = tour[~_filter]
+
+    # # People can't make more than 1 eat or maint subtour,
+    # # or more than 2 business subtours on at-work tours
+    # # Keeping only the first and dropping the others
+    # atwork_tours = tour[tour["tour_category"] == "atwork"]
+    # atwork_tours = atwork_tours.groupby(["parent_tour_id", "tour_type"]).count()[
+    #     ["household_id"]
+    # ]
+    # tour["drop"] = 0
+    # for tour_id in atwork_tours.index:
+    #     df = atwork_tours.loc[tour_id[0]]
+    #     if df["household_id"].sum() > 1:
+    #         # Only a certain set of atwork stops are allowed
+    #         # If 2 business stops, nothing else
+    #         df = tour.loc[
+    #             tour["parent_tour_id"] == tour_id[0], "tour_type"
+    #         ].value_counts()
+    #         if "business" in df.index:
+    #             if df["business"] == 2:
+    #                 # Take only first 2 business subtours and drop all else
+    #                 tour.loc[
+    #                     (tour["parent_tour_id"] == tour_id[0])
+    #                     & (tour["tour_type"] != "business"),
+    #                     "drop",
+    #                 ] = 1
+    #             if "eat" in df.index:
+    #                 # Take first business and first eat subtour only; drop any others
+    #                 if df["eat"] > 1:
+    #                     tour.loc[
+    #                         (tour["parent_tour_id"] == tour_id[0])
+    #                         & (tour["tour_type"] == "eat"),
+    #                         "drop",
+    #                     ] = range(df["eat"].sum())
+    #                 if df["business"] > 1:
+    #                     tour.loc[
+    #                         (tour["parent_tour_id"] == tour_id[0])
+    #                         & (tour["tour_type"] == "business"),
+    #                         "drop",
+    #                     ] = range(df["business"].sum())
+    #             if "eat" not in df.index and df["business"] < 2:
+    #                 # Drop any other subtours
+    #                 tour.loc[
+    #                     (tour["parent_tour_id"] == tour_id[0])
+    #                     & (tour["tour_type"] != "business"),
+    #                     "drop",
+    #                 ] = 1
+    #         if "business" not in df.index:
+    #             # Take first subtour only
+    #             tour.loc[(tour["parent_tour_id"] == tour_id[0]), "drop"] = range(
+    #                 df.sum()
+    #             )
+
+    # logger.info(
+    #     f'Dropped {len(tour[tour["drop"] > 0])} tours: at work subtour with too many eat or maint trips'
+    # )
+    # tour = tour[tour["drop"] == 0]
+
+    # # at work trips should have a purpose of at-work    
+    # at_work_tours_ids = at_work = tour[tour['tour_category']=='atwork'].tour_id
+    # trip.loc[trip["tour_id"].isin(at_work_tours_ids), "purpose",] = 'atwork' 
+
 
     ###############################
     # School and workplace cleaning
@@ -281,11 +462,14 @@ def clean(config):
     person["workplace_zone_id"] = person["workplace_zone_id"].replace(0, -1)
     person = person.merge(work_tours, how="left", left_on="person_id", right_index=True)
     person.rename(columns={"destination": "work_dest"}, inplace=True)
+    # where they have a work destination, but no usual workplace_zone, set to usual workplace_zone
     person.loc[
         (~person["work_dest"].isnull()) & (person["workplace_zone_id"] == -1),
         "workplace_zone_id",
     ] = person["work_dest"]
     person.drop("work_dest", axis=1, inplace=True)
+
+
 
     # If a person makes a school tour, make sure their pstudent and ptype is correct
     # Addressed bug in mandatory tour frequency model
@@ -304,6 +488,7 @@ def clean(config):
     ] = 2  # college student
 
     # People coded as non-workers making work tours
+    # Stefan- seems like this should check for age 18+
     work_tours = tour[tour.tour_type == "work"]
     person.loc[
         person["person_id"].isin(work_tours["person_id"]) & (person["pemploy"] == 3),
@@ -312,10 +497,74 @@ def clean(config):
 
     # Some young children are coded as having work tours (likely going with parent)
     # Remove any work tours for someone coded as ptype 8
-    tour = tour.merge(person[["person_id", "ptype"]], on="person_id", how="left")
+    tour = tour.merge(person[["person_id", "ptype", "work_from_home"]], on="person_id", how="left")
     filter = (tour["tour_type"] == "work") & (tour["ptype"] == 8)
     logger.info(f"Dropped {len(tour[filter])} tours: ptype 8 making work tours")
     tour = tour[~filter]
+
+    # Work at home workers cannot make work tours, change to other maintenance:
+
+    filter = (tour["tour_type"] == "work") & (tour["work_from_home"] == 1)
+    remove_tour_ids = tour[filter].tour_id
+    tour = tour[~filter]
+    trip = trip[~trip.tour_id.isin(remove_tour_ids)]
+
+    # filter_tour_ids = tour.loc[filter].tour_id
+    # tour.loc[filter, "tour_type"] = 'othmaint'
+    # tour.loc[filter, "pdpurp"] = 'othmaint'
+    # tour.loc[filter, "tour_category"] = 'non_mandatory'
+    # assert tour[filter].tour_type.unique()[0] == 'othmaint'
+    # assert len(tour[filter].tour_type.unique()) == 1
+    # assert tour[filter].tour_category.unique()[0] == 'non_mandatory'
+    # assert len(tour[filter].tour_category.unique()) == 1
+
+    # # now Trips
+    # trip.loc[trip['tour_id'].isin(filter_tour_ids) & (trip.opurp=='work'), 'opurp'] = 'othmaint'
+    # trip.loc[trip['tour_id'].isin(filter_tour_ids) & (trip.purpose=='work'), 'purpose'] = 'othmaint'
+
+    # # work tours/trips must go to usual workplace location, change to other maintenance
+    # # first need to remove sub tours/trips that do not originate from usual workplace location.
+    at_work = tour[tour['tour_category']=='atwork']
+    at_work = at_work.merge(person[['person_id', 'workplace_zone_id']], on='person_id', how='left') 
+    filter_tour_ids = at_work[at_work['origin'] != at_work['workplace_zone_id']].tour_id
+    # # remove from tours, trips
+    tour = tour[~tour.tour_id.isin(filter_tour_ids)]
+    trip = trip[~trip.tour_id.isin(filter_tour_ids)]
+    
+    # # now recode tours and trips taht do not to to usual workplace location:
+    tour = tour.merge(person[['person_id', 'workplace_zone_id', 'school_zone_id']], on='person_id', how='left') 
+    filter = (tour.pdpurp=='work') & (tour.destination != tour.workplace_zone_id)
+    filter_tour_ids = tour.loc[filter].tour_id
+    tour = tour[~tour.tour_id.isin(filter_tour_ids)]
+    trip = trip[~trip.tour_id.isin(filter_tour_ids)]
+    # tour.loc[filter, "tour_type"] = 'othmaint'
+    # tour.loc[filter, "pdpurp"] = 'othmaint'
+    # tour.loc[filter, "tour_category"] = 'non_mandatory'
+    # # now Trips
+    # trip.loc[trip['tour_id'].isin(filter_tour_ids) & (trip.opurp=='work'), 'opurp'] = 'othmaint'
+    # trip.loc[trip['tour_id'].isin(filter_tour_ids) & (trip.purpose=='work'), 'purpose'] = 'othmaint'
+    
+    # school tours/trips must go to usual school location, change to other maintenance
+    #tour = tour.merge(person[['person_id', 'workplace_zone_id']], on='person_id', how='left') 
+    filter = (tour.pdpurp=='school') & (tour.destination != tour.school_zone_id)
+    filter_tour_ids = tour.loc[filter].tour_id
+    tour = tour[~tour.tour_id.isin(filter_tour_ids)]
+    trip = trip[~trip.tour_id.isin(filter_tour_ids)]
+
+
+    # Work tours/trips
+    #assert tour[filter].tour_type.unique
+
+    person.loc[
+        person["person_id"].isin(school_tours["person_id"])
+        & (person["pstudent"] == 3)
+        & (person["age"] > 18),
+        "pstudent",
+    ] = 2  # college student
+
+    logger.info(f"Dropped {len(tour[filter])} tours: work at home workers making work tours")
+    tour = tour[~filter]
+
 
     # FIXME: move this to expression files ###
     # If a person has a usual workplace zone make them a part time worker (?) or remove their usual workplace location...
@@ -324,6 +573,8 @@ def clean(config):
         & (person["pemploy"] >= 3)
         & (person["age"] >= 16)
     ]["pemploy"] = 2
+
+    
 
     ### We cannot have more than 2 joint tours per household. If so, make sure we remove those households/tours
     ### FIXME: should we remove the households or edit the tours so they are not joint, or otherwise edit them?
@@ -528,8 +779,9 @@ def clean(config):
     logger.info(f"Dropped {len(tour[filter])} tours: under 16 making work tours")
     tour = tour[~filter]
 
+
     person.loc[
-        (person["person_id"].isin(person_list)) & (person["pemploy"] == 2), "ptype"
+        (person["person_id"].isin(person_list)) & (person["pemploy"] == 2) & (person['age'] > 17), "ptype"
     ] = 2
     person.loc[
         (person["person_id"].isin(person_list))
@@ -537,6 +789,8 @@ def clean(config):
         & (person["pstudent"] == 2),
         "ptype",
     ] = 3
+
+
 
     # For people making univ trips, they must be full-or part time worker or university student
     filter = (trip["purpose"] == "univ") & (~trip["ptype"].isin([1, 2, 3]))
@@ -647,10 +901,11 @@ def clean(config):
     ]
     households = households[households["household_id"].isin(person["household_id"])]
 
-    person = person[config["person_columns"]]
-    tour = tour[config["tour_columns"]]
-    trip = trip[config["trip_columns"]]
-    households = households[config["hh_columns"]]
+    households, person, tour, trip, joint_tour_participants = remove_hh_with_missing_work_location(households, person, tour, trip, joint_tour_participants, logger)
+    person = recode_missing_school_location_to_home(households, person, tour, trip)
+
+    # Recalculate weights for final output
+    person, households, trip, tours = calculate_weights(person, households, trip, tour, config)
 
     joint_tour_participants.to_csv(
         os.path.join(config["output_dir"], "cleaned","survey_joint_tour_participants.csv"),

@@ -1,6 +1,6 @@
 ﻿index,table ,filter,result_col,result_value,description
 1,df,:,household_id,df['household_id'],
-2,df,:,hh_weight,df['hh_weight'],FIXME:fill in with appropriate column when available
+2,df,:,hh_weight,df['hh_weight'],
 3,df,:,num_workers,df['numworkers'].astype('int64'),
 3,df,:,hhsize,df['hhsize'].astype('int64'),
 4,df,:,home_zone_id,df['home_maz'],

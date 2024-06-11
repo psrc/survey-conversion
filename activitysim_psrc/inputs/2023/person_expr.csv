@@ -10,12 +10,12 @@
 4,df,:,workplace_taz,df['work_taz']
 9,df,df['employment'] == 'Employed full time (35+ hours/week, paid)',ptype,1,Full time worker
 10,df,df['employment'].isin(['Employed part time (fewer than 35 hours/week, paid)', 'Self-employed']),ptype,2,Part time worker (includes part time worker and self-employed people
-11,df,(df['jobs_count'] == "Missing: Skip Logic") & (df['age']<65) & (df['student'] == 3),ptype,4,Non working adult age <65
+11,df,(df['jobs_count'] == "Missing: Skip Logic") & (df['age']<65) & (df['student'] == 0),ptype,4,Non working adult age <65
 12,df,(df['jobs_count'] == "Missing: Skip Logic") & (df['age']>=65),ptype,5, Non-working adult age 65+
-13,df,(df['age'] >= 16) & (df['schooltype'].isin(['K-12 public school','K-12 private school'])),ptype,6,driving age student
-14,df,(df['age'] < 16) & (df['schooltype'].isin(['K-12 public school','K-12 private school','Preschool'])),ptype,7,non-driving age student
-15,df,(df['schooltype'].isin(['College, graduate, or professional school','Vocational/technical school'])) & (df['student'] != 3),ptype,3,college student
-15,df,(df['age'] > 18) & (df['student'] != 3),ptype,3,if missing schooltype but coded as a full/part-time student and over 18 set ptype as college student
+13,df,(df['age'] >= 16) & (df['age']<18),ptype,6,driving age student
+14,df,(df['age'] < 16) & (df['age']>=5),ptype,7,non-driving age student
+15,df,(df['schooltype'].isin(['College, graduate, or professional school','Vocational/technical school'])) & (df['student'] > 0),ptype,3,college student
+15,df,(df['age'] > 18) & (df['student'] > 0),ptype,3,if missing schooltype but coded as a full/part-time student and over 18 set ptype as college student
 16,df,df['age'] < 5,ptype,8,child too young for school
 17,df,df['ptype'].isnull(),ptype,-1,Replace null values with -1 flag
 18,df,:,ptype,df['ptype'].astype('int'),
@@ -28,11 +28,11 @@
 25,df,df['ptype']==3,pstudent,2,university/professional student
 26,df,(df['school_zone_id'] > 0) & (df['pstudent'] != 3) & (df['age'] < 18),pstudent,1,
 27,df,(df['school_zone_id'] > 0) & (df['pstudent'] != 3) & (df['age'] >= 18),pstudent,2,
-30,df,(df['ptype'] == -1) & (df['student'] ==2) & (df['age']>18),ptype,3, university student 
-32,df,(df['ptype'] == -1) & (df['pemploy'] == 3) & (df['age']<65),ptype,4,non-working adult under 65
+28,df,:,PNUM,df['pernum'],
 29,df,(df['ptype'] == -1) & (df['pemploy'] ==3) & (df['age']>=65),ptype,5,Non-worker over 65
+30,df,(df['ptype'] == -1) & (df['student'] ==2) & (df['age']>18),ptype,3, university student
 31,df,(df['ptype'] == -1) & (df['student'] < 3) & (df['age']<=18),ptype,6,high school student
-33,df,:,free_parking_at_work,0,set default parking at work to 0
+32,df,(df['ptype'] == -1) & (df['pemploy'] == 3) & (df['age']<65),ptype,4,non-working adult under 65
 36,df,(df['workplace_zone_id'] > 0) & (df['pemploy'] >= 3) & (df['age'] >= 16),pemploy,2,
 37,df,(df['ptype'] == 3) & (df['pemploy'] == 1),pemploy,2,
 38,df,(df['ptype'] == 4) & (df['pemploy'] == 2),ptype,2,
@@ -43,4 +43,14 @@
 43,df,(df['pemploy'] == 1) & (df['pstudent'].isin([1,2])),pemploy,2,
 44,df,(df['pemploy'] == 1) & (df['pstudent'].isin([1,2])),ptype,2,
 45,df,(df['pstudent'] == 3) & (df['pemploy'] == 2),ptype,2,
-28,df,:,PNUM,df['pernum'],
+46,df,(df['workplace']=="At home (telecommute or self-employed with home office)")&(df['work_parcel']==-1),work_parcel,df['home_parcel'],
+47,df,(df['workplace']=="At home (telecommute or self-employed with home office)")&(df['work_parcel']==-1),work_maz,df['home_maz'],
+48,df,(df['workplace']=="At home (telecommute or self-employed with home office)")&(df['work_parcel']==-1),work_taz,df['home_taz'],
+49,df,:,work_from_home,0,
+50,df,(df['pemploy'].isin([1,2])) & (df['work_parcel']==df['home_parcel']),work_from_home,1,
+51,df,:,telecommute_frequency,'No_Telecommute',
+52,df,(df['work_from_home']== 0) & (df['telecommute_freq'] =='1 day a week'),telecommute_frequency,'1_day_week',
+53,df,(df['work_from_home']== 0) & (df['telecommute_freq'].isin(['2 days a week','3 days a week'])),telecommute_frequency,'2_3_days_week',
+54,df,(df['work_from_home']== 0) & (df['telecommute_freq'].isin(['4 days a week','5 days a week','6-7 days a week'])),telecommute_frequency,'4_days_week',
+61,df,:,free_parking_at_work,1,set default parking at work to 1 (parking at work does not cost anything)
+62,df,(df['commute_subsidy_3']!='Selected')&(df['parkhr_p']>0),free_parking_at_work,0,work parking is not free if workplace parcel has hourly costs AND worker does not have fully subsidized parking

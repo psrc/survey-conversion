@@ -400,7 +400,7 @@ def infer_tour_scheduling(configs_dir, tours):
     return tdds.tdd
 
 
-def patch_tour_ids(persons, tours, joint_tour_participants, CONSTANTS):
+def patch_tour_ids(persons, tours, joint_tour_participants, CONSTANTS, state):
     def set_tour_index(tours, parent_tour_num_col, is_joint):
         group_cols = ["person_id", "tour_category", "tour_type"]
 
@@ -411,8 +411,7 @@ def patch_tour_ids(persons, tours, joint_tour_participants, CONSTANTS):
             tours.sort_values(by=group_cols).groupby(group_cols).cumcount() + 1
         )
 
-        return cid.set_tour_index(
-            tours, parent_tour_num_col=parent_tour_num_col, is_joint=is_joint
+        return cid.set_tour_index(state, tours, parent_tour_num_col=parent_tour_num_col, is_joint=is_joint
         )
 
     assert "mandatory_tour_frequency" in persons
@@ -466,6 +465,11 @@ def patch_tour_ids(persons, tours, joint_tour_participants, CONSTANTS):
     patched_joint_tour_participants[ASIM_PARTICIPANT_ID] = (
         patched_joint_tour_participants[ASIM_TOUR_ID] * cid.MAX_PARTICIPANT_PNUM
     ) + participant_pnum
+
+    # Stefan Coe: make survey_participant_id = participant_id,then sort
+    patched_joint_tour_participants[SURVEY_PARTICIPANT_ID] = patched_joint_tour_participants[ASIM_PARTICIPANT_ID]
+    patched_joint_tour_participants.sort_values(SURVEY_PARTICIPANT_ID, inplace=True)
+    
 
     #####################
     # non_mandatory tours
@@ -557,6 +561,7 @@ def patch_tour_ids(persons, tours, joint_tour_participants, CONSTANTS):
 
     assert ASIM_TOUR_ID in patched_tours
     assert ASIM_PARENT_TOUR_ID in patched_tours
+    
 
     return patched_tours, patched_joint_tour_participants
 
@@ -636,7 +641,7 @@ def infer_atwork_subtour_frequency(configs_dir, tours):
     return atwork_subtour_frequency
 
 
-def patch_trip_ids(tours, trips):
+def patch_trip_ids(tours, trips, state):
     """
     replace survey trip_ids with asim standard trip_id
     replace survey tour_id foreign key with asim standard tour_id
@@ -668,7 +673,7 @@ def patch_trip_ids(tours, trips):
             + 1
         )
 
-    cid.set_trip_index(trips)
+    cid.set_trip_index(state, trips)
 
     assert trips.index.name == ASIM_TRIP_ID
     trips = trips.reset_index().rename(columns={"trip_id": ASIM_TRIP_ID})
@@ -747,7 +752,7 @@ def check_controls(table_name, column_name):
     return True
 
 
-def infer(configs_dir, input_dir, output_dir):
+def infer(configs_dir, input_dir, output_dir, state):
     with open(os.path.join(configs_dir, "constants.yaml")) as stream:
         CONSTANTS = yaml.load(stream, Loader=yaml.SafeLoader)
 
@@ -796,7 +801,7 @@ def infer(configs_dir, input_dir, output_dir):
 
     # patch_tour_ids
     tours, joint_tour_participants = patch_tour_ids(
-        persons, tours, joint_tour_participants, CONSTANTS
+        persons, tours, joint_tour_participants, CONSTANTS, state
     )
     survey_tables["tours"]["table"] = tours
     survey_tables["joint_tour_participants"]["table"] = joint_tour_participants
@@ -805,7 +810,7 @@ def infer(configs_dir, input_dir, output_dir):
     assert skip_controls or check_controls("joint_tour_participants", "index")
 
     # patch_tour_ids
-    trips = patch_trip_ids(tours, trips)
+    trips = patch_trip_ids(tours, trips, state)
     survey_tables["trips"]["table"] = trips  # so we can check_controls
     assert skip_controls or check_controls("trips", "index")
 

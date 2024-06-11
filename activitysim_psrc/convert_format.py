@@ -26,8 +26,11 @@ from daysim import logcontroller
 from modules import util, convert, tours, days
 
 # from activitysim_psrc import infer
+from activitysim.core import workflow
 from activitysim.abm.models.util import canonical_ids as cid
-
+from activitysim import cli as client
+import sys
+import argparse
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
@@ -90,7 +93,7 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     df = convert.apply_filter(
         df,
         "trips",
-        df["travel_dow_label"].isin(["Monday", "Tuesday", "Wednesday", "Thursday"]),
+        df["travel_dow_label"].isin(config['day_range']),
         logger,
         "trip taken on Friday, Saturday, or Sunday",
     )
@@ -234,46 +237,7 @@ def build_tour_file(trip, person, config, logger):
 
     return tour, trip
 
-
-def process_household_day(person_day_original_df, hh, config):
-    person_day_original_df["household_id"] = person_day_original_df[
-        "household_id"
-    ].astype("int64")
-    household_day = (
-        person_day_original_df.groupby(["household_id", "travel_dow"])
-        .count()
-        .reset_index()[["household_id", "travel_dow"]]
-    )
-
-    household_day.rename(
-        columns={"household_id": "hhno", "travel_dow": "day"}, inplace=True
-    )
-
-    # add day of week lookup
-    household_day["dow"] = household_day["day"]
-
-    # Set number of joint tours to 0 for this version of Daysim
-    for col in ["jttours", "phtours", "fhtours"]:
-        household_day[col] = 0
-
-    # Add an ID column
-    household_day["id"] = range(1, len(household_day) + 1)
-
-    # Add expansion factor
-    # FIXME: no weights yet, replace with the weights column when available
-    hh[config["hh_weight_col"]] = 1
-    household_day = household_day.merge(
-        hh[["household_id", config["hh_weight_col"]]],
-        left_on="hhno",
-        right_on="household_id",
-        how="left",
-    )
-    household_day.rename(columns={config["hh_weight_col"]: "hdexpfac"}, inplace=True)
-    household_day["hdexpfac"] = household_day["hdexpfac"].fillna(-1)
-
-    return household_day
-
-def build_joint_tours(tour, trip, person, config, logger):
+def build_joint_tours(tour, trip, person, config, logger, state):
     expr_df = pd.read_csv(os.path.join(config["input_dir"], "joint_tour_expr.csv"))
 
     tour = convert.process_expression_file(tour, expr_df, None)
@@ -297,8 +261,18 @@ def build_joint_tours(tour, trip, person, config, logger):
     tour = tour.sort_values(
         ["person_id", "day", "tour_category", "tour_type", "tlvorig"]
     )
+    # need to create an instance of ActivitySim state:
+    # sys.argv.append('--working_dir')
+    # sys.argv.append(config['asim_config_dir'])
+    # parser = argparse.ArgumentParser()
+    # client.run.add_run_args(parser)
+    # args = parser.parse_args()
+    # state = workflow.State()
+    # state.logging.config_logger(basic=True)
+    # state = client.run.handle_standard_args(state, args)  # possibly update injectables
 
-    possible_tours = cid.canonical_tours()
+
+    possible_tours = cid.canonical_tours(state)
     possible_tours_count = len(possible_tours)
     tour_num_col = "tour_type_num"
     tour["tour_type_id"] = tour.tour_type + tour["tour_type_num"].map(str)
@@ -442,9 +416,9 @@ def build_joint_tours(tour, trip, person, config, logger):
 
 def update_ids(df, df_person):
     df = df.merge(
-        df_person[["household_id", "person_id", "person_id_original"]],
+        df_person[["household_id", "person_id", "person_id_elmer_original"]],
         left_on="person_id",
-        right_on="person_id_original",
+        right_on="person_id_elmer_original",
         how="left",
     )
     for col in ["person", "household"]:
@@ -458,7 +432,7 @@ def update_ids(df, df_person):
 def reset_ids(person, person_day, households, trip, config):
     # activitysim checks specifically for int32 types; however, converting 64-bit int to 32 can create data issues if IDs are too long
     # Create a new mapping for person ID and household ID
-    person["person_id_original"] = person["person_id"].copy()
+    person["person_id_elmer_original"] = person["person_id"].copy()
     person["person_id"] = range(1, len(person) + 1)
 
     households["household_id_original"] = households["household_id"].copy()
@@ -467,7 +441,7 @@ def reset_ids(person, person_day, households, trip, config):
 
     # Merge new household ID to person records
     person = person.merge(
-        households[["household_id", "household_id_original"]],
+        households[["household_id", "household_id_original", "home_parcel", "home_maz", "home_taz"]],
         left_on="household_id",
         right_on="household_id_original",
         how="left",
@@ -482,13 +456,13 @@ def reset_ids(person, person_day, households, trip, config):
     trip = update_ids(trip, person)
 
     person[
-        ["person_id", "person_id_original", "household_id", "household_id_original"]
+        ["person_id", "person_id_elmer_original", "household_id", "household_id_original"]
     ].to_csv(os.path.join(config["output_dir"], "person_and_household_id_mapping.csv"))
 
     return person, person_day, households, trip
 
 
-def convert_format(config):
+def convert_format(config, state):
     # Start log file
     logger = logcontroller.setup_custom_logger("convert_format_logger.txt", config)
     logger.info("--------------------convert_format.py STARTING--------------------")
@@ -562,6 +536,14 @@ def convert_format(config):
         config,
     )
 
+    # Add paid parking data at the parcel level
+    parcel_df = pd.read_csv(
+        config["parcel_file_dir"],
+        sep='\s+',
+        usecols=["parcelid", "parkhr_p"],
+    )
+    person = person.merge(parcel_df, left_on="work_parcel", right_on="parcelid", how="left")
+
     # Recode person, household, and trip data
     person = convert.process_expression_file(
         person,
@@ -581,7 +563,7 @@ def convert_format(config):
     tour, trip = build_tour_file(trip, person, config, logger)
 
     #
-    joint_tour, trip, tour = build_joint_tours(tour, trip, person, config, logger)
+    joint_tour, trip, tour = build_joint_tours(tour, trip, person, config, logger, state)
 
     # Set all travel days to 1
     trip["day"] = 1

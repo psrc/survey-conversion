@@ -75,7 +75,7 @@ def locate_parcels(config):
     ]
 
     hh_new = geolocate.locate_hh_parcels(
-        hh_original.copy(), parcel_df, hh_filter_dict_list, config
+        hh_original.copy(), "household_id", parcel_df, hh_filter_dict_list, config
     )
 
     # Write to file
@@ -112,18 +112,15 @@ def locate_parcels(config):
             "var_name": "work",
             "parcel_filter": parcel_df["emptot_p"] > 0,
             "person_filter": (-person["work_lng"].isnull())
-            & (  # workplace is at a consistent location
-                person["workplace"] == "Usually the same location (outside home)"
-            ),
         },
         {
             # Student
             "var_name": "school_loc",
             "parcel_filter": (parcel_df["total_students"] > 0),
             "person_filter": (-person["school_loc_lat"].isnull())
-            & (-(person["home_lat"] == person["school_loc_lat"]))
-            & (  # Exclude home-school students
-                -(person["home_lng"] == person["school_loc_lng"])
+            # Exclude home-school students
+            & -((person["home_lat"] == person["school_loc_lat"])
+            & (person["home_lng"] == person["school_loc_lng"])
             ),
         },
     ]
