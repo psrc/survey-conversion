@@ -226,6 +226,47 @@ def process_atwork_tours(trip, tour, logger):
 
     return trip, tour
 
+def calculate_weights(person, hh, trip, tour, config):
+    
+    # household_id is generated from the renumerated household ID of duplicated households, starting at 1. 
+    # The travel day is appended to the household to create a new household 
+    # e.g., (household 11 is cloned from household 1 for day 1, hh# 12 is from household 1 for day 2, etc.)
+    hh["survey_day"] = hh["household_id"].astype('str').apply(lambda x: x[-1]).astype('int')
+
+    # Drop all households and persons from days outside of the range
+    # Get a list of values for each day of the week included in this survey
+    day_range = []
+    for i in config['day_range']:
+        day_range.append(config['day_dict'][i])
+    hh = hh[hh['survey_day'].isin(day_range)]
+
+    # Select persons corresponding to these households
+    person = person[person['household_id'].isin(hh['household_id'])]
+
+    # Recalculate household weights
+    df = hh['household_id_original'].value_counts().reset_index()
+    df.rename(columns={'household_id_original': 'count', 'index': 'household_id_original'}, inplace=True)
+
+    hh = hh.merge(
+        df, 
+        on='household_id_original', 
+        how='left'
+    )
+    
+    hh['hh_weight'] = hh['hh_weight']/hh['count']
+
+    # Recalculate person weights
+    person = person.merge(hh[['household_id','count']], on='household_id', how='left')
+    person['person_weight'] = person['person_weight']/person['count']
+
+    # Recalculate tour weights as average of trip weights
+    df = trip[['tour_id','trip_weight']].groupby('tour_id').mean().reset_index()
+    df.rename(columns={'trip_weight': 'tour_weight'}, inplace=True)
+    tour.rename(columns={'tour_weight': 'original_tour_weight'}, inplace=True)
+    tour = tour.merge(df, on='tour_id', how='left')
+
+    return person, hh, trip, tour
+
 def clean(config, state):
     # Start log file
     logger = logcontroller.setup_custom_logger("convert_format_logger.txt", config)
@@ -241,7 +282,7 @@ def clean(config, state):
     # Apply initial formatting changes so we can use fuller version with skims attached before dropping trips and tours
     # at work tours
 
-    # Map column name fr
+    # Map column name 
     df_mapping = pd.read_csv(os.path.join(os.getcwd(), config["input_dir"], "mapping.csv"))
 
     tour.drop("tour_id", inplace=True, axis=1)
@@ -254,22 +295,25 @@ def clean(config, state):
 
     trip, tour = process_atwork_tours(trip, tour, logger)
 
+    # Write these updated file to file; 
+    # recalculate other weights later, after trips and tours have been cleaned
+    person_skims, households_skims, trip_skims, tour_skims = calculate_weights(person, households, trip, tour, config)
 
     # Write untrimmed set of trips and tours to skims attached
     joint_tour_participants.to_csv(
         os.path.join(config["output_dir"], "skims_attached", "survey_joint_tour_participants.csv"),
         index=False,
     )
-    tour.to_csv(
+    tour_skims.to_csv(
         os.path.join(config["output_dir"], "skims_attached", "survey_tours.csv"), index=False
     )
-    households.to_csv(
+    households_skims.to_csv(
         os.path.join(config["output_dir"], "skims_attached", "survey_households.csv"), index=False
     )
-    person.to_csv(
+    person_skims.to_csv(
         os.path.join(config["output_dir"], "skims_attached", "survey_persons.csv"), index=False
     )
-    trip.to_csv(
+    trip_skims.to_csv(
         os.path.join(config["output_dir"], "skims_attached", "survey_trips.csv"), index=False
     )
 
@@ -857,14 +901,11 @@ def clean(config, state):
     ]
     households = households[households["household_id"].isin(person["household_id"])]
 
-    person = person[config["person_columns"]]
-    tour = tour[config["tour_columns"]]
-    trip = trip[config["trip_columns"]]
-    households = households[config["hh_columns"]]
-
     households, person, tour, trip, joint_tour_participants = remove_hh_with_missing_work_location(households, person, tour, trip, joint_tour_participants, logger)
     person = recode_missing_school_location_to_home(households, person, tour, trip)
 
+    # Recalculate weights for final output
+    person, households, trip, tours = calculate_weights(person, households, trip, tour, config)
 
     joint_tour_participants.to_csv(
         os.path.join(config["output_dir"], "cleaned","survey_joint_tour_participants.csv"),

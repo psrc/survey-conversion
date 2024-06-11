@@ -21,96 +21,59 @@ from pandera import Column, Check
 
 tours_schema = pa.DataFrameSchema(
     {
-        "hhno": Column(int, nullable=False),
-        "pno": Column(int, nullable=False),
-        "day": Column(int, nullable=False),
-        "tour": Column(int, nullable=False),
-        "jtindex": Column(int, nullable=False),
-        "parent": Column(int, nullable=False),
-        "subtrs": Column(int, nullable=False),
-        "pdpurp": Column(int, Check.isin([1, 2, 3, 4, 5, 6, 7, 10]), nullable=False),
-        "tlvorig": Column(int, nullable=False),
-        "tardest": Column(int, nullable=False),
-        "tlvdest": Column(int, nullable=False),
-        "tarorig": Column(int, nullable=False),
-        "toadtyp": Column(int, Check.isin([1, 2, 3, 4, 5, 6]), nullable=False),
-        "tdadtyp": Column(int, Check.isin([1, 2, 3, 4, 5, 6]), nullable=False),
-        "topcl": Column(int, nullable=False),
-        "totaz": Column(int, nullable=False),
-        "tdpcl": Column(int, nullable=False),
-        "tdtaz": Column(int, nullable=False),
-        "tmodetp": Column(
-            int, Check.isin([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), nullable=False
-        ),
-        "tpathtp": Column(int, Check.isin([1, 3, 4, 6, 7]), nullable=False),
-        "tripsh1": Column(int, nullable=False),
-        "tripsh2": Column(int, nullable=False),
-        "phtindx1": Column(int, nullable=False),
-        "phtindx2": Column(int, nullable=False),
-        "fhtindx1": Column(int, nullable=False),
-        "fhtindx2": Column(int, nullable=False),
-        "toexpfac": Column(float, nullable=False),
-        "tautotime": Column(float, nullable=False),
-        "tautocost": Column(float, nullable=False),
-        "tautodist": Column(float, nullable=False),
+        "tour_id": Column(int, nullable=False),
+        "person_id": Column(int, nullable=False),
+        "household_id": Column(int, nullable=False),
+        "tour_type": Column(str, nullable=False),
+        "tour_category": Column(str, nullable=False),
+        "destination": Column(int, nullable=False),
+        "origin": Column(int, nullable=False),
+        "start": Column(int, nullable=False),
+        "end": Column(int, nullable=False),
+        "tour_mode": Column(str, nullable=False),
+        "parent_tour_id": Column(int, nullable=False),
+        "household_id_elmer": Column(int, nullable=False),
     },
     coerce=True,
 )
 
 trips_schema = pa.DataFrameSchema(
     {
-        "hhno": Column(int, nullable=False),
-        "pno": Column(int, nullable=False),
-        "day": Column(int, nullable=False),
-        "tour": Column(int, nullable=False),
-        "half": Column(int, nullable=False),
-        "tseg": Column(int, nullable=False),
+        "trip_id": Column(int, nullable=False),
         "tsvid": Column(int, nullable=False),
-        "opurp": Column(int, nullable=False),
-        "dpurp": Column(int, nullable=False),
+        "person_id": Column(int, nullable=False),
+        "PNUM": Column(int, nullable=False),
+        "household_id": Column(int, nullable=False),
+        "day": Column(int, nullable=False),
+        "outbound": Column(str, nullable=False),
+        "purpose": Column(int, nullable=False),
+        "opurp": Column(str, nullable=False),
+        "purpose": Column(str, nullable=False),
         "oadtyp": Column(int, Check.isin([1, 2, 3, 4, 5, 6]), nullable=False),
         "dadtyp": Column(int, Check.isin([1, 2, 3, 4, 5, 6]), nullable=False),
-        "opcl": Column(int, nullable=False),
-        "dpcl": Column(int, nullable=False),
-        "otaz": Column(int, nullable=False),
-        "dtaz": Column(int, nullable=False),
-        "mode": Column(int, Check.isin([1, 2, 3, 4, 5, 6, 8, 9, 10]), nullable=False),
-        "pathtype": Column(int, Check.isin([0, 1, 2, 3, 4, 5, 6, 7]), nullable=False),
-        "dorp": Column(int, Check.isin([1, 2, 3, 9]), nullable=False),
-        "deptm": Column(int, nullable=False),
+        "origin": Column(int, nullable=False),
+        "destination": Column(int, nullable=False),
+        "depart": Column(int, nullable=False),
         "arrtm": Column(int, nullable=False),
-        "endacttm": Column(
-            "Int32", default=0, nullable=True
-        ),  # FIXME : this should be non-null for 2023
-        "trexpfac": Column(float, nullable=False),
-        "travtime": Column(float, nullable=False),
-        "travcost": Column(float, nullable=False),
-        "travdist": Column(float, nullable=False),
+        "trip_mode": Column(str, nullable=False),
+        "trip_weight": Column(int, nullable=False),
+        "tour_id": Column(float, nullable=False),
+        "trip_num": Column(float, nullable=False),
     },
     coerce=True,
 )
 
 household_schema = pa.DataFrameSchema(
     {
-        "hhno": Column(int, nullable=False),
+        "household_id": Column(int, nullable=False),
+        "home_zone_id": Column(int, nullable=False),
+        "income": Column(int, nullable=False),
         "hhsize": Column(int, nullable=False),
-        "hhvehs": Column(int, nullable=False),
-        "hhwkrs": Column(int, nullable=False),
-        "hhftw": Column(int, nullable=False),
-        "hhptw": Column(int, nullable=False),
-        "hhret": Column(int, nullable=False),
-        "hhoad": Column(int, nullable=False),
-        "hhuni": Column(int, nullable=False),
-        "hhhsc": Column(int, nullable=False),
-        "hh515": Column(int, nullable=False),
-        "hhcu5": Column(int, nullable=False),
-        "hhincome": Column(int, nullable=False),
-        "hownrent": Column(int, Check.isin([1, 2, 3, 9]), nullable=False),
-        "hrestype": Column(int, Check.isin([1, 2, 3, 4, 5, 6, 9]), nullable=False),
-        "hhtaz": Column(int, nullable=False),
-        "hhparcel": Column(int, nullable=False),
-        "hhexpfac": Column(float, nullable=False),
-        "samptype": Column(int, nullable=False),
+        "HHT": Column(int, nullable=False),
+        "auto_ownership": Column(int, nullable=False),
+        "num_workers": Column(int, nullable=False),
+        "hh_race_category": Column(str, nullable=False),
+        "hh_weight": Column(int, nullable=False),
         "household_id_original": Column(int, nullable=False),
     },
     coerce=True,
@@ -133,56 +96,6 @@ person_schema = pa.DataFrameSchema(
         "person_id_elmer_original": Column(int, nullable=False),
         "person_weight": Column(float, nullable=False),
         "telecommute_frequency": Column(str, nullable=False),
-        "work_from_home": Column(int, nullable=False),
-    },
-    coerce=True,
-)
-
-person_day_schema = pa.DataFrameSchema(
-    {
-        "hhno": Column(int, nullable=False),
-        "pno": Column(int, nullable=False),
-        "day": Column(int, nullable=False),
-        "beghom": Column(int, nullable=False),
-        "endhom": Column(int, nullable=False),
-        "hbtours": Column(int, nullable=False),
-        "wbtours": Column(int, nullable=False),
-        "uwtours": Column(int, nullable=False),
-        "wktours": Column(int, nullable=False),
-        "sctours": Column(int, nullable=False),
-        "estours": Column(int, nullable=False),
-        "pbtours": Column(int, nullable=False),
-        "shtours": Column(int, nullable=False),
-        "mltours": Column(int, nullable=False),
-        "sotours": Column(int, nullable=False),
-        "retours": Column(int, nullable=False),
-        "metours": Column(int, nullable=False),
-        "wkstops": Column(int, nullable=False),
-        "scstops": Column(int, nullable=False),
-        "esstops": Column(int, nullable=False),
-        "pbstops": Column(int, nullable=False),
-        "shstops": Column(int, nullable=False),
-        "mlstops": Column(int, nullable=False),
-        "sostops": Column(int, nullable=False),
-        "restops": Column(int, nullable=False),
-        "mestops": Column(int, nullable=False),
-        "wkathome": Column(int, nullable=False),
-        "pdexpfac": Column(float, nullable=False),
-        "household_id_original": Column(int, nullable=False),
-        "person_id_elmer_original": Column(int, nullable=False),
-    },
-    coerce=True,
-)
-
-household_day_schema = pa.DataFrameSchema(
-    {
-        "hhno": Column(int, nullable=False),
-        "day": Column(int, nullable=False),
-        "dow": Column(int, nullable=False),
-        "jttours": Column(int, nullable=False),
-        "phtours": Column(int, nullable=False),
-        "fhtours": Column(int, nullable=False),
-        "hdexpfac": Column(float, nullable=False),
     },
     coerce=True,
 )
@@ -192,23 +105,17 @@ def read_validate_write(schema, fname):
     """Load survey file, apply schema, and overwrite results."""
 
     df = pd.read_csv(fname)
-    # FIXME!! temp: validation is not changing the type properly
-    df['ptype'] = df['ptype'].astype('int64')
-    # df = schema.validate(df.fillna(-1))   # FIXME: temporarily fill missing, should probably halt
+    df = schema.validate(df.fillna(-1))
     df[schema.columns.keys()].to_csv(fname, index=False)
 
 
 def data_validation(config):
-    # read_validate_write(tours_schema, 
-    #                     os.path.join(config["output_dir"],'cleaned', "_tour.tsv"))
-    # read_validate_write(trips_schema, 
-    #                     os.path.join(config["output_dir"],'cleaned', "_trip.tsv"))
+    read_validate_write(tours_schema, 
+                        os.path.join(config["output_dir"],'cleaned', "survey_tours.csv"))
+    read_validate_write(trips_schema, 
+                        os.path.join(config["output_dir"],'cleaned', "survey_trips.csv"))
     read_validate_write(person_schema, 
                         os.path.join(config["output_dir"],'cleaned', "survey_persons.csv"))
-    # read_validate_write(household_schema, 
-    #                     os.path.join(config["output_dir"],'cleaned', "_household.tsv"))
-    # read_validate_write(person_day_schema, 
-    #                     os.path.join(config["output_dir"],'cleaned', "_person_day.tsv"))
-    # read_validate_write(household_day_schema, 
-    #                     os.path.join(config["output_dir"],'cleaned', "_household_day.tsv"))
+    read_validate_write(household_schema, 
+                        os.path.join(config["output_dir"],'cleaned', "survey_households.csv"))
     

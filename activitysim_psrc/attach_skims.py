@@ -249,7 +249,7 @@ def process_person_skims(tour, person, hh, config):
 
     # Fill fields for usual work mode and times
     work_tours["puwmode"] = work_tours["tmodetp"]
-    work_tours["puwarrp"] = work_tours["tardest"]
+    work_tours["puwarrp"] = work_tours["tlvorig"]
     work_tours["puwdepp"] = work_tours["tlvdest"]
 
     # some people make multiple work tours; select only the tours with greatest distance
@@ -274,11 +274,18 @@ def process_person_skims(tour, person, hh, config):
     for field in ["puwmode", "puwarrp", "puwdepp"]:
         person[field].fillna(-1, inplace=True)
 
+    # For people that didn't make a work tour but have a workplace location, use average departure time for skims
+    median_puwarrp = person.loc[person['puwarrp'] > -1, 'puwarrp'].median()
+    person.loc[(person['work_taz'] > 0) & (person['puwarrp'] == -1), 'puwarrp'] = median_puwarrp
+    median_puwdepp = person.loc[person['puwdepp'] > -1, 'puwdepp'].median()
+    person.loc[(person['work_taz'] > 0) & (person['puwdepp'] == -1), 'puwdepp'] = median_puwdepp
+
+
     # Get school tour info
     # pusarrp and pusdepp are non-daysim variables, meaning usual arrival and departure time from school
     school_tours = tour_per[tour_per["pdpurp"] == 'school']
     school_tours["pusmode"] = school_tours["tmodetp"]
-    school_tours["pusarrp"] = school_tours["tardest"]
+    school_tours["pusarrp"] = school_tours["tlvorig"]
     school_tours["pusdepp"] = school_tours["tlvdest"]
 
     # Select a primary school trip, based on longest distance
@@ -300,6 +307,12 @@ def process_person_skims(tour, person, hh, config):
 
     for field in ["pusarrp", "pusdepp"]:
         person[field].fillna(-1, inplace=True)
+
+    # For people that didn't make a school tour but have a school location, use average departure time for skims
+    median_pusarrp = person.loc[person['pusarrp'] > -1, 'pusarrp'].median()
+    person.loc[(person['school_loc_taz'] > 0) & (person['pusarrp'] == -1), 'pusarrp'] = median_pusarrp
+    median_pusdepp = person.loc[person['pusdepp'] > -1, 'pusdepp'].median()
+    person.loc[(person['school_loc_taz'] > 0) & (person['pusdepp'] == -1), 'pusdepp'] = median_pusdepp
 
     # Attach income and TAZ info
     person = pd.merge(person, hh[["household_id", "income", "home_zone_id"]], on="household_id", how="left")
@@ -445,8 +458,9 @@ def attach_skims(config, state):
     start_time = datetime.datetime.now()
 
     # Create new output directory for survey records with skims attached, if needed
-    if not os.path.exists(os.path.join(config["output_dir"], "skims_attached", "initial", "initial")):
-        os.makedirs(os.path.join(config["output_dir"], "skims_attached", "initial", "initial"))
+    from pathlib import Path
+    if not os.path.exists(os.path.join(config["output_dir"], "skims_attached", "initial/")):
+        os.makedirs(os.path.join(config["output_dir"], "skims_attached", "initial"))
 
     # Load daysim-converted data produced from daysim_conversion.py
     input_dir = os.path.join(config["output_dir"])
@@ -498,7 +512,7 @@ def attach_skims(config, state):
         person_modified,
         time_field="puwarrp",
         mode_field="puwmode",
-        otaz_field="home_zone_id",
+        otaz_field="home_taz",
         dtaz_field="work_taz",
         config=config,
         use_mode="DRIVEALONEFREE",
@@ -510,7 +524,7 @@ def attach_skims(config, state):
         person_modified,
         time_field="pusarrp",
         mode_field="pusmode",
-        otaz_field="home_zone_id",
+        otaz_field="home_taz",
         dtaz_field="school_taz",
         config=config,
         use_mode="DRIVEALONEFREE",

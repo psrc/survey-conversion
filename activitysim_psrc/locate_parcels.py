@@ -75,7 +75,7 @@ def locate_parcels(config):
     ]
 
     hh_new = geolocate.locate_hh_parcels(
-        hh_original.copy(), parcel_df, hh_filter_dict_list, config
+        hh_original.copy(), "household_id", parcel_df, hh_filter_dict_list, config
     )
 
     # Write to file

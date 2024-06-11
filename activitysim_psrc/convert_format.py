@@ -93,7 +93,7 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
     df = convert.apply_filter(
         df,
         "trips",
-        df["travel_dow_label"].isin(["Monday", "Tuesday", "Wednesday", "Thursday"]),
+        df["travel_dow_label"].isin(config['day_range']),
         logger,
         "trip taken on Friday, Saturday, or Sunday",
     )
@@ -236,45 +236,6 @@ def build_tour_file(trip, person, config, logger):
     )
 
     return tour, trip
-
-
-def process_household_day(person_day_original_df, hh, config):
-    person_day_original_df["household_id"] = person_day_original_df[
-        "household_id"
-    ].astype("int64")
-    household_day = (
-        person_day_original_df.groupby(["household_id", "travel_dow"])
-        .count()
-        .reset_index()[["household_id", "travel_dow"]]
-    )
-
-    household_day.rename(
-        columns={"household_id": "hhno", "travel_dow": "day"}, inplace=True
-    )
-
-    # add day of week lookup
-    household_day["dow"] = household_day["day"]
-
-    # Set number of joint tours to 0 for this version of Daysim
-    for col in ["jttours", "phtours", "fhtours"]:
-        household_day[col] = 0
-
-    # Add an ID column
-    household_day["id"] = range(1, len(household_day) + 1)
-
-    # Add expansion factor
-    # FIXME: no weights yet, replace with the weights column when available
-    hh[config["hh_weight_col"]] = 1
-    household_day = household_day.merge(
-        hh[["household_id", config["hh_weight_col"]]],
-        left_on="hhno",
-        right_on="household_id",
-        how="left",
-    )
-    household_day.rename(columns={config["hh_weight_col"]: "hdexpfac"}, inplace=True)
-    household_day["hdexpfac"] = household_day["hdexpfac"].fillna(-1)
-
-    return household_day
 
 def build_joint_tours(tour, trip, person, config, logger, state):
     expr_df = pd.read_csv(os.path.join(config["input_dir"], "joint_tour_expr.csv"))
@@ -574,6 +535,14 @@ def convert_format(config, state):
         "household_id",
         config,
     )
+
+    # Add paid parking data at the parcel level
+    parcel_df = pd.read_csv(
+        config["parcel_file_dir"],
+        sep='\s+',
+        usecols=["parcelid", "parkhr_p"],
+    )
+    person = person.merge(parcel_df, left_on="work_parcel", right_on="parcelid", how="left")
 
     # Recode person, household, and trip data
     person = convert.process_expression_file(

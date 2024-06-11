@@ -33,7 +33,6 @@
 30,df,(df['ptype'] == -1) & (df['student'] ==2) & (df['age']>18),ptype,3, university student
 31,df,(df['ptype'] == -1) & (df['student'] < 3) & (df['age']<=18),ptype,6,high school student
 32,df,(df['ptype'] == -1) & (df['pemploy'] == 3) & (df['age']<65),ptype,4,non-working adult under 65
-33,df,:,free_parking_at_work,0,set default parking at work to 0
 36,df,(df['workplace_zone_id'] > 0) & (df['pemploy'] >= 3) & (df['age'] >= 16),pemploy,2,
 37,df,(df['ptype'] == 3) & (df['pemploy'] == 1),pemploy,2,
 38,df,(df['ptype'] == 4) & (df['pemploy'] == 2),ptype,2,
@@ -53,5 +52,5 @@
 52,df,(df['work_from_home']== 0) & (df['telecommute_freq'] =='1 day a week'),telecommute_frequency,'1_day_week',
 53,df,(df['work_from_home']== 0) & (df['telecommute_freq'].isin(['2 days a week','3 days a week'])),telecommute_frequency,'2_3_days_week',
 54,df,(df['work_from_home']== 0) & (df['telecommute_freq'].isin(['4 days a week','5 days a week','6-7 days a week'])),telecommute_frequency,'4_days_week',
-
-
+61,df,:,free_parking_at_work,1,set default parking at work to 1 (parking at work does not cost anything)
+62,df,(df['commute_subsidy_3']!='Selected')&(df['parkhr_p']>0),free_parking_at_work,0,work parking is not free if workplace parcel has hourly costs AND worker does not have fully subsidized parking
