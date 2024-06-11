@@ -463,6 +463,14 @@ def convert_format(config):
     person_original_df = person_original_df.merge(hh_original_df[['household_id','home_parcel','home_taz']], 
                                                   on='household_id',
                                                   how='left')
+    
+    # Add paid parking data at the parcel level
+    parcel_df = pd.read_csv(
+        config["parcel_file_dir"],
+        sep='\s+',
+        usecols=["parcelid", "parkhr_p"],
+    )
+    person_original_df = person_original_df.merge(parcel_df, left_on="work_parcel", right_on="parcelid", how="left")
 
     # Recode person, household, and trip data
     person = convert.process_expression_file(
@@ -475,20 +483,6 @@ def convert_format(config):
     trip = process_trip_file(
         trip_original_df, person, person_day_original_df, df_lookup, config, logger
     )
-
-    # Paid parking data is not available from Elmer; calculate from workplace location
-    parcel_df = pd.read_csv(
-        config["parcel_file_dir"],
-        sep='\s+',
-        usecols=["parcelid", "parkhr_p"],
-    )
-    person = person.merge(parcel_df, left_on="pwpcl", right_on="parcelid", how="left")
-    # If person works at a parcel with paid parking, assume they pay to park
-    # FIXME! come up with a better process for this...
-    person.loc[person["parkhr_p"] > 0, "ppaidprk"] = 1
-    # Note that the 2023 survey does not include data about employer-paid benefits
-    # We may have to estimate using older data...
-
 
     # Make sure trips are properly ordered, where deptm is increasing for each person's travel day
     # Note that we also have some trips that continue into the following day

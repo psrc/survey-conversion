@@ -22,7 +22,6 @@
 12,df,(df['age'].isin(['16-17 years'])) & (df['pptyp'] == -1),pptyp,6,Assume anyone 16-17 is a student if they have missing school data
 16,df,:,ptpass,0,Default of no transit pass availability
 17,df,(df['transit_pass'] == "Yes"),ptpass,1,
-18,df,:,ppaidprk,0,FIXME: must get this from trip info since its removed from survey
 27,df,:,hhno,df['household_id'].astype('int64'),
 28,df,:,pno,df['pernum'].astype('int64'),
 29,df,:,psexpfac,df['person_weight'],
@@ -37,9 +36,5 @@
 39,df,(df['pwtyp'].isin([1,2])),worker_type,'commuter',
 40,df,(df['pwtyp'].isin([1,2]))&(df['pwpcl']==df['home_parcel']),worker_type,'wfh',
 41,df,(df['pwtyp'].isin([1,2]))&(df['telecommute_freq'].isin(['3 days a week', '4 days a week', '5 days a week', '6-7 days a week']))&(df['pwpcl']!=df['home_parcel']),worker_type,'telecommuter'
-42,df,:,'transit_pass_subsidy','none'
-43,df,df['commute_subsidy_2']=='Selected',transit_pass_subsidy,'partial'
-44,df,df['commute_subsidy_1']=='Selected',transit_pass_subsidy,'full'
-45,df,:,'parking_subsidy','none'
-46,df,df['commute_subsidy_4']=='Selected',parking_subsidy,'partial'
-47,df,df['commute_subsidy_3']=='Selected',parking_subsidy,'full'
+42,df,:,ppaidprk,0
+43,df,(df['commute_subsidy_3']!='Selected')&(df['parkhr_p']>0),ppaidprk,1,parcels with paid parking unless person uses fully subsidized parking cost from work

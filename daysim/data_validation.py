@@ -135,8 +135,6 @@ person_schema = pa.DataFrameSchema(
         "psexpfac": Column(float, nullable=False),
         "puwmode": Column(int, Check.isin([-1, 0, 1, 2, 3, 4, 5, 6, 7, 9]), nullable=False),
         "worker_type": Column(str, Check.isin(['commuter','wfh','telecommuter','-1']), nullable=False),
-        "transit_pass_subsidy": Column(str, Check.isin(['none','full','partial','-1']), nullable=False),
-        "parking_subsidy": Column(str, Check.isin(['none','full','partial','-1']), nullable=False),
     },
     coerce=True,
 )
