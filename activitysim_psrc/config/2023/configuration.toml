@@ -21,10 +21,10 @@ asim_state_wd = 'E:/asim_testing/psrc_activitysim'
 asim_config_dir = 'E:/asim_testing/psrc_activitysim/configs_dev'
 
 # Specify which components to run
-run_locate_parcels = false
-run_convert_format = false
-run_attach_skims = false
-run_clean = false
+run_locate_parcels = true
+run_convert_format = true
+run_attach_skims = true
+run_clean = true
 run_data_validation = true
 run_infer = true
 run_unclone = true

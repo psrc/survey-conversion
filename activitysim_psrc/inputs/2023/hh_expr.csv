@@ -5,3 +5,5 @@
 3,df,:,hhsize,df['hhsize'].astype('int64'),
 4,df,:,home_zone_id,df['home_maz'],
 5,df,:,HHT,1,FIXME:  Set household type to 1 for now
+6,df,:,num_adults,df['numadults']
+7,df,:,num_drivers,df['hhsize']-df['hh515']-df['hhcu5']
