@@ -252,17 +252,19 @@ def calculate_weights(person, hh, trip, tour, config):
         on='household_id_original', 
         how='left'
     )
-    
+
+    hh['hh_weight_original'] = hh['hh_weight'].copy()
     hh['hh_weight'] = hh['hh_weight']/hh['count']
 
     # Recalculate person weights
     person = person.merge(hh[['household_id','count']], on='household_id', how='left')
+    person['person_weight_original'] = person['person_weight'].copy()
     person['person_weight'] = person['person_weight']/person['count']
 
     # Recalculate tour weights as average of trip weights
+    trip['trip_weight_original'] = trip['trip_weight'].copy()
     df = trip[['tour_id','trip_weight']].groupby('tour_id').mean().reset_index()
     df.rename(columns={'trip_weight': 'tour_weight'}, inplace=True)
-    tour.rename(columns={'tour_weight': 'original_tour_weight'}, inplace=True)
     tour = tour.merge(df, on='tour_id', how='left')
 
     return person, hh, trip, tour
