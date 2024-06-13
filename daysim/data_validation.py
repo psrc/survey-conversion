@@ -110,6 +110,7 @@ household_schema = pa.DataFrameSchema(
         "hhtaz": Column(int, nullable=False),
         "hhparcel": Column(int, nullable=False),
         "hhexpfac": Column(float, nullable=False),
+        "hhexpfac_original": Column(float, nullable=False),
         "samptype": Column(int, nullable=False),
     },
     coerce=True,
@@ -133,6 +134,7 @@ person_schema = pa.DataFrameSchema(
         "pdiary": Column(int, Check.isin([0, 1]), nullable=False),
         "pproxy": Column(int, Check.isin([0, 1]), nullable=False),
         "psexpfac": Column(float, nullable=False),
+        "psexpfac_original": Column(float, nullable=False),
         "puwmode": Column(int, Check.isin([-1, 0, 1, 2, 3, 4, 5, 6, 7, 9]), nullable=False),
         "worker_type": Column(str, Check.isin(['commuter','wfh','telecommuter','-1']), nullable=False),
     },
@@ -169,6 +171,7 @@ person_day_schema = pa.DataFrameSchema(
         "mestops": Column(int, nullable=False),
         "wkathome": Column(int, nullable=False),
         "pdexpfac": Column(float, nullable=False),
+        "pdexpfac_original": Column(float, nullable=False),
     },
     coerce=True,
 )
@@ -182,6 +185,7 @@ household_day_schema = pa.DataFrameSchema(
         "phtours": Column(int, nullable=False),
         "fhtours": Column(int, nullable=False),
         "hdexpfac": Column(float, nullable=False),
+        "hdexpfac_original": Column(float, nullable=False),
     },
     coerce=True,
 )

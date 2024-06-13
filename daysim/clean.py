@@ -57,7 +57,7 @@ def clean(config):
         on='person_id_original', 
         how='left'
     )
-
+    person['psexpfac_original'] = person['psexpfac'].copy()
     person['psexpfac'] = person['psexpfac']/person['count']
 
     # Re-calculate household weights in the same way
@@ -69,19 +69,18 @@ def clean(config):
         on='hhid_elmer', 
         how='left'
     )
+    hh['hhexpfac_original'] = hh['hhexpfac'].copy()
     hh['hhexpfac'] = hh['hhexpfac']/hh['count']
-
 
     # Re-calculate tour weights
     # Tour weights are to be taken as the average of trip weights
-    # FIXME: move this into the standard tour creation module
     df = trip[['tour','trexpfac']].groupby('tour').mean().reset_index()
     df.rename(columns={'trexpfac': 'toexpfac'}, inplace=True)
     tour.drop('toexpfac', axis=1, inplace=True)
     tour = tour.merge(df, on='tour', how='left')
 
     # Update person day weights
-    person_day.drop('pdexpfac', axis=1, inplace=True)
+    person_day.rename(columns={'pdexpfac':'pdexpfac_original'}, inplace=True)
     person_day = person_day.merge(
         person[['person_id','psexpfac']], 
         on='person_id', 
@@ -90,7 +89,7 @@ def clean(config):
     person_day.rename(columns={'psexpfac': 'pdexpfac'}, inplace=True)
 
     # Update household day weights
-    hh_day.drop('hdexpfac', axis=1, inplace=True)
+    hh_day.rename(columns={'hdexpfac': 'hdexpfac_original'},inplace=True)
     hh_day = hh_day.merge(
         hh[['hhno','hhexpfac']], 
         on='hhno', 
