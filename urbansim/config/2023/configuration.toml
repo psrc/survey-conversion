@@ -2,14 +2,14 @@
 # General Configuration Settings
 ########################################
 
-elmer_person_table = "HHSurvey.v_person_2023_modeling"
-elmer_hh_table = "HHSurvey.v_household_2023_modeling"
+elmer_person_table = "HHSurvey.v_persons_labels"
+elmer_hh_table = "HHSurvey.v_households_labels"
 
 # Project Output Directory
-output_dir = 'R:/e2projects_two/2023_base_year/23_on_18'
+output_dir = 'R:/e2projects_two/2023_base_year/parcels'
 
 # Specify which components to run
-run_locate_parcels = false
+run_locate_parcels = true
 run_convert_format = true
 
 # Inputs for expression files and data conversion
@@ -27,7 +27,7 @@ survey_input_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/elmer'
 
 # Set parcel file location
 # Parcels must have housing units 
-parcel_file_dir = 'R:/e2projects_two/2023_base_year/23_on_18/parcels_for_hh_survey.csv'
+parcel_file_dir = 'R:/e2projects_two/2023_base_year/parcels/parcels_for_hh_survey.csv'
 parcel_file_standard_dir = 'R:/e2projects_two/SoundCast/Inputs/dev/landuse/2018/rtp_2018/parcels_urbansim.txt'
 parcel_maz_file_dir = 'R:/e2projects_two/activitysim/conversion/geographic_crosswalks/parcel_taz_block_lookup.csv'
 

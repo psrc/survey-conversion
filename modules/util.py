@@ -17,7 +17,11 @@ def load_elmer_table(table_name, sql=None):
     if sql is None:
         sql = "SELECT * FROM " + table_name
 
-    df = pd.DataFrame(engine.connect().execute(text(sql)))
+    # df = pd.DataFrame(engine.connect().execute(text(sql)))
+    with engine.begin() as connection:
+        result = connection.execute(sql)
+        df = pd.DataFrame(result.fetchall())
+        df.columns = result.keys()
 
     return df
 
