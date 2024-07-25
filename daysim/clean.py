@@ -98,11 +98,39 @@ def clean(config):
     hh_day.rename(columns={'hhexpfac': 'hdexpfac'}, inplace=True)
 
     # Do some further flagging
-    # Flag trips that have missing O/Ds, purposes, etc.
+    # All workers should have a valid work TAZ/parcel
+    # Try to use their most visited work location as their usual workplace
+    # This is important for location choice models
+    # Use tour file to get work departure/arrival time and mode
+    work_tours = tour[tour["pdpurp"] == 1]
+    no_pwtaz_df = person.loc[(person['pwtyp'].isin([1,2])) & (person['worker_type'].isin(['commuter','telecommuter'])) & (person['pwtaz']==-1)]
 
+    df = work_tours[work_tours['person_id'].isin(no_pwtaz_df['person_id'])]
 
+    # Calculate time spent at destination and choose the one where they spent the longest time
+    df['time_at_dest'] = df['tlvdest']-df['tardest']
+    df = df.sort_values('time_at_dest', ascending=False).drop_duplicates(['person_id'])
+    person = person.merge(df[['person_id','tdtaz','tdpcl']], on='person_id', how='left')
 
-    # Select tours without errors/issues
+    # Replace usual work location with these values on the person file
+    person.loc[person['person_id'].isin(no_pwtaz_df.person_id), 'pwtaz'] = person['tdtaz'].fillna(-1)
+    person.loc[person['person_id'].isin(no_pwtaz_df.person_id), 'pwpcl'] = person['tdpcl'].fillna(-1)
+
+    # If no workplace TAZ and no work tours, change the person type to non-worker
+    person.loc[person['person_id'].isin(no_pwtaz_df.person_id) & (person['pwpcl']==-1), 'pwtyp'] = 0
+    # Change person type to non-worker based on age
+    # Non-working adult >65
+    person.loc[person['person_id'].isin(no_pwtaz_df.person_id) & (person['pwpcl']==-1) & (person['pagey']>65), 'pptyp'] = 3
+    # Non-working adult <= 65 (and not a student)
+    person.loc[person['person_id'].isin(no_pwtaz_df.person_id) & (person['pwpcl']==-1) & 
+               (person['pagey']<=65) & (person['pstyp']==0), 'pptyp'] = 4
+    # University student
+    person.loc[person['person_id'].isin(no_pwtaz_df.person_id) & (person['pwpcl']==-1) & 
+               (person['pagey']>=18) & (person['pstyp']!=0), 'pagey'] = 5
+    # High school student if under 18
+    person.loc[person['person_id'].isin(no_pwtaz_df.person_id) & (person['pwpcl']==-1) & (person['pagey']<18), 'pptyp'] = 6
+
+    
 
     # write these out as the final versions and have skims attached
     trip.to_csv(os.path.join(cleaned_output_dir, "_trip.tsv"), sep="\t", index=False)

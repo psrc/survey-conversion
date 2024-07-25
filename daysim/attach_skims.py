@@ -325,8 +325,8 @@ def process_person_skims(tour, person, hh, config):
     
     # For students that don't have tours in the data, use median for depart times
     for col in ['pusarrp','pusdepp']:
-        median_val = person.loc[person['pstyp'].isin([1,2]),col].median().astype('int')
-        person.loc[person['pstyp'].isin([1,2])&(person[col]==-1),col] = median_val
+        median_val = person.loc[(person['pptyp'].isin([5,6,7])) & (person[col]>=0), col].median()
+        person.loc[person['pptyp'].isin([5,6,7])&(person[col]==-1),col] = median_val
 
 
     # Fill -1 income (college students) with lowest income category

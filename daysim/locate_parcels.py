@@ -162,6 +162,9 @@ def locate_parcels(config):
         "work_maz",
         "school_loc_parcel_distance",
         "work_parcel_distance",
+        "home_parcel",
+        "home_taz",
+        "home_maz"
     ]
 
     # Join selected fields back to the original person file
@@ -171,6 +174,12 @@ def locate_parcels(config):
     person_orig_update[person_loc_fields] = (
         person_orig_update[person_loc_fields].fillna(-1).astype("int")
     )
+
+    for geog in ["parcel", "taz", "maz"]:
+        person_orig_update.loc[person_orig_update['schooltype'].isin(['Cared for at home', 'Home school']),
+                        'school_loc_'+geog] = person_orig_update['home_'+geog]
+
+    person_orig_update.drop(["home_parcel","home_taz","home_maz"], inplace=True, axis=1)
 
     # Write to file
     person_orig_update.to_csv(
