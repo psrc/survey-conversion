@@ -21,7 +21,7 @@
 11,df,df['pptyp'].isnull(),pptyp,-1,Assign any missing df -1 value as missing logic flag
 12,df,(df['age'].isin(['16-17 years'])) & (df['pptyp'] == -1),pptyp,6,Assume anyone 16-17 is a student if they have missing school data
 16,df,:,ptpass,0,Default of no transit pass availability
-17,df,(df['transit_pass'] == "Yes"),ptpass,1,
+17,df,df['benefits_3'].isin(["Offered, and I use"]),ptpass,1,
 18,df,:,ppaidprk,0,FIXME: must get this from trip info since its removed from survey
 27,df,:,hhno,df['household_id'].astype('int64'),
 28,df,:,pno,df['pernum'].astype('int64'),

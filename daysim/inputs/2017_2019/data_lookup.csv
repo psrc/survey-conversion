@@ -146,10 +146,10 @@ trip,mode_acc,Got dropped off in my own household's vehicle (or motorcycle),3,tr
 trip,mode_acc,Got dropped off in another vehicle (or motorcycle),3,transit_access_mode
 trip,mode_acc,Other,1,transit_access_mode
 trip,mode_acc,Missing: Skip Logic,1,transit_access_mode
-day,travel_dow,Monday,1,day
-day,travel_dow,Tuesday,2,day
-day,travel_dow,Wednesday,3,day
-day,travel_dow,Thursday,4,day
-day,travel_dow,Friday,5,day
-day,travel_dow,Saturday,6,day
-day,travel_dow,Sunday,7,day
+day,daynum,1,1,day
+day,daynum,2,2,day
+day,daynum,3,3,day
+day,daynum,4,4,day
+day,daynum,5,5,day
+day,daynum,6,6,day
+day,daynum,7,7,day

@@ -15,8 +15,8 @@ output_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/test'
 output_dir_clean = 'R:/e2projects_two/2023_base_year/2017_2019_survey/test/clean'
 
 # Specify which components to run
-run_locate_parcels = false
-run_convert_format = false
+run_locate_parcels = true
+run_convert_format = true
 run_clean = true
 run_data_validation = true
 run_attach_skims = true
@@ -158,3 +158,12 @@ transit_mode_list = ['Ferry or water taxi',
 8 = 'sov'   # assign school bus as sov
 9 = 'sov'	# assign TNC/taxi as sov   # FIXME
 10 = 'sov'	# assign other as sov
+
+[travel_dow]
+1 = 'Monday'
+2 = 'Tuesday'
+3 = 'Wednesday'
+4 = 'Thursday'
+5 = 'Friday'
+6 = 'Saturday'
+7 = 'Sunday'

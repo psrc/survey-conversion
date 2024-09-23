@@ -26,8 +26,10 @@
 28,df,(df['age'].isin(['16-17 years'])) & (df['pptyp'] == -1),pptyp,6,Assume anyone 16-17 is a student if they have missing school data
 29,df,(df['pptyp']==-1) & (df['age'].isin(['65-74 years','75-84 years','85 years or older'])),pptyp,3,Non-working adult age over 65
 30,df,(df['pptyp']==-1) & (df['age'].isin(['18-24 years','25-34 years','35-44 years','45-54 years','55-64 years'])),pptyp,4,Non working adult age <65
-31,df,:,ptpass,0,Default of no transit pass availability
-17,df,(df['transit_pass'] == "Yes"),ptpass,1,
+31,df,:,ptpass,0,Default of no paid transit pass used
+17,df,(df['commute_subsidy_use_1'] == 'Selected'),ptpass,1,
+18,df,(df['pptyp'].isin([6,7,8])),ptpass,1,Ages under 0-18 ride transit free
+19,df,(df['pptyp']==5)&(df['transit_pass']=='Yes'),ptpass,1,if college student has a pass assume it is subsidized
 27,df,:,hhno,df['household_id'].astype('int64'),
 28,df,:,pno,df['pernum'].astype('int64'),
 29,df,:,psexpfac,df['person_weight'],

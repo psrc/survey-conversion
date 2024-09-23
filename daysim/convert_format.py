@@ -416,6 +416,10 @@ def convert_format(config):
         columns={"travel_dow": "travel_dow_label", "model_value": "travel_dow"},
         inplace=True,
     )
+
+    # FIXME: using logic specific to 2017/2019 survey because labels are missing
+    if config['survey_year'] == '(2017, 2019)':
+        person_day_original_df['travel_dow_label'] = person_day_original_df['travel_dow'].astype('str').map(config['travel_dow'])
     
     # Get day of week from day ID and drop it on trips since it's missing in some years
     trip_original_df.drop('travel_dow', axis=1, inplace=True)
