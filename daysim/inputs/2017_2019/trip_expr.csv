@@ -6,15 +6,15 @@
 4,df,:,day,df['travel_dow'],day of week in integer format joined from person day file
 8,df,:,mode,10,
 8,df,:,travelers,df['travelers'].fillna(0).astype('int')
-9,df,df['mode_characterization'] == 'Drive SOV',mode,3,
-10,df,df['mode_characterization'] == 'Drive HOV2',mode,4,
-11,df,df['mode_characterization'] == 'Drive HOV3+',mode,5,
-12,df,df['mode_characterization'] == 'Transit',mode,6,
-12,df,((df['mode_characterization'] == 'Transit')&(df['transit_access_mode']==3)),mode,7,
-13,df,df['mode_characterization'] == 'Walk',mode,1,
-14,df,df['mode_characterization'] == 'Bike/Micromobility',mode,2,
-15,df,df['mode_1'].isin(['School bus']),mode,8,
-16,df,"df['mode_1'].isin(['Other hired service (Uber, Lyft, or other smartphone-app car service)','Taxi (e.g., Yellow Cab)'])",mode,9,
+9,df,df['mode_class'] == 'Drive SOV',mode,3,
+10,df,df['mode_class'] == 'Drive HOV2',mode,4,
+11,df,df['mode_class'] == 'Drive HOV3+',mode,5,
+12,df,df['mode_class'] == 'Transit',mode,6,
+12,df,((df['mode_class'] == 'Transit')&(df['transit_access_mode']==3)),mode,7,
+13,df,df['mode_class'] == 'Walk',mode,1,
+14,df,(df['mode_class'].isin["Bike", "Micromobility"]),mode,2,
+15,df,df['mode_class'].isin(['School bus']),mode,8,
+16,df,df['mode_class'] == 'Ride Hail',mode,9,
 18,df,:,oadtyp,4,origin type: assume other by default
 19,df,:,dadtyp,4,destination type: assume other by default
 20,df,df['opurp'] == 0,oadtyp,1,"Trips with origin/destination purpose of ""Home"" (0) have a origin/destination address type of ""Home"" (1)"

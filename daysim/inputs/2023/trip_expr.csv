@@ -12,8 +12,8 @@
 12,df,((df['mode_class'] == 'Transit')&(df['transit_access_mode']==3)),mode,7,
 13,df,df['mode_class'] == 'Walk',mode,1,
 14,df,(df['mode_class'] == 'Bike') | (df['mode_class'] == 'Micromobility'),mode,2,
-15,df,df['mode_1'].isin(['School bus']),mode,8,
-16,df,df['mode_1'] == 'Ride Hail',mode,9,
+15,df,df['mode_class'].isin(['School bus']),mode,8,
+16,df,df['mode_class'] == 'Ride Hail',mode,9,
 18,df,:,oadtyp,4,origin type: assume other by default
 19,df,:,dadtyp,4,destination type: assume other by default
 20,df,df['opurp'] == 0,oadtyp,1,"Trips with origin/destination purpose of ""Home"" (0) have a origin/destination address type of ""Home"" (1)"

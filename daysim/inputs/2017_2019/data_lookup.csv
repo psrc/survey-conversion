@@ -93,26 +93,28 @@ trip,origin_purpose_cat,Home,0,opurp
 trip,origin_purpose_cat,Work,1,opurp
 trip,origin_purpose_cat,Work-related,1,opurp
 trip,origin_purpose_cat,School,2,opurp
+trip,origin_purpose_cat,School-related,7,opurp
 trip,origin_purpose_cat,Escort,3,opurp
-trip,origin_purpose_cat,Errand/Other,4,opurp
-trip,origin_purpose_cat,Shop,5,opurp
+trip,origin_purpose_cat,Personal Business/Errand/Appointment,4,opurp
+trip,origin_purpose_cat,Shopping,5,opurp
 trip,origin_purpose_cat,Meal,6,opurp
 trip,origin_purpose_cat,Social/Recreation,7,opurp
 trip,origin_purpose_cat,Change mode,10,opurp
-trip,origin_purpose_cat,Missing: Non-response,7,opurp
+trip,origin_purpose_cat,Missing Response,7,opurp
 trip,origin_purpose_cat,Overnight,7,opurp
 trip,origin_purpose_cat,Other,7,opurp
 trip,dest_purpose_cat,Home,0,dpurp
 trip,dest_purpose_cat,Work,1,dpurp
 trip,dest_purpose_cat,Work-related,1,dpurp
 trip,dest_purpose_cat,School,2,dpurp
+trip,dest_purpose_cat,School-related,7,dpurp
 trip,dest_purpose_cat,Escort,3,dpurp
-trip,dest_purpose_cat,Errand/Other,4,dpurp
-trip,dest_purpose_cat,Shop,5,dpurp
+trip,dest_purpose_cat,Personal Business/Errand/Appointment,4,dpurp
+trip,dest_purpose_cat,Shopping,5,dpurp
 trip,dest_purpose_cat,Meal,6,dpurp
 trip,dest_purpose_cat,Social/Recreation,7,dpurp
 trip,dest_purpose_cat,Change mode,10,dpurp
-trip,dest_purpose_cat,Missing: Non-response,7,dpurp
+trip,dest_purpose_cat,Missing Response,7,dpurp
 trip,dest_purpose_cat,Overnight,7,dpurp
 trip,dest_purpose_cat,Other,7,dpurp
 trip,driver,Driver,1,dorp
@@ -123,11 +125,7 @@ trip,travelers_total,1 traveler,1,travelers
 trip,travelers_total,2 travelers,2,travelers
 trip,travelers_total,3 travelers,3,travelers
 trip,travelers_total,4 travelers,4,travelers
-trip,travelers_total,5 travelers,5,travelers
-trip,travelers_total,6 travelers,6,travelers
-trip,travelers_total,7 travelers,7,travelers
-trip,travelers_total,8 travelers,8,travelers
-trip,travelers_total,9 travelers,9,travelers
+trip,travelers_total,5+ travelers,5,travelers
 trip,mode_acc,Missing: Technical error,1,transit_access_mode
 trip,mode_acc,Walked or jogged,1,transit_access_mode
 trip,mode_acc,Bicycle or e-bicycle,1,transit_access_mode

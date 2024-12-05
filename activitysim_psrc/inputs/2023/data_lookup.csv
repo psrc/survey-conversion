@@ -67,14 +67,14 @@ person,gender,Non-Binary,9,sex
 person,gender,Another,9,sex
 person,gender,Missing Response,9,sex
 person,gender,Prefer not to answer,9,sex
-person,student,"No, not a student",0,student
-person,student,Part-time student,2,student
-person,student,Full-time student,1,student
-person,student,"Part-time student, currently attending some or all classes in-person",2,student
-person,student,"Part-time student, ONLY online classes",0,student
-person,student,"Full-time student, currently attending some or all classes in-person",1,student
-person,student,"Full-time student, ONLY online classes",0,student
-person,student,Missing Response,0,student
+person,adult_student,"No, not a student",0,student
+person,adult_student,Part-time student,2,student
+person,adult_student,Full-time student,1,student
+person,adult_student,"Part-time student, currently attending some or all classes in-person",2,student
+person,adult_student,"Part-time student, ONLY online classes",0,student
+person,adult_student,"Full-time student, currently attending some or all classes in-person",1,student
+person,adult_student,"Full-time student, ONLY online classes",0,student
+person,adult_student,Missing Response,0,student
 person,race_category,'White Only',1,race
 person,race_category,'African American',2,race
 person,race_category,'Asian',3,race
