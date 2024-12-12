@@ -11,8 +11,8 @@ elmer_person_day_table = "HHSurvey.v_days_labels"
 input_dir = 'daysim/inputs/2023'
 
 # Project Output Directory
-output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format'
-output_dir_clean = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format/cleaned'
+output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format/updated_weights_12_10_24'
+output_dir_clean = 'R:/e2projects_two/2023_base_year/2023_survey/daysim_format/updated_weights_12_10_24/cleaned'
 
 # Specify which components to run
 run_locate_parcels = true
@@ -29,7 +29,7 @@ debug = false
 debug_person_id = []
 # debug_person_id = ['2309359141']   # List of person IDs to iterate over in tour creation, empty list to process all
 
-hh_weight_col = 'hh_weight_2023'
+hh_weight_col = 'hh_weight'
 walk_to_transit_mode = 6
 drive_to_transit_mode = 7
 drive_to_transit_access_list = [
@@ -71,7 +71,7 @@ school_max_dist = 5280     # mile for distance near parcel with students
 ################################################
 # Specify soundcast root directory to obtain skim values
 # NOTE: network location are very slow now, recommend using local runs
-run_root = '//modelstation4/c$/workspace/sc_2023/soundcast'
+run_root = '//modelstation2/c$/Workspace/sc_2023_12_07_24'
 
 # Assumed travel speeds of walk and bike modes (generated from distance skims)
 bike_speed = 10 # miles per hour

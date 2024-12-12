@@ -28,7 +28,7 @@ debug = false
 debug_person_id = []
 # debug_person_id = ['19101794011']   # List of person IDs to iterate over in tour creation, empty list to process all
 
-hh_weight_col = 'hh_weight_2023'
+hh_weight_col = 'hh_weight'
 walk_to_transit_mode = 6
 drive_to_transit_mode = 7
 drive_to_transit_access_list = [
