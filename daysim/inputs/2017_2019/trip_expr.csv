@@ -13,7 +13,7 @@
 12,df,((df['mode_class'] == 'Transit')&(df['transit_access_mode']==3)),mode,7,
 13,df,df['mode_class'] == 'Walk',mode,1,
 14,df,(df['mode_class'].isin["Bike", "Micromobility"]),mode,2,
-15,df,df['mode_class'].isin(['School bus']),mode,8,
+15,df,df['mode_class'].isin(['School Bus']),mode,8,
 16,df,df['mode_class'] == 'Ride Hail',mode,9,
 18,df,:,oadtyp,4,origin type: assume other by default
 19,df,:,dadtyp,4,destination type: assume other by default

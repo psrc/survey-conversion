@@ -9,7 +9,7 @@
 11,df,df['mode_class'] == 'Drive HOV3+',trip_mode,'SHARED3FREE',
 13,df,df['mode_class'] == 'Walk',trip_mode,'WALK',
 14,df,df['mode_class'] == 'Bike',trip_mode,'BIKE',
-15,df,df['mode_class'] == 'School bus',trip_mode,'SCHBUS',
+15,df,df['mode_class'] == 'School Bus',trip_mode,'SCHBUS',
 16,df,"df['mode_class'] == 'Ride Hail',trip_mode,'TNC',
 17,df,df["trip_mode"].isnull(),trip_mode,'Other'
 18,df,:,oadtyp,4,origin type: assume other by default
