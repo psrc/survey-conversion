@@ -244,9 +244,9 @@ def process_household_day(person_day_original_df, hh, config):
         "household_id"
     ].astype("int64")
     household_day = (
-        person_day_original_df.groupby(["household_id", "travel_dow"])
+        person_day_original_df.groupby(["household_id", "hhid_elmer", "travel_dow"])
         .count()
-        .reset_index()[["household_id", "travel_dow"]]
+        .reset_index()[["household_id", "hhid_elmer", "travel_dow"]]
     )
 
     # household_day.rename(
@@ -321,7 +321,7 @@ def process_person_day(
     for col in ['hhno','pno','day']:
         pday[col] = pday[col].astype('int64')
     pday = pday.merge(
-        person_day_original_df[["household_id", "pernum", "travel_dow", "wkathome"]],
+        person_day_original_df[['day_id', "household_id", "pernum", "hhid_elmer", "person_id_original", "travel_dow", "wkathome"]],
         left_on=["hhno", "pno", "day"],
         right_on=["household_id", "pernum", "travel_dow"],
         how="inner",

@@ -86,6 +86,7 @@ trips_schema = pa.DataFrameSchema(
         "travtime": Column(float, nullable=False),
         "travcost": Column(float, nullable=False),
         "travdist": Column(float, nullable=False),
+        "trip_id": Column(int, nullable=False),
     },
     coerce=True,
 )
@@ -112,6 +113,7 @@ household_schema = pa.DataFrameSchema(
         "hhexpfac": Column(float, nullable=False),
         "hhexpfac_original": Column(float, nullable=False),
         "samptype": Column(int, nullable=False),
+        "hhid_elmer": Column(int, nullable=False),
     },
     coerce=True,
 )
@@ -137,6 +139,7 @@ person_schema = pa.DataFrameSchema(
         "psexpfac_original": Column(float, nullable=False),
         "puwmode": Column(int, Check.isin([-1, 0, 1, 2, 3, 4, 5, 6, 7, 9]), nullable=False),
         "worker_type": Column(str, Check.isin(['commuter','wfh','telecommuter','-1']), nullable=False),
+        "person_id_original": Column(int, nullable=False),
     },
     coerce=True,
 )
@@ -172,6 +175,7 @@ person_day_schema = pa.DataFrameSchema(
         "wkathome": Column(int, nullable=False),
         "pdexpfac": Column(float, nullable=False),
         "pdexpfac_original": Column(float, nullable=False),
+        "day_id": Column(int, nullable=False),
     },
     coerce=True,
 )
