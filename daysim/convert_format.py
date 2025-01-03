@@ -342,30 +342,17 @@ def process_person_day(
     for person_rec in no_travel_df.person_id.unique():
         pday.loc[person_rec, :] = 0
         pday.loc[person_rec, "no_travel_flag"] = 1
-        pday.loc[person_rec, "hhno"] = no_travel_df[
-            no_travel_df["person_id"] == person_rec
-        ]["household_id"].values[0]
-        pday.loc[person_rec, "pno"] = no_travel_df[
-            no_travel_df["person_id"] == person_rec
-        ]["pernum"].values[0]
-        pday.loc[person_rec, "person_id"] = no_travel_df[
-            no_travel_df["person_id"] == person_rec
-        ]["person_id"].values[0]
+        pday.loc[person_rec, "day_id"] = no_travel_df[no_travel_df["person_id"] == person_rec]["day_id"].values[0]
+        pday.loc[person_rec, "hhno"] = no_travel_df[no_travel_df["person_id"] == person_rec]["household_id"].values[0]
+        pday.loc[person_rec, "pno"] = no_travel_df[no_travel_df["person_id"] == person_rec]["pernum"].values[0]
+        # pday.loc[person_rec, "person_id"] = no_travel_df[no_travel_df["person_id"] == person_rec]["person_id"].values[0]
         pday.loc[person_rec, "person_id"] = person_rec
-        pday.loc[person_rec, "day"] = no_travel_df[
-            no_travel_df["person_id"] == person_rec
-        ]["travel_dow"].values[0]
+        pday.loc[person_rec, "day"] = no_travel_df[no_travel_df["person_id"] == person_rec]["travel_dow"].values[0]
         pday.loc[person_rec, "beghom"] = 1
         pday.loc[person_rec, "endhom"] = 1
-        pday.loc[person_rec, "wkathome"] = no_travel_df[
-            no_travel_df["person_id"] == person_rec
-        ]["wkathome"].values[0]
-        pday.loc[person_rec, "pdexpfac"] = person[person["person_id"] == person_rec][
-            "psexpfac"
-        ].values[0]
-        pday.loc[person_rec, "travel_dow"] = no_travel_df[
-            no_travel_df["person_id"] == person_rec
-        ]["travel_dow"].values[0]
+        pday.loc[person_rec, "wkathome"] = no_travel_df[no_travel_df["person_id"] == person_rec]["wkathome"].values[0]
+        pday.loc[person_rec, "pdexpfac"] = person[person["person_id"] == person_rec]["psexpfac"].values[0]
+        pday.loc[person_rec, "travel_dow"] = no_travel_df[no_travel_df["person_id"] == person_rec]["travel_dow"].values[0]
 
     # Join household day ID to person Day
     pday = pday.merge(
