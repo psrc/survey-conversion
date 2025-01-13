@@ -9,7 +9,7 @@ import toml
 
 
 def load_elmer_table(table_name, sql=None):
-    conn_string = "DRIVER={ODBC Driver 17 for SQL Server}; SERVER=AWS-PROD-SQL\Sockeye; DATABASE=Elmer; trusted_connection=yes"
+    conn_string = "DRIVER={ODBC Driver 17 for SQL Server}; SERVER=SQLserver; DATABASE=Elmer; trusted_connection=yes"
     sql_conn = pyodbc.connect(conn_string)
     params = urllib.parse.quote_plus(conn_string)
     engine = create_engine("mssql+pyodbc:///?odbc_connect=%s" % params)

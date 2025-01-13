@@ -1,8 +1,14 @@
-import os
+import os, datetime
 import pandas as pd
 import toml
+from modules import util
+from daysim import logcontroller
 
 def clean(config):
+
+    logger = logcontroller.setup_custom_logger("clean_logger.txt", config)
+    logger.info("--------------------clean.py STARTING--------------------")
+    start_time = datetime.datetime.now()
 
     trip = pd.read_csv(os.path.join(config["output_dir"], "_trip.tsv"), sep="\t")
     tour = pd.read_csv(os.path.join(config["output_dir"], "_tour.tsv"), sep="\t")
@@ -72,13 +78,6 @@ def clean(config):
     hh['hhexpfac_original'] = hh['hhexpfac'].copy()
     hh['hhexpfac'] = hh['hhexpfac']/hh['count']
 
-    # Re-calculate tour weights
-    # Tour weights are to be taken as the average of trip weights
-    df = trip[['tour','trexpfac']].groupby('tour').mean().reset_index()
-    df.rename(columns={'trexpfac': 'toexpfac'}, inplace=True)
-    tour.drop('toexpfac', axis=1, inplace=True)
-    tour = tour.merge(df, on='tour', how='left')
-
     # Update person day weights
     person_day.rename(columns={'pdexpfac':'pdexpfac_original'}, inplace=True)
     person_day = person_day.merge(
@@ -130,7 +129,37 @@ def clean(config):
     # High school student if under 18
     person.loc[person['person_id'].isin(no_pwtaz_df.person_id) & (person['pwpcl']==-1) & (person['pagey']<18), 'pptyp'] = 6
 
+    # Scale weights so the smaller, cleaned dataset matches totals
+    trip_original = util.load_elmer_table(config["elmer_trip_table"], 
+                                            sql="SELECT trip_weight FROM "+config["elmer_trip_table"]+\
+                                                " WHERE survey_year in "+str(config['survey_year']))
+    hh_original = util.load_elmer_table(config["elmer_hh_table"], 
+                                            sql="SELECT hh_weight FROM "+config["elmer_hh_table"]+\
+                                                " WHERE survey_year in "+str(config['survey_year']))
+    person_original = util.load_elmer_table(config["elmer_person_table"], 
+                                            sql="SELECT person_weight FROM "+config["elmer_person_table"]+\
+                                                " WHERE survey_year in "+str(config['survey_year']))
     
+    trip_wt_scale = trip_original['trip_weight'].sum()/trip['trexpfac'].sum()
+    hh_wt_scale = hh_original['hh_weight'].sum()/hh['hhexpfac'].sum()
+    person_wt_scale = person_original['person_weight'].sum()/person['psexpfac'].sum()
+
+    trip['trexpfac'] = trip['trexpfac']*(trip_wt_scale)
+    hh['hhexpfac'] = hh['hhexpfac']*(hh_wt_scale)
+    hh_day['hdexpfac'] = hh_day['hdexpfac']*(hh_wt_scale)
+    person['psexpfac'] = person['psexpfac']*(person_wt_scale)
+    person_day['pdexpfac'] = person_day['pdexpfac']*(person_wt_scale)
+
+    logger.info(f"Trip weights scaled by: {trip_wt_scale} to match Elmer totals")
+    logger.info(f"Household weights scaled by: {hh_wt_scale} to match Elmer totals")
+    logger.info(f"Person weights scaled by: {person_wt_scale} to match Elmer totals")
+    
+    # Re-calculate tour weights
+    # Tour weights are to be taken as the average of trip weights
+    df = trip[['tour','trexpfac']].groupby('tour').mean().reset_index()
+    df.rename(columns={'trexpfac': 'toexpfac'}, inplace=True)
+    tour.drop('toexpfac', axis=1, inplace=True)
+    tour = tour.merge(df, on='tour', how='left')
 
     # write these out as the final versions and have skims attached
     trip.to_csv(os.path.join(cleaned_output_dir, "_trip.tsv"), sep="\t", index=False)
@@ -139,3 +168,8 @@ def clean(config):
     person.to_csv(os.path.join(cleaned_output_dir, "_person.tsv"),sep="\t", index=False)
     person_day.to_csv(os.path.join(cleaned_output_dir, "_person_day.tsv"),sep="\t", index=False)
     hh_day.to_csv(os.path.join(cleaned_output_dir, "_household_day.tsv"),sep="\t", index=False)
+
+    end_time = datetime.datetime.now()
+    elapsed_total = end_time - start_time
+    logger.info("--------------------convert_format.py ENDING--------------------")
+    logger.info("convert_format.py RUN TIME %s" % str(elapsed_total))
