@@ -25,6 +25,9 @@ run_unclone = true
 # Specify set of days to include
 day_range = ["Monday","Tuesday","Wednesday","Thursday"]
 
+# Scale cleaned weights to match Elmer totals (initial test suggest this is not an accurate approach)
+scale_totals = false
+
 debug = false
 debug_person_id = []
 # debug_person_id = ['2309359141']   # List of person IDs to iterate over in tour creation, empty list to process all

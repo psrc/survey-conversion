@@ -129,30 +129,31 @@ def clean(config):
     # High school student if under 18
     person.loc[person['person_id'].isin(no_pwtaz_df.person_id) & (person['pwpcl']==-1) & (person['pagey']<18), 'pptyp'] = 6
 
-    # Scale weights so the smaller, cleaned dataset matches totals
-    trip_original = util.load_elmer_table(config["elmer_trip_table"], 
-                                            sql="SELECT trip_weight FROM "+config["elmer_trip_table"]+\
-                                                " WHERE survey_year in "+str(config['survey_year']))
-    hh_original = util.load_elmer_table(config["elmer_hh_table"], 
-                                            sql="SELECT hh_weight FROM "+config["elmer_hh_table"]+\
-                                                " WHERE survey_year in "+str(config['survey_year']))
-    person_original = util.load_elmer_table(config["elmer_person_table"], 
-                                            sql="SELECT person_weight FROM "+config["elmer_person_table"]+\
-                                                " WHERE survey_year in "+str(config['survey_year']))
-    
-    trip_wt_scale = trip_original['trip_weight'].sum()/trip['trexpfac'].sum()
-    hh_wt_scale = hh_original['hh_weight'].sum()/hh['hhexpfac'].sum()
-    person_wt_scale = person_original['person_weight'].sum()/person['psexpfac'].sum()
+    if config["scale_totals"]:
+        # Scale weights so the smaller, cleaned dataset matches totals
+        trip_original = util.load_elmer_table(config["elmer_trip_table"], 
+                                                sql="SELECT trip_weight FROM "+config["elmer_trip_table"]+\
+                                                    " WHERE survey_year in "+str(config['survey_year']))
+        hh_original = util.load_elmer_table(config["elmer_hh_table"], 
+                                                sql="SELECT hh_weight FROM "+config["elmer_hh_table"]+\
+                                                    " WHERE survey_year in "+str(config['survey_year']))
+        person_original = util.load_elmer_table(config["elmer_person_table"], 
+                                                sql="SELECT person_weight FROM "+config["elmer_person_table"]+\
+                                                    " WHERE survey_year in "+str(config['survey_year']))
+        
+        trip_wt_scale = trip_original['trip_weight'].sum()/trip['trexpfac'].sum()
+        hh_wt_scale = hh_original['hh_weight'].sum()/hh['hhexpfac'].sum()
+        person_wt_scale = person_original['person_weight'].sum()/person['psexpfac'].sum()
 
-    trip['trexpfac'] = trip['trexpfac']*(trip_wt_scale)
-    hh['hhexpfac'] = hh['hhexpfac']*(hh_wt_scale)
-    hh_day['hdexpfac'] = hh_day['hdexpfac']*(hh_wt_scale)
-    person['psexpfac'] = person['psexpfac']*(person_wt_scale)
-    person_day['pdexpfac'] = person_day['pdexpfac']*(person_wt_scale)
+        trip['trexpfac'] = trip['trexpfac']*(trip_wt_scale)
+        hh['hhexpfac'] = hh['hhexpfac']*(hh_wt_scale)
+        hh_day['hdexpfac'] = hh_day['hdexpfac']*(hh_wt_scale)
+        person['psexpfac'] = person['psexpfac']*(person_wt_scale)
+        person_day['pdexpfac'] = person_day['pdexpfac']*(person_wt_scale)
 
-    logger.info(f"Trip weights scaled by: {trip_wt_scale} to match Elmer totals")
-    logger.info(f"Household weights scaled by: {hh_wt_scale} to match Elmer totals")
-    logger.info(f"Person weights scaled by: {person_wt_scale} to match Elmer totals")
+        logger.info(f"Trip weights scaled by: {trip_wt_scale} to match Elmer totals")
+        logger.info(f"Household weights scaled by: {hh_wt_scale} to match Elmer totals")
+        logger.info(f"Person weights scaled by: {person_wt_scale} to match Elmer totals")
     
     # Re-calculate tour weights
     # Tour weights are to be taken as the average of trip weights
