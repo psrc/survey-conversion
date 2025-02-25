@@ -169,10 +169,9 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
                 in row[["mode_1", "mode_2", "mode_3", "mode_4"]].values
             ):
                 df.loc[index, "pathtype"] = 6
-            # 'Urban rail (e.g., Link light rail, monorail)'
+            # Urban Rail (e.g., Link light rail, monorail, streetcar)
             elif [
-                "Urban Rail (e.g., Link light rail, monorail)"
-                or "Other rail (e.g., streetcar)"
+                "Urban Rail (e.g., Link light rail, monorail, streetcar)"
             ] in row[["mode_1", "mode_2", "mode_3", "mode_4"]].values:
                 df.loc[index, "pathtype"] = 4
             else:
