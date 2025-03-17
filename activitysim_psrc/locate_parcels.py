@@ -264,7 +264,9 @@ def locate_parcels(config):
         # Meal (purp==50); parcel must have food service jobs; FIXME: maybe allow retail/other for things like grocery stores
         {
             "type": "meal",
-            "parcel_filter": parcel_df["empret_p"] > 0,
+            "parcel_filter": (
+                (parcel_df["empret_p"] > 0) | (parcel_df["empfoo_p"] > 0)
+            ),
             "o_trip_filter": trip_results[config["opurp_field"]].isin(
                 df_lookup_o.loc[df_lookup_o["model_value"] == "eatout", "elmer_value"]
             ),
