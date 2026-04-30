@@ -1,0 +1,47 @@
+﻿index,table ,filter,result_col,result_value,description
+1,df,:,pstaz,df['school_loc_taz'],
+2,df,:,pspcl,df['school_loc_parcel'],
+3,df,(df['adult_student']=="No, not a student"),pstyp,0,not a student
+4,df,(df['adult_student']=="Part-time student, currently attending some or all classes in-person"),pstyp,2,part time student
+5,df,(df['adult_student']=="Part-time student, ONLY online classes"),pstyp,2,part time student
+6,df,(df['adult_student']=="Part-time student, ONLY online classes"),pspcl,df['home_parcel'],set school loc at home
+7,df,(df['adult_student']=="Part-time student, ONLY online classes"),pstaz,df['home_taz'],set school loc at home
+8,df,(df['adult_student']=="Full-time student, currently attending some or all classes in-person"),pstyp,1,full time student
+9,df,(df['adult_student']=="Full-time student, ONLY online classes"),pstyp,1,full time student
+13,df,df['pstyp'].isnull(),pstyp,0,default to not a student if not already filled
+14,df,df['employment'].isin(["Employed full time (35+ hours/week, paid)"]),pwtyp,1,Full time worker
+15,df,df['employment'].isin(["Employed part time (fewer than 35 hours/week, paid)"]),pwtyp,2,Part time worker
+16,df,df['employment'].isin(["Self-employed (fewer than 35 hours/week, paid)"]),pwtyp,2,Part time worker
+17,df,df['employment'].isin(["Self-employed"]),pwtyp,1,Full time worker
+18,df,df['pwtyp']==1,pptyp,1,full-time worker
+19,df,df['pwtyp']==2,pptyp,2,part-time worker
+20,df,~df['pwtyp'].isin([1,2]),pwtyp,0,Non-worker
+21,df,(df['pwtyp']==0) & (df['age'].isin(['65-74 years','75-84 years','85 years or older'])),pptyp,3,Non-working adult age over 65
+22,df,(df['pwtyp']==0) & (df['age'].isin(['18-24 years','25-34 years','35-44 years','45-54 years','55-64 years'])),pptyp,4,Non working adult age <65
+23,df,(df['schooltype'].isin(['Associate or bachelor\'s program', 'Vocational/technical school','Graduate or professional school'])) & (df['adult_student'].isin(['Full-time student, currently attending some or all classes in-person','Full-time student, ONLY online classes'])),pptyp,5,University student (full-time)
+24,df,(~df['age'].isin(['Under 5 years old','5-11 years','12-15 years'])) & (df['schooltype'].isin(['High school (public, private, charter)','Home school'])),pptyp,6,High school student age 16+
+25,df,df['age'].isin(['5-11 years','12-15 years']),pptyp,7,Child age 5-15
+26,df,df['age']=='Under 5 years old',pptyp,8,Child Under 5
+27,df,df['pptyp'].isnull(),pptyp,-1,Assign any missing df -1 value as missing logic flag
+28,df,(df['age'].isin(['16-17 years'])) & (df['pptyp'] == -1),pptyp,6,Assume anyone 16-17 is a student if they have missing school data
+29,df,(df['pptyp']==-1) & (df['age'].isin(['65-74 years','75-84 years','85 years or older'])),pptyp,3,Non-working adult age over 65
+30,df,(df['pptyp']==-1) & (df['age'].isin(['18-24 years','25-34 years','35-44 years','45-54 years','55-64 years'])),pptyp,4,Non working adult age <65
+31,df,:,ptpass,0,Default of no paid transit pass used
+17,df,(df['commute_subsidy_use_1'] == 'Selected'),ptpass,1,
+18,df,(df['pptyp'].isin([6,7,8])),ptpass,1,Ages under 0-18 ride transit free
+27,df,:,hhno,df['household_id'].astype('int64'),
+28,df,:,pno,df['pernum'].astype('int64'),
+29,df,:,psexpfac,df['person_weight'],
+30,df,:,pwtaz,df['work_taz'],
+35,df,:,pwpcl,df['work_parcel'],
+11,df,(df['pptyp']==5)&(df['school_in_region']=="No"),pspcl,df['home_parcel'],for college students that have schools outside region assert them to be online only to get reasonable distance targets
+12,df,(df['pptyp']==5)&(df['school_in_region']=="No"),pstaz,df['home_taz'],
+35,df,(df['work_from_home'].str.contains("Yes, all of the time"))&(df['work_parcel']==-1),pwpcl,df['home_parcel'],
+36,df,(df['work_from_home'].str.contains("Yes, all of the time"))&(df['work_parcel']==-1),pwtaz,df['home_taz'],
+37,df,:,pdiary,0,
+38,df,:,pproxy,0,
+39,df,(df['pwtyp'].isin([1,2])),worker_type,'commuter',
+40,df,(df['pwtyp'].isin([1,2]))&(df['pwpcl']==df['home_parcel']),worker_type,'wfh',
+41,df,(df['pwtyp'].isin([1,2]))&(df['telecommute_freq'].isin(['3 days a week', '4 days a week', '5 days a week', '6-7 days a week']))&(df['pwpcl']!=df['home_parcel']),worker_type,'telecommuter'
+42,df,:,ppaidprk,0
+43,df,(df['commute_subsidy_3']!='Selected')&(df['parkhr_p']>0),ppaidprk,1,parcels with paid parking unless person uses fully subsidized parking cost from work

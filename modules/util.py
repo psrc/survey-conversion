@@ -1,7 +1,7 @@
 import pandas as pd
 import geopandas as gpd
 from shapely import wkt
-from pymssql import connect
+# from pymssql import connect
 from sqlalchemy import create_engine, text
 import urllib
 import pyodbc
@@ -19,7 +19,7 @@ def load_elmer_table(table_name, sql=None):
 
     # df = pd.DataFrame(engine.connect().execute(text(sql)))
     with engine.begin() as connection:
-        result = connection.execute(sql)
+        result = connection.execute(text(sql))
         df = pd.DataFrame(result.fetchall())
         df.columns = result.keys()
 

@@ -29,7 +29,7 @@ from pyproj import Proj, transform
 import numpy as np
 from operator import itemgetter
 from sqlalchemy.engine import URL
-from pymssql import connect
+# from pymssql import connect
 from shapely import wkt
 from daysim import logcontroller
 

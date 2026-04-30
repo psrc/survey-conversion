@@ -26,7 +26,7 @@ import urllib
 import pyodbc
 import sqlalchemy
 from sqlalchemy.engine import URL
-from pymssql import connect
+# from pymssql import connect
 from shapely import wkt
 import logging
 from daysim import logcontroller
@@ -72,7 +72,7 @@ def locate_parcels(config):
 
 
     # Load parcel data
-    parcel_df = pd.read_csv(config["parcel_file_dir"], delim_whitespace=True)
+    parcel_df = pd.read_csv(config["parcel_file_dir"], sep=' ')
     parcel_maz_df = pd.read_csv(config["parcel_maz_file_dir"])
 
     # Join MAZ data to parcel records

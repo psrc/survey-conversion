@@ -1,0 +1,6 @@
+﻿index,table ,filter,result_col,result_value,description
+1,df,:,hhexpfac,df['hh_weight'],
+2,df,:,hhno,df['household_id'].astype('int64'),
+8,df,:,hhtaz,df['home_taz'].astype('int64'),
+9,df,:,hhparcel,df['home_parcel'].astype('int64'),
+10,df,:,samptype,1,

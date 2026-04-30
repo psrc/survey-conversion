@@ -56,7 +56,7 @@ def clean(config):
     #     how='left'
     # )
     df = person['person_id_original'].value_counts().reset_index()
-    df.rename(columns={'person_id_original': 'count', 'index': 'person_id_original'}, inplace=True)
+    # df.rename(columns={'person_id_original': 'count', 'index': 'person_id_original'}, inplace=True)
     # person['psexpfac'] = person['psexpfac']/person['count']
     person = person.merge(
         df, 
@@ -69,7 +69,7 @@ def clean(config):
     # Re-calculate household weights in the same way
     hh = hh[hh['hhno'].isin(person_day['hhno'])]
     df = hh['hhid_elmer'].value_counts().reset_index()
-    df.rename(columns={'hhid_elmer': 'count', 'index': 'hhid_elmer'}, inplace=True)
+    # df.rename(columns={'hhid_elmer': 'count', 'index': 'hhid_elmer'}, inplace=True)
     hh = hh.merge(
         df, 
         on='hhid_elmer', 
