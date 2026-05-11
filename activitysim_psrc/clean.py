@@ -25,9 +25,9 @@ import logging
 from daysim import logcontroller
 from activitysim_psrc import infer
 from modules import convert
-from activitysim.core import workflow
+# from activitysim.core import workflow
 from activitysim.abm.models.util import canonical_ids as cid
-from activitysim import cli as client
+# from activitysim import cli as client
 import sys
 import argparse
 
@@ -245,7 +245,7 @@ def calculate_weights(person, hh, trip, tour, config):
 
     # Recalculate household weights
     df = hh['household_id_original'].value_counts().reset_index()
-    df.rename(columns={'household_id_original': 'count', 'index': 'household_id_original'}, inplace=True)
+    # df.rename(columns={'household_id_original': 'count', 'index': 'household_id_original'}, inplace=True)
 
     hh = hh.merge(
         df, 

@@ -128,18 +128,20 @@ def process_expression_file(df, expr_df, df_lookup=None):
     if df_lookup is not None:
         for col in df_lookup["elmer_name"].unique():
             _df_lookup = df_lookup[(df_lookup["elmer_name"] == col)]
+            _dict_lookup = dict(zip(_df_lookup['elmer_value'], _df_lookup['model_value']))
             model_var_name = _df_lookup["model_name"].iloc[0]
-            df = df.merge(
-                _df_lookup[["elmer_value", "model_value"]],
-                left_on=col,
-                right_on="elmer_value",
-                how="left",
-            )
+            df[model_var_name] = df[col].map(_dict_lookup)
+            # df = df.merge(
+            #     _df_lookup[["elmer_value", "model_value"]],
+            #     left_on=col,
+            #     right_on="elmer_value",
+            #     how="left",
+            # )
             # Update column names
-            if col == model_var_name:
-                df.drop(col, inplace=True, axis=1)  # avoid duplicate cols
-            df.drop("elmer_value", axis=1, inplace=True)
-            df.rename(columns={"model_value": model_var_name}, inplace=True)
+            # if col == model_var_name:
+            #     df.drop(col, inplace=True, axis=1)  # avoid duplicate cols
+            # df.drop("elmer_value", axis=1, inplace=True)
+            # df.rename(columns={"model_value": model_var_name}, inplace=True)
 
     for index, row in expr_df.iterrows():
         expr = (

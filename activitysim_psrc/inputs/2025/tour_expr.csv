@@ -1,0 +1,15 @@
+﻿index,table ,filter,result_col,result_value,description
+2,df,:,tour_weight,1,FIXME:fill in with appropriate column when available
+4,df,(df['travelers_total'] == 1) & (df['mode'] == 'Auto'),mode,"""DRIVEALONEFREE""",
+5,df,(df['travelers_total'] == 2) & (df['mode'] == 'Auto'),mode,"""SHARED2FREE""",
+6,df,(df['travelers_total'] > 2) & (df['mode'] == 'Auto'),mode,"""SHARED3FREE""",
+7,df,"(df['mode'] == 'Transit') & (df['mode_1'] ==""Ferry or water taxi"")",mode,"""WALK_FRY""",
+8,df,"(df['mode'] == 'Transit') & (df['mode_1'] ==""Commuter rail (Sounder, Amtrak)"")",mode,"""WALK_COM""",
+9,df,"(df['mode'] == 'Transit') & (df['mode_1'].isin([""Urban Rail (e.g., Link light rail, monorail)"",""Other rail (e.g., streetcar)""]))",mode,"""WALK_LR""",
+10,df,"(df['mode'] == 'Transit') & (df['mode_1'] ==""Bus (public transit)"")",mode,"""WALK_LOC""",
+11,df,:,purpose,df['dest_purpose'].map(full_purpose_map),
+12,df,:,origin_parcel_dim_id,df['origin_parcel_dim_id'].fillna(-1),
+13,df,:,dest_parcel_dim_id,df['dest_parcel_dim_id'].fillna(-1),
+14,df,:,depart_time_hhmm,df['depart_time_hhmm'].fillna(-1),
+15,df,:,mam,df['depart_time_hhmm'].apply(lambda x: convert_hhmm_to_mam(x)),
+16,df,:,depart,np.floor(df['mam']/60),

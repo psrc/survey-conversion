@@ -9,20 +9,21 @@ def unclone(config):
             if not os.path.exists(my_path):
                 os.makedirs(my_path)
 
-        trip = pd.read_csv(os.path.join(outdir,"survey_trips.csv"))
-        tour = pd.read_csv(os.path.join(outdir,"survey_tours.csv"))
-        hh = pd.read_csv(os.path.join(outdir, "survey_households.csv"))
-        person = pd.read_csv(os.path.join(outdir, "survey_persons.csv"))
-        jt_participants = pd.read_csv(os.path.join(outdir, "survey_joint_tour_participants.csv"))
-
-        # Remove duplicate households and person for household- and person-level model estimation 
-        #hh_uncloned = hh[~hh[hh.columns.drop('household_id')].duplicated()]
-        hh_uncloned = hh.groupby('household_id_original', as_index=False).first()
-
-        # Reset weights to use the original values that haven't been factored for cloned persons/days
-        hh_uncloned.rename(columns={'hh_weight': 'hh_weight_drop', 'hh_weight_original': 'hh_weight'}, inplace=True)
-
         for name_type in ['override','survey']:
+
+            trip = pd.read_csv(os.path.join(outdir,name_type+"_trips.csv"))
+            tour = pd.read_csv(os.path.join(outdir,name_type+"_tours.csv"))
+            hh = pd.read_csv(os.path.join(outdir, name_type+"_households.csv"))
+            person = pd.read_csv(os.path.join(outdir, name_type+"_persons.csv"))
+            jt_participants = pd.read_csv(os.path.join(outdir, name_type+"_joint_tour_participants.csv"))
+
+            # Remove duplicate households and person for household- and person-level model estimation 
+            #hh_uncloned = hh[~hh[hh.columns.drop('household_id')].duplicated()]
+            hh_uncloned = hh.groupby('household_id_original', as_index=False).first()
+
+            # Reset weights to use the original values that haven't been factored for cloned persons/days
+            hh_uncloned.rename(columns={'hh_weight': 'hh_weight_drop', 'hh_weight_original': 'hh_weight'}, inplace=True)
+
             hh_uncloned.to_csv(os.path.join(outdir, "uncloned", name_type+"_households.csv"), index=False)
 
             person_uncloned = person[person['household_id'].isin(hh_uncloned['household_id'])]

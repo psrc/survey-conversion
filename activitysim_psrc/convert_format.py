@@ -26,9 +26,9 @@ from daysim import logcontroller
 from modules import util, convert, tours, days
 
 # from activitysim_psrc import infer
-from activitysim.core import workflow
+# from activitysim.core import workflow
 from activitysim.abm.models.util import canonical_ids as cid
-from activitysim import cli as client
+# from activitysim import cli as client
 import sys
 import argparse
 pd.options.mode.chained_assignment = None  # default='warn'

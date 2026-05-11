@@ -1,0 +1,213 @@
+########################################
+# General Configuration Settings
+########################################
+survey_year = "(2025)"   # parens because we can pass in a set of years
+
+elmer_trip_table = "HHSurvey.v_trips"
+elmer_person_table = "HHSurvey.v_persons"
+elmer_hh_table = "HHSurvey.v_households"
+elmer_person_day_table = "HHSurvey.v_days"
+
+input_dir = "C:/Joanne_PSRC/travel_models/survey-conversion/activitysim_psrc/inputs/2025"
+
+# Project Output Directory
+output_dir = 'R:/e2projects_two/2023_base_year/2025_survey/activitysim_format'
+unclone_path_list = ['R:/e2projects_two/2023_base_year/2025_survey/activitysim_format/cleaned',
+                     'R:/e2projects_two/2023_base_year/2025_survey/activitysim_format/skims_attached']
+
+# Config files used for infer.py
+asim_state_wd = 'S:/workspace/sc_asim_develop'
+asim_config_dir = 'S:/workspace/sc_asim_develop/inputs/model/activitysim/configs'
+asim_data = 'Z:/Joanne/psrc_activitysim/data'
+
+# Specify which components to run
+run_locate_parcels = false
+run_convert_format = false
+run_attach_skims = false
+run_clean = false
+run_data_validation = true
+run_infer = true
+run_unclone = true
+
+# Specify set of days to include
+day_range = ["Monday","Tuesday","Wednesday","Thursday"]
+
+# To debug, add person IDs to list; to process all pass empty list
+# debug_person_id = [5611]
+debug_person_id = []
+
+drive_to_transit_access_list = [
+    "Drove and parked a car (e.g., a vehicle in my household)",
+    "Drove and parked a carshare vehicle (e.g., ZipCar, Car2Go)",
+    "Drove and parked my own household's vehicle (or motorcycle)",
+    "Drove and parked another vehicle (or motorcycle)",
+    "Got dropped off in my own household's vehicle (or motorcycle)",
+    "Got dropped off in another vehicle (or motorcycle)",
+    "Uber/Lyft, taxi, or car service"
+]
+
+# Heirarchy order for tour mode, per DaySim docs: https://www.psrc.org/sites/default/files/2015psrc-modechoiceautomodels.pdf
+# Drive to Transit > Walk to Transit > School Bus > HOV3+ > HOV2 > SOV > Bike > Walk > Other
+transit_heirarchy = ['FRY','COM','LR','LOC']
+TRANSIT_DRIVE_MODE = 'DRIVE_TRN'
+mode_heirarchy = ["DRIVE_TRN","WALK_FRY","WALK_COM","WALK_LR","WALK_LOC","SCHBUS","TNC",
+                  "SHARED3FREE","SHARED2FREE","DRIVEALONEFREE","BIKE","WALK","Other"]
+
+transit_mode_list = ['WALK_FRY',
+                    'WALK_COM',
+                    'WALK_LR',
+                    'WALK_LOC',
+                    'DRIVE_TRN']
+
+missing_school_zone = 9999999999999
+
+################################################
+# Parcel Location (locate_parcels.py) Config
+################################################
+# Load Survey Data from Elmer or use CSV
+use_elmer = true
+
+# If not using Elmer, specify CSV directory of raw survey files 
+# Expected files: trip.csv, hh.csv, person.csv
+survey_input_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/elmer'
+
+# Set parcel file location
+parcel_file_dir = 'R:/e2projects_two/SoundCast/Inputs/rtp_2026_2050/landuse/2023/23_on_23_v3/parcels_urbansim.txt'
+parcel_maz_file_dir = 'R:/e2projects_two/activitysim/conversion/geographic_crosswalks/parcel_taz_block_lookup.csv'
+
+opurp_field = "origin_purpose"
+dpurp_field = "dest_purpose"
+
+# Spatial projection definitions
+LAT_LNG_CRS = 'epsg:4326'    # Survey data expected in lat/lng format
+WA_STATE_PLANE_CRS = 'epsg:2285'    # Projection of parcel and TAZ data; survey data is converted to this
+
+# list of columns in "workplace" field that represent main work location as home
+usual_workplace_home = ['At home (telecommute or self-employed with home office)']
+
+# distance in feet for max allowable distance between collected XY data and acceptable land use
+hh_max_dist = 2640    # half mile for distance near parcel with households
+school_max_dist = 5280     # mile for distance near parcel with students
+
+################################################
+# 
+################################################
+
+hhid = 'household_id'
+pno = 'PNUM'
+home_purp = 'Home'
+work_purp = 'work'
+change_mode_purp = 'change_mode'
+origin = 'origin'
+dest = 'destination'
+
+
+################################################
+# Attach Skims (attach_skims.py) Config
+################################################
+# Specify soundcast root directory to obtain skim values
+# NOTE: network location are very slow now, recommend using local runs
+# run_root = 'L:/RTP_2022/final_runs/sc_rtp_2018_final/soundcast'
+run_root = 'N:/rtp_2026_2050/final_runs/sc_base_year_2023_final/soundcast'
+
+# Assumed travel speeds of walk and bike modes (generated from distance skims)
+bike_speed = 10 # miles per hour
+walk_speed = 3 # miles per hour
+
+# survey_tables = [
+# households = {"file_name": "survey_households.csv"},
+# persons = {"file_name": "survey_persons.csv"},
+# tours = {"file_name": "survey_tours.csv"},
+# joint_tour_participants = {"file_name": "survey_joint_tour_participants.csv"},
+# trips = {"file_name": "survey_trips.csv"}
+# ]
+
+[submode_dict]
+FRY = ['Ferry or water taxi']
+COM = ['Commuter rail (Sounder, Amtrak)']
+LR = ['Urban Rail (e.g., Link light rail, monorail, streetcar)','Other rail']
+LOC = ['Bus (public transit)','Other bus (rMove only)']
+
+[person_type_dict]
+1 = "hhftw"  # full time workers
+2 = "hhptw"  # part time workers
+3 = "hhret"  # retirees
+4 = "hhoad"  # other adults,
+5 = "hhuni"  # university students
+6 = "hhhsc"  # high school students
+7 = "hh515"  # k12 age 5-15,
+8 = "hhcu5"  # age under 5
+
+[pwtyp_map]
+'hhftw' = 1
+'hhptw' = 2
+
+[pptyp_map]
+'hhret' = 3
+'hhoad' = 4
+'hhuni' = 5
+'hhhsc' = 6
+'hh515' = 7
+'hhcu5' = 8
+
+# lookup for departure hour to skim times
+[tod_dict]
+0 = '20to5'
+1 = '20to5'
+2 = '20to5'
+3 = '20to5'
+4 = '20to5'
+5 = '5to6'
+6 = '6to7'
+7 = '7to8'
+8 = '8to9'
+9 = '9to10'
+10 = '10to14'
+11 = '10to14'
+12 = '10to14'
+13 = '10to14'
+14 = '14to15'
+15 = '15to16'
+16 = '16to17'
+17 = '17to18'
+18 = '18to20'
+19 = '18to20'
+20 = '20to5'
+21 = '20to5'
+22 = '20to5'
+23 = '20to5'
+24 = '20to5'
+
+[purp_dict]
+'wk' = 1
+'sc' = 2
+'es' = 3
+'pb' = 4
+'sh' = 5
+'ml' = 6
+'so' = 7
+'re' = 8
+'me' = 9
+
+# Create an ID to match skim naming method
+[skim_mode_dict]
+'WALK' = 'walk'
+'BIKE' = 'bike'
+'DRIVEALONEFREE' = 'sov'
+'SHARED2FREE' = 'hov2'
+'SHARED3FREE' = 'hov3'
+'Transit' = 'ivtwa'
+"DRIVE_TRN" = 'ivtwa'	# transit in-vehicle time
+"WALK_FRY" = 'ivtwa'	# transit in-vehicle time
+"WALK_COM" = 'ivtwa'	# transit in-vehicle time
+"WALK_LR" = 'ivtwa'	# transit in-vehicle time
+"WALK_LOC" = 'ivtwa'	# transit in-vehicle time
+'Other' = 'sov'
+'SCHBUS' = 'sov'   # assign school bus as sov
+'TNC' = 'sov'	# assign TNC/taxi as sov   # FIXME
+
+[day_dict]
+'Monday' = 1
+'Tuesday' = 2
+'Wednesday' = 3
+'Thursday' = 4

@@ -163,11 +163,11 @@ def fetch_skim(
     df = df[df[dtaz_field] >= 0]
 
     # Build a lookup variable to find skim value
-    matrix_dict_loc = os.path.join(
-        config["run_root"], r"inputs\model\skim_parameters\demand_matrix_dictionary.txt"
-    )
-    matrix_dict = text_to_dictionary(matrix_dict_loc)
-    uniqueMatrices = set(matrix_dict.values())
+    # matrix_dict_loc = os.path.join(
+    #     config["run_root"], r"inputs\model\skim_parameters\demand_matrix_dictionary.txt"
+    # )
+    # matrix_dict = text_to_dictionary(matrix_dict_loc)
+    # uniqueMatrices = set(matrix_dict.values())
 
     skim_output_file = df_name + "_skim_output.csv"
 
@@ -221,7 +221,7 @@ def fetch_skim(
     skim_dict = {}
     for tod in tods:
         contents = h5py.File(
-            os.path.join(config["run_root"], r"inputs/model/roster", tod + ".h5")
+            os.path.join(config["run_root"], r"inputs/model/daysim/roster", tod + ".h5")
         )
         skim_dict[tod] = contents
     

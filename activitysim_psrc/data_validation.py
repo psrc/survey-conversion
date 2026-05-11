@@ -110,7 +110,8 @@ def read_validate_write(schema, fname):
 
     df = pd.read_csv(fname)
     df = schema.validate(df.fillna(-1))
-    df[schema.columns.keys()].to_csv(fname, index=False)
+    # df[schema.columns.keys()].to_csv(fname, index=False)
+    df.to_csv(fname, index=False)
 
 
 def data_validation(config):
