@@ -327,8 +327,12 @@ def locate_parcels(config):
     )
     trip_original_updated["otaz"].fillna(-1, inplace=True)
 
-    trip_original_updated["trip_id"] = trip_original_updated.index
+    # add park and ride assignment if requested
+    if config["add_pnr_assign"]:
+        pnr_assign = pd.read_csv(config["pnr_file_dir"])
+        trip_original_updated = trip_original_updated.merge(pnr_assign, how="left", on="trip_id")
 
+    trip_original_updated["trip_id"] = trip_original_updated.index
     # Write to file
     trip_original_updated.to_csv(
         os.path.join(config["output_dir"], "geolocated_trip.csv"), index=False

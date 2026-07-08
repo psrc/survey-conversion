@@ -112,6 +112,16 @@ def assign_tour_mode(df, config):
     for mode in config["mode_heirarchy"]:
         if mode in df["mode"].values:
             return mode
+        
+def attach_pnr_lot(df):
+    """Get a park and ride lot
+    """
+
+    _df = df.sort_values(by='PNRname')
+    all_pnr = _df["PNRname"].values
+    print(all_pnr)
+    
+    return all_pnr[0], _df["PNRjunctID"].values[0]
 
 
 def transit_mode(df, config):
@@ -215,6 +225,7 @@ def add_tour_data(df, tour_dict, tour_id, day, config, primary_index=None):
     tour_dict[tour_id]["tripsh1"] = len(df.loc[0:primary_index])
     tour_dict[tour_id]["tripsh2"] = len(df.loc[primary_index + 1 :])
     tour_dict[tour_id]["tmodetp"] = assign_tour_mode(df, config)
+    tour_dict[tour_id]["tPNRname"], tour_dict[tour_id]["tPNRjunctID"] = attach_pnr_lot(df)
 
     # path type
     # Pathtype is defined by a heirarchy, where highest number is chosen first

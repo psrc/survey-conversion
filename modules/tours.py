@@ -61,6 +61,10 @@ def build(df, tour_dict, tour_id, trip, day, config):
     Process set of trips
     """
 
+    
+    if len(df) > 0 and df['PNRname'].notnull().any():
+        print(df['PNRname'])
+
     # Identify home-based tours
     home_tours_start = df[(df["opurp"] == config["home_purp"]) & (df['error_flag']==0)]
     home_tours_end = df[(df["dpurp"] == config["home_purp"]) & (df['error_flag']==0)]

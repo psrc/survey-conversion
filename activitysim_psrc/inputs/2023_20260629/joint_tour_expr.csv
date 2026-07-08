@@ -1,0 +1,8 @@
+﻿index,table ,filter,result_col,result_value,description
+1,df,:,start,np.floor(df['tlvorig']/60)
+2,df,:,end,np.floor(df['tarorig']/60)
+3,df,(df['start'] <= 5) & (df['end'] <= 5),start,5.0,
+4,df,(df['start'] <= 5) & (df['end'] <= 5),end,5.0,
+5,df,(df['start'] <= 5) & (df['end'] >= 5),start,5.0,
+6,df,(df['start'] > 5) & (df['end'] < 5),end,23.0,
+7,df,:,tour_id,df['tour'],

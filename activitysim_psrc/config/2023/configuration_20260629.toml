@@ -1,28 +1,29 @@
 ########################################
 # General Configuration Settings
 ########################################
-survey_year = "(2025)"   # parens because we can pass in a set of years
+survey_year = "(2023)"   # parens because we can pass in a set of years
 
 elmer_trip_table = "HHSurvey.v_trips"
 elmer_person_table = "HHSurvey.v_persons"
 elmer_hh_table = "HHSurvey.v_households"
 elmer_person_day_table = "HHSurvey.v_days"
 
-input_dir = "C:/Joanne_PSRC/travel_models/survey-conversion/activitysim_psrc/inputs/2025"
+input_dir = "C:/Joanne/survey-conversion/activitysim_psrc/inputs/2023_20260629"
 
 # Project Output Directory
-output_dir = 'R:/e2projects_two/2023_base_year/2025_survey/activitysim_format'
-unclone_path_list = ['R:/e2projects_two/2023_base_year/2025_survey/activitysim_format/cleaned',
-                     'R:/e2projects_two/2023_base_year/2025_survey/activitysim_format/skims_attached']
+output_dir = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format_20260629'
+# output_dir_final = 'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format_20260629/final'
+unclone_path_list = ['R:/e2projects_two/2023_base_year/2023_survey/activitysim_format_20260629/cleaned',
+                     'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format_20260629/skims_attached']
 
 # Config files used for infer.py
-asim_state_wd = 'S:/workspace/sc_asim_develop'
-asim_config_dir = 'S:/workspace/sc_asim_develop/inputs/model/activitysim/configs'
-asim_data = 'Z:/Joanne/psrc_activitysim/data'
+asim_state_wd = '//modelstation2/c$/workspace/sc_2023_pnr_6_26_26'
+asim_config_dir = '//modelstation2/c$/workspace/sc_2023_pnr_6_26_26/inputs/model/activitysim/configs'
+asim_data = '//modelstation2/c$/workspace/sc_6_22_26_asim_data'
 
 # Specify which components to run
-run_locate_parcels = true
-run_convert_format = true
+run_locate_parcels = false
+run_convert_format = false
 run_attach_skims = true
 run_clean = true
 run_data_validation = true
@@ -75,12 +76,12 @@ survey_input_dir = 'R:/e2projects_two/2023_base_year/2017_2019_survey/elmer'
 parcel_file_dir = 'R:/e2projects_two/SoundCast/Inputs/rtp_2026_2050/landuse/2023/23_on_23_v3/parcels_urbansim.txt'
 parcel_maz_file_dir = 'R:/e2projects_two/activitysim/conversion/geographic_crosswalks/parcel_taz_block_lookup.csv'
 
-opurp_field = "origin_purpose"
-dpurp_field = "dest_purpose"
-
 # Park and Ride Assignment
 add_pnr_assign = true
 pnr_file_dir = "R:/e2projects_two/2023_base_year/park_and_ride/park-and-ride-assignment-2023.csv"
+
+opurp_field = "origin_purpose"
+dpurp_field = "dest_purpose"
 
 # Spatial projection definitions
 LAT_LNG_CRS = 'epsg:4326'    # Survey data expected in lat/lng format
@@ -112,7 +113,7 @@ dest = 'destination'
 # Specify soundcast root directory to obtain skim values
 # NOTE: network location are very slow now, recommend using local runs
 # run_root = 'L:/RTP_2022/final_runs/sc_rtp_2018_final/soundcast'
-run_root = 'N:/rtp_2026_2050/final_runs/sc_base_year_2023_final/soundcast'
+run_root = '//modelstation1/c$/workspace/sc_main_RTP_2023'
 
 # Assumed travel speeds of walk and bike modes (generated from distance skims)
 bike_speed = 10 # miles per hour

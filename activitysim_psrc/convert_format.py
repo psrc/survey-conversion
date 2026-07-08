@@ -44,7 +44,7 @@ def process_household_file(hh, person, df_lookup, config, logger):
     # For each household, calculate total number of people in each person_type
     person_type_field = "ptype"
     hhid_col = "household_id"
-    for person_type in person[person_type_field].unique():
+    for person_type in person_type_dict.keys():
         df = person[person["ptype"] == person_type]
         df = df.groupby("household_id")["household_id"].count()
         df.name = person_type_dict[str(int(person_type))]
@@ -124,11 +124,19 @@ def process_trip_file(df, person, day, df_lookup, config, logger):
             (df["transit_mode"].isnull()) & (df[mode + "_flag"] == 1), "transit_mode"
         ] = mode
 
-    # Join access method to complete transit submode
-    df["trip_mode"] = df["access_mode"] + "_" + df["transit_mode"]
+    # if park and ride assign
+    if 'PNRjunctID' in df.columns:
+        df.loc[df["access_mode"] == "DRIVE", "access_mode"] = "WALK"
+        # Join access method to complete transit submode
+        df["trip_mode"] = df["access_mode"] + "_" + df["transit_mode"]
 
-    # We don't separate drive access by submode so reset those values
-    df.loc[df["access_mode"] == "DRIVE", "trip_mode"] = config["TRANSIT_DRIVE_MODE"]
+        # assign drive to transit to PNR trips
+        df.loc[df["PNRjunctID"].notna(), "trip_mode"] = config["TRANSIT_DRIVE_MODE"]
+    else:
+        # Join access method to complete transit submode
+        df["trip_mode"] = df["access_mode"] + "_" + df["transit_mode"]
+        # We don't separate drive access by submode so reset those values
+        df.loc[df["access_mode"] == "DRIVE", "trip_mode"] = config["TRANSIT_DRIVE_MODE"]
 
     df = convert.process_expression_file(
         df, expr_df, df_lookup[df_lookup["table"] == "trip"]
