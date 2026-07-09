@@ -292,6 +292,7 @@ def build(df, tour_dict, tour_id, trip, day, config):
                 tour_dict[tour_id]["tmodetp"] = convert.assign_tour_mode(
                     _df, config
                 )
+                tour_dict[tour_id]["tPNRname"], tour_dict[tour_id]["tPNRjunctID"] = convert.attach_pnr_lot(df)
 
                 tour_dict[tour_id]["tour"] = tour_id
 
