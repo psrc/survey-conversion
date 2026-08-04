@@ -346,6 +346,12 @@ def update_records(trip, tour, person, config):
     tour_skim = pd.read_csv(
         os.path.join(config["output_dir"], "skims_attached", "initial", "tour_skim_output.csv")
     )
+    pnr_home_skim = pd.read_csv(
+        os.path.join(config["output_dir"], "skims_attached", "initial", "pnr_home_lot_skim_output.csv")
+    )
+    pnr_dest_skim = pd.read_csv(
+        os.path.join(config["output_dir"], "skims_attached", "initial", "pnr_lot_dest_skim_output.csv")
+    )
     person_skim = pd.read_csv(
         os.path.join(config["output_dir"], "skims_attached", "initial", "person_skim_output.csv")
     )
@@ -360,7 +366,7 @@ def update_records(trip, tour, person, config):
         )
     )
 
-    for df in [trip_skim, tour_skim, person_skim, work_skim, school_skim]:
+    for df in [trip_skim, tour_skim, person_skim, work_skim, school_skim, pnr_home_skim, pnr_dest_skim]:
         df["id"] = df["id"].astype("int")
 
     for df in [trip, tour, person]:
@@ -371,6 +377,8 @@ def update_records(trip, tour, person, config):
     person_cols = {"puwmode": "puwmode"}
     work_cols = {"time_to_work": "t", "distance_to_work": "d"}
     school_cols = {"time_to_school": "t", "distance_to_school": "d"}
+    pnr_home_cols = {'time_home_to_pnr_lot': 't', 'driving_cost_home_to_pnr_lot': 'c', 'distance_home_to_pnr_lot': 'd'}
+    pnr_dest_cols = {'time_dest_to_pnr_lot': 't', 'driving_cost_dest_to_pnr_lot': 'c', 'distance_dest_to_pnr_lot': 'd'}
 
 
     # drop skim columns from the old file
@@ -402,6 +410,28 @@ def update_records(trip, tour, person, config):
     # For tour
     df = pd.merge(tour, tour_skim[["id", "c", "d", "t"]], on="id", how="left")
     for colname, skimname in tour_cols.items():
+        df[colname] = df[skimname]
+        df.drop(skimname, axis=1, inplace=True)
+        df[colname] = (
+            df[df[colname] >= 0][colname].iloc[:] / 100
+        )  # divide all existing skim values by 100
+        df[colname].fillna(-1.0, inplace=True)
+    # df = df.drop(["id"], axis=1)
+
+    # for park and ride
+    df = pd.merge(df, pnr_home_skim[["id", "c", "d", "t"]], on="id", how="left")
+    for colname, skimname in pnr_home_cols.items():
+        df[colname] = df[skimname]
+        df.drop(skimname, axis=1, inplace=True)
+        df[colname] = (
+            df[df[colname] >= 0][colname].iloc[:] / 100
+        )  # divide all existing skim values by 100
+        df[colname].fillna(-1.0, inplace=True)
+    # df = df.drop(["id"], axis=1)
+
+    # for park and ride
+    df = pd.merge(df, pnr_dest_skim[["id", "c", "d", "t"]], on="id", how="left")
+    for colname, skimname in pnr_dest_cols.items():
         df[colname] = df[skimname]
         df.drop(skimname, axis=1, inplace=True)
         df[colname] = (
@@ -484,6 +514,31 @@ def attach_skims(config, state):
     # Extract person-level results from trip file
     person_modified = process_person_skims(tour, person, hh, config)
 
+    # If park and ride zone available, load skims between home and park and ride lot, and destination and lot
+    if config['add_pnr_assign']:
+        
+        fetch_skim(
+            "pnr_home_lot",
+            tour_hh,
+            time_field="tlvorig",    # minutes after midnight format
+            mode_field="tmodetp",
+            otaz_field="home_taz",
+            dtaz_field="tPNRjunctID",
+            config=config,
+            use_mode="DRIVEALONEFREE",
+        )
+
+        fetch_skim(
+            "pnr_lot_dest",
+            tour_hh,
+            time_field="tlvorig",    # minutes after midnight format
+            mode_field="tmodetp",
+            otaz_field="tPNRjunctID",
+            dtaz_field="tdtaz",
+            config=config,
+            use_mode="DRIVEALONEFREE",
+        )
+
     # Fetch trip skims based on trip departure time
     fetch_skim(
         "trip",
@@ -505,6 +560,7 @@ def attach_skims(config, state):
         dtaz_field="tdtaz",
         config=config,
     )
+
 
     # Attach person-level work skims based on home to work auto trips
     fetch_skim(
