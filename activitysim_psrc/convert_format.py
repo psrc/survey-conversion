@@ -243,6 +243,13 @@ def build_tour_file(trip, person, config, logger):
         + "in"
     )
 
+    if config["add_pnr_assign"]:
+        df_landuse = pd.read_csv(os.path.join(config["asim_data"], "land_use.csv"))
+        maz_lookup = df_landuse[["MAZ","TAZ"]].copy().rename(columns={"MAZ": "pnr_zone_id", "TAZ": "tPNRjunctID"})
+
+        tour = tour.merge(maz_lookup, how="left", on="tPNRjunctID")
+
+    
     return tour, trip
 
 def build_joint_tours(tour, trip, person, config, logger, state):
