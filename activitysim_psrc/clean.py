@@ -537,6 +537,12 @@ def clean(config, state):
     tour = tour.merge(person[['person_id', 'workplace_zone_id', 'school_zone_id']], on='person_id', how='left') 
     filter = (tour.pdpurp=='work') & (tour.destination != tour.workplace_zone_id)
     filter_tour_ids = tour.loc[filter].tour_id
+
+    # keep if pnr tours
+    tour.loc[(tour.tour_id.isin(filter_tour_ids)) & (tour.tPNRjunctID > 0) & (abs(tour.destination - tour.workplace_zone_id)>3), "pdpurp"] = 'othmaint'
+    tour.loc[(tour.tour_id.isin(filter_tour_ids)) & (tour.tPNRjunctID > 0) & (abs(tour.destination - tour.workplace_zone_id)<=3), "destination"] = tour.loc[(tour.tour_id.isin(filter_tour_ids)) & (tour.tPNRjunctID > 0) & (abs(tour.destination - tour.workplace_zone_id)<=3), "workplace_zone_id"]
+    filter_tour_ids = tour.loc[filter].tour_id
+
     tour = tour[~tour.tour_id.isin(filter_tour_ids)]
     trip = trip[~trip.tour_id.isin(filter_tour_ids)]
     # tour.loc[filter, "tour_type"] = 'othmaint'
@@ -564,8 +570,8 @@ def clean(config, state):
         "pstudent",
     ] = 2  # college student
 
-    logger.info(f"Dropped {len(tour[filter])} tours: work at home workers making work tours")
-    tour = tour[~filter]
+    # logger.info(f"Dropped {len(tour[filter])} tours: work at home workers making work tours")
+    # tour = tour[~filter]
 
 
     # FIXME: move this to expression files ###
@@ -698,8 +704,10 @@ def clean(config, state):
     ) | (tour["tour_category"] == "atwork")
     logger.info(
         f"Dropped {len(tour[~_filter])} tours: non-subtour tours must start at home zone"
-    )
-    tour = tour[_filter]
+    )    
+
+    # keep if pnr tours
+    tour = tour[_filter | (tour.tPNRjunctID > 0)]
 
     # FIXME: Check that subtours start at work place
 

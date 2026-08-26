@@ -507,7 +507,7 @@ def attach_skims(config, state):
     # Add unique id fields
     person["id"] = person["person_id"].astype("int")
     trip_hh["id"] = trip_hh["tsvid"].astype("int")
-    tour_hh["id"] = tour["tour_id"].astype("int")
+    tour_hh["id"] = tour_hh["tour_id"].astype("int")
     tour["id"] = tour["tour_id"].astype("int")
     trip["id"] = trip["tsvid"].astype("int")
 

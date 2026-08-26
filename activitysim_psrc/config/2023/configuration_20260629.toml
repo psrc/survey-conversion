@@ -17,9 +17,9 @@ unclone_path_list = ['R:/e2projects_two/2023_base_year/2023_survey/activitysim_f
                      'R:/e2projects_two/2023_base_year/2023_survey/activitysim_format_20260629/skims_attached']
 
 # Config files used for infer.py
-asim_state_wd = '//modelstation2/c$/workspace/sc_7_7_26'
-asim_config_dir = '//modelstation2/c$/workspace/sc_7_7_26/inputs/model/activitysim/configs'
-asim_data = '//modelstation2/c$/workspace/sc_7_7_26_data'
+asim_state_wd = '//modelstation2/c$/workspace/sc_scen_1_8_20_26'
+asim_config_dir = '//modelstation2/c$/workspace/sc_scen_1_8_20_26/inputs/model/activitysim/configs'
+asim_data = '//modelstation2/c$/workspace/sc_scen_1_8_20_26_data'
 
 # Specify which components to run
 run_locate_parcels = true
