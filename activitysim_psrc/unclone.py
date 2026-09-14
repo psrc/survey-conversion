@@ -16,10 +16,15 @@ def unclone(config):
             hh = pd.read_csv(os.path.join(outdir, name_type+"_households.csv"))
             person = pd.read_csv(os.path.join(outdir, name_type+"_persons.csv"))
             jt_participants = pd.read_csv(os.path.join(outdir, name_type+"_joint_tour_participants.csv"))
+            
+            # keep day with park and ride tours
+            tour_pnr = tour.loc[tour["tPNRjunctID"]!=-1].copy()
+            hh_sort = hh.copy()
+            hh_sort.loc[hh_sort['household_id'].isin(tour_pnr['household_id']),"PNRday"] = 1
+            hh_sort = hh_sort.sort_values(by=["household_id_original","PNRday"])
 
             # Remove duplicate households and person for household- and person-level model estimation 
-            #hh_uncloned = hh[~hh[hh.columns.drop('household_id')].duplicated()]
-            hh_uncloned = hh.groupby('household_id_original', as_index=False).first()
+            hh_uncloned = hh_sort.groupby('household_id_original', as_index=False).first()
 
             # Reset weights to use the original values that haven't been factored for cloned persons/days
             hh_uncloned.rename(columns={'hh_weight': 'hh_weight_drop', 'hh_weight_original': 'hh_weight'}, inplace=True)
@@ -36,7 +41,7 @@ def unclone(config):
             trip_uncloned.drop('trip_weight_drop', inplace=True, axis=1)
             trip_uncloned.to_csv(os.path.join(outdir, "uncloned", name_type+"_trips.csv"), index=False)
 
-            tour_uncloned = tour[tour['household_id'].isin(hh_uncloned['household_id'])]    
+            tour_uncloned = tour[(tour['household_id'].isin(hh_uncloned['household_id'])) | tour['tPNRname']!="-1"]    
             tour_uncloned.to_csv(os.path.join(outdir, "uncloned", name_type+"_tours.csv"), index=False)
 
             jt_participants_uncloned = jt_participants[jt_participants['household_id'].isin(hh_uncloned['household_id'])]
