@@ -19,12 +19,16 @@ def unclone(config):
             
             # keep day with park and ride tours
             tour_pnr = tour.loc[tour["tPNRjunctID"]!=-1].copy()
-            hh_sort = hh.copy()
-            hh_sort.loc[hh_sort['household_id'].isin(tour_pnr['household_id']),"PNRday"] = 1
-            hh_sort = hh_sort.sort_values(by=["household_id_original","PNRday"])
+            hh_pnr = hh.copy()
+            hh_pnr.loc[hh_pnr['household_id'].isin(tour_pnr['household_id']),"PNRday"] = 1
+
+            # remove day that has trips outside region
+            trip_outside = trip.loc[(trip['d_in_region'] == "No") | (trip['o_in_region'] == "No")].copy()
+            hh_filter = hh_pnr.loc[~hh_pnr['household_id'].isin(trip_outside['household_id'])].copy()
 
             # Remove duplicate households and person for household- and person-level model estimation 
-            hh_uncloned = hh_sort.groupby('household_id_original', as_index=False).first()
+            hh_filter = hh_filter.sort_values(by=["household_id_original","PNRday"])
+            hh_uncloned = hh_filter.groupby('household_id_original', as_index=False).first()
 
             # Reset weights to use the original values that haven't been factored for cloned persons/days
             hh_uncloned.rename(columns={'hh_weight': 'hh_weight_drop', 'hh_weight_original': 'hh_weight'}, inplace=True)

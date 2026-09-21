@@ -274,10 +274,10 @@ def locate_parcels(config):
                 df_lookup_d.loc[df_lookup_d["model_value"] == "eatout", "elmer_value"]
             ),
         },
-        # Social, recreational, change mode, escort, missing, no constraints
+        # Social, recreational, change mode, escort, missing, must have either parks, employment or households
         {
             "type": "other",
-            "parcel_filter": -parcel_df.isnull(),
+            "parcel_filter": parcel_df["aparks"] + parcel_df["emptot_p"] + parcel_df["hh_p"] + parcel_df['parkhr_p'] + parcel_df['parkdy_p'] > 0,
             "o_trip_filter": trip_results[config["opurp_field"]].isin(
                 df_lookup_o.loc[
                     df_lookup_o["model_value"].isin(
