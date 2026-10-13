@@ -86,7 +86,7 @@ def process_person_day(tour, trip, config, logger, state):
     tour = tour[
         ~(
             (tour["person_id"].isin(person_day[person_day["flag"] == 1].index))
-            & tour["tour_id"].isin(["work2", "school2"])
+            & tour["loc_tour_id"].isin(["work2", "school2"])
         )
     ]
 
@@ -97,7 +97,7 @@ def process_person_day(tour, trip, config, logger, state):
     tour = tour[
         ~(
             (tour["person_id"].isin(person_day[person_day["flag"] == 2].index))
-            & (tour["tour_id"] == "work2")
+            & (tour["loc_tour_id"] == "work2")
         )
     ]
 
@@ -108,7 +108,7 @@ def process_person_day(tour, trip, config, logger, state):
     tour = tour[
         ~(
             (tour["person_id"].isin(person_day[person_day["flag"] == 3].index))
-            & (tour["tour_id"] == "school2")
+            & (tour["loc_tour_id"] == "school2")
         )
     ]
 
@@ -138,8 +138,8 @@ def process_person_day(tour, trip, config, logger, state):
 
     # DATA FILTER:
     # select trips that only exist in tours - is this necessary or can we use the trip file directly?
-
-    # canonical_trip_num: 1st trip out = 1, 2nd trip out = 2, 1st in = 5, etc.
+    trip = trip[(trip['tour_id'].isin(tour['tour_id'])) & (trip['trip_id'].notna())]
+    # canonical_: 1st trip out = 1, 2nd trip out = 2, 1st in = 5, etc.
     # Keep the original trip ID for later use
     canonical_trip_num = (~trip.outbound * MAX_TRIPS_PER_LEG) + trip.trip_num
     trip["trip_id"] = trip['tour_id'].fillna(-1).astype('int') * (2 * MAX_TRIPS_PER_LEG) + canonical_trip_num
@@ -147,12 +147,12 @@ def process_person_day(tour, trip, config, logger, state):
     # DATA FILTER:
     # Some of these IDs are duplicated and it's not clear why - seems to be an issue with the canonical_trip_num definition
     # FIXME: what do we do about this? Fix canonical_trip_num? drop duplicates?
-    duplicated_person = trip[trip["trip_id"].duplicated()]["person_id"].unique()
-    logger.info(
-        f"Dropped {len(duplicated_person)} persons: duplicate IDs from canonical trip num definition"
-    )
-    trip = trip[~trip["person_id"].isin(duplicated_person)]
-    trip.set_index("trip_id", inplace=True, drop=False, verify_integrity=True)
+    # duplicated_person = trip[trip["trip_id"].duplicated()]["person_id"].unique()
+    # logger.info(
+    #     f"Dropped {len(duplicated_person)} persons: duplicate IDs from canonical trip num definition"
+    # )
+    # trip = trip[~trip["person_id"].isin(duplicated_person)]
+    # trip.set_index("trip_id", inplace=True, drop=False, verify_integrity=True)
 
     # Make sure all trips in a tour have an outbound and inbound component
     trips_per_tour = trip.groupby("tour_id")["person_id"].value_counts()
@@ -271,8 +271,8 @@ def calculate_weights(person, hh, trip, tour, config):
 
 def clean(config, state):
     # Start log file
-    logger = logcontroller.setup_custom_logger("convert_format_logger.txt", config)
-    logger.info("--------------------convert_format.py STARTING--------------------")
+    logger = logcontroller.setup_custom_logger("clean_logger.txt", config)
+    logger.info("--------------------clean.py STARTING--------------------")
     start_time = datetime.datetime.now()
 
     households = pd.read_csv(os.path.join(config['output_dir'], 'skims_attached', 'initial', 'survey_households.csv')) 
@@ -533,15 +533,15 @@ def clean(config, state):
     tour = tour[~tour.tour_id.isin(filter_tour_ids)]
     trip = trip[~trip.tour_id.isin(filter_tour_ids)]
     
-    # # now recode tours and trips taht do not to to usual workplace location:
+    # # now recode tours and trips that do not to to usual workplace location:
     tour = tour.merge(person[['person_id', 'workplace_zone_id', 'school_zone_id']], on='person_id', how='left') 
     filter = (tour.pdpurp=='work') & (tour.destination != tour.workplace_zone_id)
     filter_tour_ids = tour.loc[filter].tour_id
 
     # keep if pnr tours
-    tour.loc[(tour.tour_id.isin(filter_tour_ids)) & (tour.tPNRjunctID > 0) & (abs(tour.destination - tour.workplace_zone_id)>3), "pdpurp"] = 'othmaint'
-    tour.loc[(tour.tour_id.isin(filter_tour_ids)) & (tour.tPNRjunctID > 0) & (abs(tour.destination - tour.workplace_zone_id)<=3), "destination"] = tour.loc[(tour.tour_id.isin(filter_tour_ids)) & (tour.tPNRjunctID > 0) & (abs(tour.destination - tour.workplace_zone_id)<=3), "workplace_zone_id"]
-    filter_tour_ids = tour.loc[filter].tour_id
+    # tour.loc[(tour.tour_id.isin(filter_tour_ids)) & (tour.tPNRjunctID > 0) & (abs(tour.destination - tour.workplace_zone_id)>3), "pdpurp"] = 'othmaint'
+    # tour.loc[(tour.tour_id.isin(filter_tour_ids)) & (tour.tPNRjunctID > 0) & (abs(tour.destination - tour.workplace_zone_id)<=3), "destination"] = tour.loc[(tour.tour_id.isin(filter_tour_ids)) & (tour.tPNRjunctID > 0) & (abs(tour.destination - tour.workplace_zone_id)<=3), "workplace_zone_id"]
+    # filter_tour_ids = tour.loc[filter].tour_id
 
     tour = tour[~tour.tour_id.isin(filter_tour_ids)]
     trip = trip[~trip.tour_id.isin(filter_tour_ids)]
@@ -707,7 +707,8 @@ def clean(config, state):
     )    
 
     # keep if pnr tours
-    tour = tour[_filter | (tour.tPNRjunctID > 0)]
+    # tour = tour[_filter | (tour.tPNRjunctID > 0)]
+    tour = tour[_filter]
 
     # FIXME: Check that subtours start at work place
 

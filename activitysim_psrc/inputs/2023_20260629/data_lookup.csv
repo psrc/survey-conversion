@@ -98,72 +98,100 @@ person,race_category,'Some Other Race non-Hispanic',4,race
 person,race_category,'Hispanic',5,race
 person,race_category,'Child',8,race
 person,race_category,'Missing Response',-1,race
-trip,origin_purpose,Went home,Home,opurp
-trip,origin_purpose,"Accompany someone only (e.g., go along for the ride)",escort,opurp
-trip,origin_purpose,BOTH pick up AND drop off,escort,opurp
-trip,origin_purpose,Drop someone off,escort,opurp
-trip,origin_purpose,Pick someone up,escort,opurp
-trip,origin_purpose,"Other activity at workplace only (e.g., attend meeting, pick-up or drop-off item)",work,opurp
-trip,origin_purpose,Went to other work-related activity,work,opurp
-trip,origin_purpose,Went to primary workplace,work,opurp
-trip,origin_purpose,"Went to work-related place (e.g., meeting, second job, delivery)",work,opurp
-trip,origin_purpose,Attend college/university,school,opurp
-trip,origin_purpose,Attend daycare or preschool,school,opurp
-trip,origin_purpose,Attend K-12 school,school,opurp
-trip,origin_purpose,"Attend other education-related activity (e.g., field trip)",othdiscr,opurp
-trip,origin_purpose,"Attend other type of class (e.g., cooking class)",othdiscr,opurp
-trip,origin_purpose,"Transferred to another mode of transportation (e.g., change from ferry to bus)",othdiscr,opurp
-trip,origin_purpose,Other reason,othdiscr,opurp
-trip,origin_purpose,Missing Response,othdiscr,opurp
-trip,origin_purpose,Not imputable,othdiscr,opurp
-trip,origin_purpose,Volunteering,social,opurp
-trip,origin_purpose,Went to religious/community/volunteer activity,social,opurp
-trip,origin_purpose,"Went to exercise (e.g., gym, walk, jog, bike ride)",social,opurp
-trip,origin_purpose,"Attended recreational event (e.g., movies, sporting event)",social,opurp
-trip,origin_purpose,"Attended social event (e.g., visit with friends, family, co-workers)",social,opurp
-trip,origin_purpose,Other social/leisure,social,opurp
-trip,origin_purpose,"Went to another residence (e.g., someone else's home, second home)",social,opurp
-trip,origin_purpose,"Went to temporary lodging (e.g., hotel, vacation rental)",social,opurp
-trip,origin_purpose,"Conducted personal business (e.g., bank, post office)",othmaint,opurp
-trip,origin_purpose,"Went to medical appointment (e.g., doctor, dentist)",othmaint,opurp
-trip,origin_purpose,Other appointment/errands,othmaint,opurp
-trip,origin_purpose,"Went to other shopping (e.g., mall, pet store)",shopping,opurp
-trip,origin_purpose,Went grocery shopping,shopping,opurp
-trip,origin_purpose,Got gas,shopping,opurp
-trip,origin_purpose,Went to restaurant to eat/get take-out,eatout,opurp
 trip,dest_purpose,Went home,Home,dpurp
-trip,dest_purpose,"Accompany someone only (e.g., go along for the ride)",escort,dpurp
-trip,dest_purpose,BOTH pick up AND drop off,escort,dpurp
-trip,dest_purpose,Drop someone off,escort,dpurp
-trip,dest_purpose,Pick someone up,escort,dpurp
-trip,dest_purpose,"Other activity at workplace only (e.g., attend meeting, pick-up or drop-off item)",work,dpurp
-trip,dest_purpose,Went to other work-related activity,work,dpurp
 trip,dest_purpose,Went to primary workplace,work,dpurp
+trip,dest_purpose,Went to other work-related activity,work,dpurp
+trip,dest_purpose,"Went to work-related activity (e.g., meeting, delivery, worksite)",work,dpurp
 trip,dest_purpose,"Went to work-related place (e.g., meeting, second job, delivery)",work,dpurp
 trip,dest_purpose,Attend college/university,school,dpurp
 trip,dest_purpose,Attend daycare or preschool,school,dpurp
 trip,dest_purpose,Attend K-12 school,school,dpurp
-trip,dest_purpose,"Attend other education-related activity (e.g., field trip)",othdiscr,dpurp
-trip,dest_purpose,"Attend other type of class (e.g., cooking class)",othdiscr,dpurp
-trip,dest_purpose,"Transferred to another mode of transportation (e.g., change from ferry to bus)",othdiscr,dpurp
-trip,dest_purpose,Other reason,othdiscr,dpurp
-trip,dest_purpose,Missing Response,othdiscr,dpurp
-trip,dest_purpose,Not imputable,othdiscr,dpurp
-trip,dest_purpose,Volunteering,social,dpurp
-trip,dest_purpose,Went to religious/community/volunteer activity,social,dpurp
-trip,dest_purpose,"Went to exercise (e.g., gym, walk, jog, bike ride)",social,dpurp
+trip,dest_purpose,"Went to school/daycare (e.g., daycare, K-12, college)",school,dpurp
+trip,dest_purpose,"Accompany someone only (e.g., go along for the ride)",escort,dpurp
+trip,dest_purpose,BOTH pick up AND drop off,escort,dpurp
+trip,dest_purpose,Drop someone off,escort,dpurp
+trip,dest_purpose,"Dropped off, picked up, or accompanied another person",escort,dpurp
+trip,dest_purpose,"Dropped off/picked up someone (e.g., son at a friend's house, spouse at bus stop)",escort,dpurp
+trip,dest_purpose,Pick someone up,escort,dpurp
+trip,dest_purpose,Went to restaurant to eat/get take-out,eatout,dpurp
+trip,dest_purpose,Got gas,shopping,dpurp
+trip,dest_purpose,Grocery shopping,shopping,dpurp
+trip,dest_purpose,"Other shopping (e.g., mall, pet store)",shopping,dpurp
+trip,dest_purpose,Went grocery shopping,shopping,dpurp
+trip,dest_purpose,"Went to other shopping (e.g., mall, pet store)",shopping,dpurp
+trip,dest_purpose,"Appointment, shopping, or errands (e.g., gas)",othmaint,dpurp
+trip,dest_purpose,"Conducted personal business (e.g., bank, post office)",othmaint,dpurp
+trip,dest_purpose,"Medical appointment (e.g., doctor, dentist)",othmaint,dpurp
+trip,dest_purpose,Other appointment/errands,othmaint,dpurp
+trip,dest_purpose,Other appointment/errands (rMove only),othmaint,dpurp
+trip,dest_purpose,"Personal business (e.g., bank, post office)",othmaint,dpurp
+trip,dest_purpose,"Went to medical appointment (e.g., doctor, dentist)",othmaint,dpurp
 trip,dest_purpose,"Attended recreational event (e.g., movies, sporting event)",social,dpurp
 trip,dest_purpose,"Attended social event (e.g., visit with friends, family, co-workers)",social,dpurp
+trip,dest_purpose,"Exercise or recreation (e.g., gym, jog, bike, walk dog)",social,dpurp
 trip,dest_purpose,Other social/leisure,social,dpurp
+trip,dest_purpose,Other social/leisure (rMove only),social,dpurp
+trip,dest_purpose,"Recreational event (e.g., movies, sporting event)",social,dpurp
+trip,dest_purpose,Religious/civic/volunteer activity,social,dpurp
+trip,dest_purpose,"Social event (e.g., visit friends, family, co-workers)",social,dpurp
+trip,dest_purpose,Volunteering,social,dpurp
+trip,dest_purpose,"Went to a family activity (e.g., child's softball game)",social,dpurp
 trip,dest_purpose,"Went to another residence (e.g., someone else's home, second home)",social,dpurp
+trip,dest_purpose,Went to religious/community/volunteer activity,social,dpurp
+trip,dest_purpose,"Went to exercise (e.g., gym, walk, jog, bike ride)",social,dpurp
 trip,dest_purpose,"Went to temporary lodging (e.g., hotel, vacation rental)",social,dpurp
-trip,dest_purpose,"Conducted personal business (e.g., bank, post office)",othmaint,dpurp
-trip,dest_purpose,"Went to medical appointment (e.g., doctor, dentist)",othmaint,dpurp
-trip,dest_purpose,Other appointment/errands,othmaint,dpurp
-trip,dest_purpose,"Went to other shopping (e.g., mall, pet store)",shopping,dpurp
-trip,dest_purpose,Went grocery shopping,shopping,dpurp
-trip,dest_purpose,Got gas,shopping,dpurp
-trip,dest_purpose,Went to restaurant to eat/get take-out,eatout,dpurp
+trip,dest_purpose,"Attend other education-related activity (e.g., field trip)",othdiscr,dpurp
+trip,dest_purpose,"Attend other type of class (e.g., cooking class)",othdiscr,dpurp
+trip,dest_purpose,Attend vocational education class,othdiscr,dpurp
+trip,dest_purpose,"Changed or transferred mode (e.g., change from ferry to bus)",othdiscr,dpurp
+trip,dest_purpose,Missing Response,othdiscr,dpurp
+trip,dest_purpose,Not imputable,othdiscr,dpurp
+trip,dest_purpose,Other purpose,othdiscr,dpurp
+trip,dest_purpose,Other reason,othdiscr,dpurp
+trip,dest_purpose,"Transferred to another mode of transportation (e.g., change from ferry to bus)",othdiscr,dpurp
+trip,dest_purpose,Vacation/Traveling (rMove only),othdiscr,dpurp
+trip,dest_purpose,"Other activity only (e.g., attend meeting, pick-up or drop-off item)",othdiscr,dpurp
+trip,origin_purpose,Went home,Home,opurp
+trip,origin_purpose,Went to other work-related activity,work,opurp
+trip,origin_purpose,Went to primary workplace,work,opurp
+trip,origin_purpose,"Went to work-related place (e.g., meeting, second job, delivery)",work,opurp
+trip,origin_purpose,"Other activity at workplace only (e.g., attend meeting, pick-up or drop-off item)",work,opurp
+trip,origin_purpose,Attend college/university,school,opurp
+trip,origin_purpose,Attend daycare or preschool,school,opurp
+trip,origin_purpose,Attend K-12 school,school,opurp
+trip,origin_purpose,"Went to school/daycare (e.g., daycare, K-12, college)",school,opurp
+trip,origin_purpose,"Accompany someone only (e.g., go along for the ride)",escort,opurp
+trip,origin_purpose,BOTH pick up AND drop off,escort,opurp
+trip,origin_purpose,Drop someone off,escort,opurp
+trip,origin_purpose,"Dropped off/picked up someone (e.g., son at a friend's house, spouse at bus stop)",escort,opurp
+trip,origin_purpose,Pick someone up,escort,opurp
+trip,origin_purpose,Went to restaurant to eat/get take-out,eatout,opurp
+trip,origin_purpose,Got gas,shopping,opurp
+trip,origin_purpose,Went grocery shopping,shopping,opurp
+trip,origin_purpose,"Went to other shopping (e.g., mall, pet store)",shopping,opurp
+trip,origin_purpose,"Conducted personal business (e.g., bank, post office)",othmaint,opurp
+trip,origin_purpose,Other appointment/errands,othmaint,opurp
+trip,origin_purpose,Other appointment/errands (rMove only),othmaint,opurp
+trip,origin_purpose,"Went to medical appointment (e.g., doctor, dentist)",othmaint,opurp
+trip,origin_purpose,"Attended recreational event (e.g., movies, sporting event)",social,opurp
+trip,origin_purpose,"Attended social event (e.g., visit with friends, family, co-workers)",social,opurp
+trip,origin_purpose,Other social/leisure,social,opurp
+trip,origin_purpose,Other social/leisure (rMove only),social,opurp
+trip,origin_purpose,Volunteering,social,opurp
+trip,origin_purpose,"Went to a family activity (e.g., child's softball game)",social,opurp
+trip,origin_purpose,"Went to another residence (e.g., someone else's home, second home)",social,opurp
+trip,origin_purpose,"Went to exercise (e.g., gym, walk, jog, bike ride)",social,opurp
+trip,origin_purpose,Went to religious/community/volunteer activity,social,opurp
+trip,origin_purpose,"Went to temporary lodging (e.g., hotel, vacation rental)",social,opurp
+trip,origin_purpose,"Attend other education-related activity (e.g., field trip)",othdiscr,opurp
+trip,origin_purpose,"Attend other type of class (e.g., cooking class)",othdiscr,opurp
+trip,origin_purpose,Attend vocational education class,othdiscr,opurp
+trip,origin_purpose,Missing Response,othdiscr,opurp
+trip,origin_purpose,Not imputable,othdiscr,opurp
+trip,origin_purpose,Other purpose,othdiscr,opurp
+trip,origin_purpose,Other reason,othdiscr,opurp
+trip,origin_purpose,"Transferred to another mode of transportation (e.g., change from ferry to bus)",othdiscr,opurp
+trip,origin_purpose,Vacation/Traveling (rMove only),othdiscr,opurp
 trip,driver,Driver,1,dorp
 trip,driver,Passenger,2,dorp
 trip,driver,Both (switched drivers during trip),3,dorp

@@ -72,12 +72,8 @@ def build(df, tour_dict, tour_id, trip, day, config):
     ########################################
     # Process Each Home-Based Tour
     ########################################
-    if len(home_tours_start) == len(home_tours_end):
-        num_tours = len(home_tours_start)
-    else:
-        num_tours = min(len(home_tours_start), len(home_tours_end))
     # Loop through each of the home-based tours identified above
-    for tour_start_index in range(num_tours):
+    for tour_start_index in range(len(home_tours_start)):
         tour_dict[tour_id] = {}
 
         # Iterate between the first and last row of trips to build the tour
@@ -349,7 +345,6 @@ def create(trip, config):
     for person_id in person_id_list:
         print(str(tour_id))
         person_df = trip.loc[trip["person_id"] == person_id]
-
         # Evaluate each person's travel day
         for day in person_df["day"].unique():
             df = person_df.loc[person_df["day"] == day]

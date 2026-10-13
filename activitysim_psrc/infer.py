@@ -233,7 +233,7 @@ def infer_non_mandatory_tour_frequency(configs_dir, persons, tours):
                 tours.person_id.isin(persons.index[bad_tour_frequencies])
             ].sort_values("person_id")
         )
-        bug
+        # bug
 
     tf = unconstrained_tour_counts.rename(
         columns={tour_type: "_%s" % tour_type for tour_type in tour_types}
@@ -302,7 +302,7 @@ def infer_joint_tour_frequency(configs_dir, households, tours):
                 joint_tours.household_id.isin(households.index[bad_tour_frequencies])
             ]
         )
-        bug
+        # bug
 
     logger.info(
         "infer_joint_tour_frequency: %s households with joint tours",
@@ -392,7 +392,7 @@ def infer_tour_scheduling(configs_dir, tours):
         bad_tdds = tours[tdds.tdd.isna()]
         print("Bad tour start/end times:")
         print(bad_tdds)
-        bug
+        # bug
 
     # print("tdd_alts\n%s" %tdd_alts, "\n")
     # print("tours\n%s" %tours[['start', 'end']])
@@ -410,9 +410,16 @@ def patch_tour_ids(persons, tours, joint_tour_participants, CONSTANTS, state):
         tours["tour_type_num"] = (
             tours.sort_values(by=group_cols).groupby(group_cols).cumcount() + 1
         )
+        # remove tours that don't meet requirements
+        tours = tours[~ ((tours['tour_type'].isin(['work','school','escort','eat']) | (tours['tour_type_num']>2)) & (is_joint))].copy()
+        tours = tours[tours['loc_tour_id'].isin(cid.canonical_tours(state))].copy()
+        if parent_tour_num_col:
+            tours = tours[~tours[parent_tour_num_col].isna()].copy()
+            tours = tours[~ (tours['tour_type'].isin(['eat','maint']) & (tours['tour_type_num']>1))].copy()
+            tours[parent_tour_num_col] = tours[parent_tour_num_col].astype(np.int64)
+            tours['tour_type_num'] = tours['tour_type_num'].astype(np.int64)
 
-        return cid.set_tour_index(state, tours, parent_tour_num_col=parent_tour_num_col, is_joint=is_joint
-        )
+        return cid.set_tour_index(state, tours, parent_tour_num_col=parent_tour_num_col, is_joint=is_joint)
 
     assert "mandatory_tour_frequency" in persons
 
@@ -632,7 +639,7 @@ def infer_atwork_subtour_frequency(configs_dir, tours):
                 subtours.parent_tour_id.isin(tour_counts[bad_tour_frequencies].index)
             ].sort_values("parent_tour_id")
         )
-        bug
+        # bug
 
     atwork_subtour_frequency = reindex(
         atwork_subtour_frequency, tours[ASIM_TOUR_ID]
@@ -672,7 +679,8 @@ def patch_trip_ids(tours, trips, state):
             .cumcount()
             + 1
         )
-
+    trips = trips[trips['trip_num']<cid.determine_max_trips_per_leg(state)].copy()
+    trips = trips[~trips['tour_id'].isna()].copy()
     cid.set_trip_index(state, trips)
 
     assert trips.index.name == ASIM_TRIP_ID

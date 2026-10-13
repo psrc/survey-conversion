@@ -45,6 +45,12 @@ if activitysim_config["run_infer"]:
         os.path.join(activitysim_config["output_dir"], "cleaned"),
         state
     )
+    infer.infer(
+        activitysim_config["asim_config_dir"],
+        os.path.join(activitysim_config["output_dir"], "skims_attached"),
+        os.path.join(activitysim_config["output_dir"], "skims_attached"),
+        state
+    )
 
 if activitysim_config["run_unclone"]:
    unclone.unclone(activitysim_config)
